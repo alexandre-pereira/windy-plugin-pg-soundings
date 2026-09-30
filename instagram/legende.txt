@@ -1,0 +1,20 @@
+🪂 PG Soundings : la météo du vol libre directement dans Windy !
+
+J'ai développé un plugin gratuit pour Windy.com qui réunit en un seul écran tout ce qu'on regarde avant de voler :
+
+☁️ Vent et thermiques heure par heure et altitude par altitude, avec le plafond, les cumulus et la pluie
+📈 L'émagramme redressé de chaque heure
+🗺️ Une carte des meilleurs décollages pour un cross, en distance libre ou en aller-retour, avec les trajectoires estimées
+🌍 Plusieurs modèles : ECMWF, ICON, ICON-D2, AROME, GFS…
+🇫🇷🇬🇧 En français et en anglais
+
+👉 Pour l'installer : va sur windy.com/plugins (ou menu de Windy → « Install Windy plugin »), choisis « Load plugin directly from URL » et colle ce lien :
+https://windy-plugins.com/2727410/windy-plugin-pg-soundings/1.2.7/plugin.min.js
+
+Ce sont des estimations tirées des modèles : rien ne remplace l'observation sur le déco 😉 Vos retours sont les bienvenus !
+
+—
+
+🇬🇧 PG Soundings: a free paragliding forecast plugin for Windy.com. Wind & thermals by altitude, ceiling, cumulus, rain, skewed sounding, and a map of the best take-offs for free-distance or out-and-return cross-country flights. Install: go to windy.com/plugins → "Load plugin directly from URL" and paste the link above.
+
+#parapente #paragliding #parapentisme #vollibre #paraglider #cross #xc #xcparagliding #meteo #windy #thermiques #emagramme #alpes #annecy #soaring #freeflight

@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>PG Soundings slides</title>
+<!--
+  Visuels Instagram de PG Soundings. Une diapo par adresse :
+    slides.html?s=1..5&f=post   → carrousel 1080 × 1350
+    slides.html?s=1..5&f=story  → story 1080 × 1920 (f=reel : sans l'indication du sticker lien)
+  Captures : assets/panel2x-fr.png (plugin, données ECMWF réelles du 29/09 à Saint-André-les-Alpes, rendu 2×),
+  assets/mapshot-*.png (simulation réelle du 29/09, fond OpenTopoMap).
+-->
+<style>
+  :root { --bg1: #3b2a6b; --bg2: #16202c; --bg3: #0d141c; --fg: #eef2f7; --dim: #b5bfcc; --accent: #ffd24a; }
+  html, body { margin: 0; }
+  body { font-family: 'Segoe UI', Roboto, Arial, sans-serif; color: var(--fg); overflow: hidden;
+    background: radial-gradient(circle at 15% 0%, var(--bg1) 0%, var(--bg2) 48%, var(--bg3) 100%); }
+  .page { position: relative; width: 1080px; box-sizing: border-box; padding: 64px 70px 0; }
+  .post { height: 1350px; }
+  .story { height: 1920px; padding-top: 190px; }
+  .tag { display: inline-block; padding: 8px 18px; border-radius: 30px; background: var(--accent); color: #111;
+    font-weight: 800; font-size: 24px; letter-spacing: .5px; }
+  .num { position: absolute; top: 64px; right: 70px; font-size: 26px; color: var(--dim); font-weight: 600; }
+  .story .num { top: 190px; }
+  h1 { margin: 24px 0 10px; font-size: 80px; line-height: 1.02; letter-spacing: -2px; }
+  h1.big { font-size: 96px; }
+  h2 { margin: 22px 0 10px; font-size: 62px; line-height: 1.08; letter-spacing: -1px; }
+  h2 em { font-style: normal; color: var(--accent); }
+  .sub { font-size: 34px; color: var(--dim); margin: 0 0 34px; line-height: 1.3; }
+  .card { border-radius: 22px; overflow: hidden; box-shadow: 0 30px 70px rgba(0,0,0,.6); border: 2px solid rgba(255,255,255,.12);
+    background: #2b2b2b; position: relative; }
+  .crop { position: relative; overflow: hidden; }
+  .crop img { position: absolute; display: block; }
+  ul.checks { list-style: none; padding: 0; margin: 36px 0 0; display: grid; grid-template-columns: 1fr 1fr; gap: 14px 30px; font-size: 29px; }
+  ul.checks li::before, ul.points li::before { content: '✓ '; color: var(--accent); font-weight: 800; }
+  ul.points { list-style: none; padding: 0; margin: 34px 0 0; font-size: 31px; line-height: 1.35; }
+  ul.points li { margin: 0 0 12px; }
+  ul.points b { color: #fff; }
+  .foot { position: absolute; bottom: 44px; left: 70px; right: 70px; display: flex; justify-content: space-between;
+    font-size: 25px; color: #8f9bab; }
+  .story .foot { bottom: 250px; }
+  .foot b { color: var(--accent); }
+  .attr { position: absolute; right: 10px; bottom: 8px; font-size: 15px; color: #333; background: rgba(255,255,255,.75);
+    padding: 2px 8px; border-radius: 6px; }
+  .chips { display: flex; gap: 0; margin-top: 22px; border-radius: 10px; overflow: hidden; width: fit-content; }
+  .chips span { padding: 8px 18px; font-weight: 800; font-size: 22px; }
+  .toggle { display: inline-flex; border: 2px solid rgba(255,255,255,.25); border-radius: 12px; overflow: hidden; margin-top: 24px; font-size: 26px; }
+  .toggle span { padding: 10px 22px; color: var(--dim); }
+  .toggle span.on { background: rgba(255,255,255,.14); color: #fff; font-weight: 700; }
+  .steps { counter-reset: s; list-style: none; padding: 0; margin: 40px 0 0; font-size: 36px; line-height: 1.35; }
+  .steps li { counter-increment: s; position: relative; padding: 0 0 0 86px; margin: 0 0 34px; min-height: 64px; }
+  .steps li::before { content: counter(s); position: absolute; left: 0; top: -4px; width: 60px; height: 60px; border-radius: 50%;
+    background: var(--accent); color: #111; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+  .steps small { display: block; color: var(--dim); font-size: 27px; margin-top: 6px; }
+  .link { margin-top: 20px; padding: 26px 28px; border-radius: 18px; background: rgba(255,255,255,.08); border: 2px dashed rgba(255,210,74,.6);
+    font: 600 25px/1.35 Consolas, 'Courier New', monospace; color: #fff; word-break: break-all; }
+  .badges { display: flex; gap: 16px; margin-top: 40px; flex-wrap: wrap; }
+  .badges span { padding: 12px 22px; border-radius: 40px; background: rgba(255,255,255,.1); font-size: 28px; font-weight: 600; }
+  .sticker { position: absolute; left: 50%; bottom: 470px; transform: translateX(-50%); width: 640px; height: 60px; border-radius: 26px;
+    display: flex; align-items: center; justify-content: center; color: var(--dim); font-size: 28px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+  const q = new URLSearchParams(location.search);
+  const S = Number(q.get('s') || 1);
+  const F = q.get('f') === 'story' || q.get('f') === 'reel' ? 'story' : 'post';
+  const story = F === 'story';
+  const reel = q.get('f') === 'reel';
+  const LINK = 'https://windy-plugins.com/2727410/windy-plugin-pg-soundings/1.2.7/plugin.min.js';
+  const PANEL = 'assets/panel2x-fr.png'; // 1560 × 2800 (rendu 2×)
+
+  // Découpe (x, y, w, h en px de la capture) affichée sur `width` px de large
+  const crop = (src, x, y, w, h, width) => {
+    const k = width / w;
+    return `<div class="crop" style="width:${width}px;height:${Math.round(h * k)}px"><img src="${src}"
+      style="left:${-x * k}px;top:${-y * k}px;width:auto;height:auto;transform-origin:0 0;transform:scale(${k})"></div>`;
+  };
+  const num = `<div class="num">${S} / 5</div>`;
+  const foot = `<div class="foot"><span>Plugin gratuit pour <b>Windy.com</b></span><span>PG Soundings 🪂</span></div>`;
+  const W = 940;
+
+  const slides = {
+    1: () => `
+      <div class="tag">NOUVEAU PLUGIN WINDY · GRATUIT</div>
+      <h1 class="big">PG Soundings 🪂</h1>
+      <p class="sub">La météo du vol libre, directement dans Windy.</p>
+      <div class="card">${crop(PANEL, 0, 0, 1560, story ? 1330 : 1150, W)}</div>
+      <ul class="checks">
+        <li>Vent &amp; thermiques par altitude</li><li>Plafond, cumulus, pluie</li>
+        <li>Émagramme redressé</li><li>Meilleurs départs pour un cross</li>
+        <li>Distance libre ou aller-retour</li><li>Français &amp; English</li>
+      </ul>`,
+    2: () => `${num}
+      <div class="tag">VENT &amp; THERMIQUES</div>
+      <h2>Heure par heure,<br><em>altitude par altitude</em></h2>
+      <div class="card" style="margin-top:30px">${crop(PANEL, 0, 330, 1560, 990, W)}</div>
+      <ul class="points">
+        <li><b>Vent</b> à chaque altitude, heure par heure, en couleur selon la force</li>
+        <li><b>Force des thermiques</b>, <b>plafond</b> et <b>cumulus</b> estimés</li>
+        <li><b>Lever / coucher du soleil</b>, <b>0 °C</b> et <b>pluie</b></li>
+      </ul>`,
+    3: () => `${num}
+      <div class="tag">ÉMAGRAMME</div>
+      <h2>Le sondage de <em>chaque heure</em></h2>
+      <div class="card" style="margin-top:30px">${crop(PANEL, 0, 1330, 1560, story ? 1200 : 1050, W)}</div>
+      <ul class="points">
+        <li>Émagramme <b>redressé</b>, coloré selon la <b>stabilité</b></li>
+        <li><b>Particule</b>, point de rosée, base et sommet des cumulus</li>
+      </ul>`,
+    4: () => `${num}
+      <div class="tag">CARTE DES MEILLEURS DÉPARTS</div>
+      <h2>D'où partir pour <em>un grand cross</em> ?</h2>
+      <div class="toggle"><span class="on">Distance libre</span><span>Aller-retour</span></div>
+      <div class="card" style="margin-top:26px">${story ? crop('assets/mapshot-free.png', 150, 200, 1440, 1310, W) : crop('assets/mapshot-free.png', 150, 470, 1440, 1040, W)}
+        <div class="attr">Fond © OpenStreetMap, OpenTopoMap (CC-BY-SA)</div></div>
+      <div class="chips">${[[15, '#fef08a', '#111'], [30, '#fde047', '#111'], [60, '#fb923c', '#111'], [100, '#ef4444', '#fff'], [150, '#db2777', '#fff'], [200, '#a21caf', '#fff'], ['300+', '#7c3aed', '#fff']]
+        .map(([v, b, c]) => `<span style="background:${b};color:${c}">${v}</span>`).join('')}<span style="background:none;color:var(--dim);font-weight:600">km</span></div>
+      <ul class="points" style="margin-top:26px"><li>Un vol simulé depuis <b>chaque point</b> de la carte, avec le vent et les thermiques du modèle</li><li>Les <b>3 meilleurs départs</b> et leur trajectoire, en distance libre ou en aller-retour</li></ul>`,
+    5: () => `${num}
+      <div class="tag">GRATUIT · FR / EN</div>
+      <h2>Comment <em>l'installer</em> ?</h2>
+      <ol class="steps">
+        <li>Va sur <b>windy.com/plugins</b><small>Ou menu de Windy → « Install Windy plugin »</small></li>
+        <li>« <b>Load plugin directly from URL</b> » et colle ce lien :<div class="link">${LINK}</div></li>
+        <li>Clique sur un site de vol 🪂<small>Le plugin retient ton dernier site.</small></li>
+      </ol>
+      <div class="badges"><span>ECMWF</span><span>ICON</span><span>ICON-D2</span><span>AROME</span><span>GFS</span><span>UKV</span></div>
+      <p class="sub" style="margin-top:44px;font-size:30px">Des estimations tirées des modèles : rien ne remplace l'observation au déco 😉<br>Vos retours sont les bienvenus !</p>`,
+  };
+
+  document.body.innerHTML = `<div class="page ${F}">${slides[S]()}${S === 5 && story && !reel ? `<div class="sticker">Lien d'installation 👇</div>` : ''}${S > 1 && S < 5 ? '' : ''}${foot}</div>`;
+</script>
+</body>
+</html>
