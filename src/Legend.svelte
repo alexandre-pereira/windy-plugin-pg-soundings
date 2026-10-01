@@ -408,7 +408,7 @@
                     <span>{tr("Couche convective (zone des thermiques)", "Convective layer (thermal zone)")}</span>
                 </li>
             </ul>
-            <div class="wpp-lg__subtitle">{tr("CAPE et LI (au-dessus de l'émagramme)", 'CAPE and LI (above the sounding)')}</div>
+            <div class="wpp-lg__subtitle">{tr("CAPE et LI (sous l'émagramme)", 'CAPE and LI (below the sounding)')}</div>
             {#each instability as ix}
                 <p class="wpp-lg__ix"><b>{ix.name}</b> <small>{ix.unit}</small> — {ix.text}</p>
                 <ul class="wpp-lg__levels">

@@ -52,7 +52,7 @@ L'interface est en français ou en anglais, selon la langue de Windy.
 Sur <https://www.windy.com/plugins>, choisissez « Load plugin directly from URL » et collez :
 
 ```
-https://windy-plugins.com/2727410/windy-plugin-pg-soundings/1.6.1/plugin.min.js
+https://windy-plugins.com/2727410/windy-plugin-pg-soundings/1.6.2/plugin.min.js
 ```
 
 Le plugin signale ensuite lui-même les nouvelles versions. L'historique est dans

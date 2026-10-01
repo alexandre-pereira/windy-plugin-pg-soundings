@@ -222,51 +222,67 @@
                     </div>
                 </div>
             </div>
+            <Emagram
+                column={selected}
+                width={chartWidth}
+                {yMin}
+                {yMax}
+                light={lightTheme}
+                xRange={emaRange}
+                {showAscent}
+            />
             <!-- Grille fixe : les valeurs changent sur place, rien ne bouge en faisant défiler l'heure -->
             <div class="wpp__summary">
-                <span
-                    title={tr(
-                        'Altitude où l’ascendance compense encore le taux de chute d’une aile en spirale',
-                        'Height where the climb still beats a glider’s circling sink rate',
-                    )}
-                    >{tr('Plafond', 'Ceiling')} <b>{selected.ceiling != null ? `${r50(selected.ceiling)} m` : '—'}</b></span
-                >
-                <span title={tr('Fin de la flottabilité de la bulle d’air', 'Where the rising air stops being buoyant')}
-                    >{tr('Sommet thermique', 'Thermal top')}
-                    <b>{selected.thermalTop != null ? `${r50(selected.thermalTop)} m` : '—'}</b></span
-                >
-                <span
-                    >Cumulus <b
-                        >{selected.cuBase != null
-                            ? `${r50(selected.cuBase)}–${r50(selected.cuTop ?? selected.cuBase)}${selected.cuTopCapped ? '+' : ''} m`
-                            : '—'}</b
-                    ></span
-                >
-                <span
-                    title={tr(
-                        'Montée nette lue au vario au cœur des thermiques (taux de chute en spirale déduit) ; entre parenthèses, vitesse de l’air qui monte (w*)',
-                        'Net climb read on the vario in thermal cores (circling sink deducted); in brackets, speed of the rising air (w*)',
-                    )}
-                    >{tr('Vario', 'Vario')}
-                    <b>{selected.climb >= 0.1 ? `+${selected.climb.toFixed(1)} m/s` : '—'}</b
-                    >{#if selected.wStar >= 0.2}<small>({tr('air', 'air')} {selected.wStar.toFixed(1)})</small
-                        >{/if}{#if selected.choppy > 0}<small
-                            class="wpp__choppy"
-                            title={tr(
-                                'Thermiques hachés par le vent : plus de ~25 km/h en moyenne dans la couche des thermiques, ou vent au sol fort pour des thermiques faibles',
-                                'Thermals broken up by the wind: more than ~25 km/h on average in the thermal layer, or strong surface wind for weak thermals',
-                            )}>{selected.choppy === 2 ? tr('très haché', 'very choppy') : tr('haché', 'choppy')}</small
-                        >{/if}</span
-                >
-                <span>0 °C <b>{selected.freezing != null ? `${r50(selected.freezing)} m` : '—'}</b></span>
-                <span
-                    >{tr('T° / rosée sol', 'Ground T° / dew')}
-                    <b
-                        >{(selected.t2m - 273.15).toFixed(0)}°{selected.td2m != null
-                            ? ` / ${(selected.td2m - 273.15).toFixed(0)}°`
-                            : ''}</b
-                    ></span
-                >
+                <!-- Par paires : sur téléphone, deux valeurs par ligne -->
+                <div class="wpp__pair">
+                    <span
+                        title={tr(
+                            'Altitude où l’ascendance compense encore le taux de chute d’une aile en spirale',
+                            'Height where the climb still beats a glider’s circling sink rate',
+                        )}
+                        >{tr('Plafond', 'Ceiling')} <b>{selected.ceiling != null ? `${r50(selected.ceiling)} m` : '—'}</b></span
+                    >
+                    <span title={tr('Fin de la flottabilité de la bulle d’air', 'Where the rising air stops being buoyant')}
+                        >{tr('Sommet thermique', 'Thermal top')}
+                        <b>{selected.thermalTop != null ? `${r50(selected.thermalTop)} m` : '—'}</b></span
+                    >
+                </div>
+                <div class="wpp__pair">
+                    <span
+                        title={tr(
+                            'Montée nette lue au vario au cœur des thermiques (taux de chute en spirale déduit) ; entre parenthèses, vitesse de l’air qui monte (w*)',
+                            'Net climb read on the vario in thermal cores (circling sink deducted); in brackets, speed of the rising air (w*)',
+                        )}
+                        >{tr('Vario', 'Vario')}
+                        <b>{selected.climb >= 0.1 ? `+${selected.climb.toFixed(1)} m/s` : '—'}</b
+                        >{#if selected.wStar >= 0.2}<small>({tr('air', 'air')} {selected.wStar.toFixed(1)})</small
+                            >{/if}{#if selected.choppy > 0}<small
+                                class="wpp__choppy"
+                                title={tr(
+                                    'Thermiques hachés par le vent : plus de ~25 km/h en moyenne dans la couche des thermiques, ou vent au sol fort pour des thermiques faibles',
+                                    'Thermals broken up by the wind: more than ~25 km/h on average in the thermal layer, or strong surface wind for weak thermals',
+                                )}>{selected.choppy === 2 ? tr('très haché', 'very choppy') : tr('haché', 'choppy')}</small
+                            >{/if}</span
+                    >
+                    <span>0 °C <b>{selected.freezing != null ? `${r50(selected.freezing)} m` : '—'}</b></span>
+                </div>
+                <div class="wpp__pair">
+                    <span
+                        >Cumulus <b
+                            >{selected.cuBase != null
+                                ? `${r50(selected.cuBase)}–${r50(selected.cuTop ?? selected.cuBase)}${selected.cuTopCapped ? '+' : ''} m`
+                                : '—'}</b
+                        ></span
+                    >
+                    <span
+                        >{tr('T° / rosée sol', 'Ground T° / dew')}
+                        <b
+                            >{(selected.t2m - 273.15).toFixed(0)}°{selected.td2m != null
+                                ? ` / ${(selected.td2m - 273.15).toFixed(0)}°`
+                                : ''}</b
+                        ></span
+                    >
+                </div>
                 <!-- Instabilité, sur toute la largeur : CAPE et LI standard avec la pastille de leur palier
                      (voir la légende ; « max » : particule la plus instable, quand de l'air d'altitude a
                      nettement plus d'énergie), puis risque d'orage de l'heure et orage attendu dans les 3 h
@@ -296,15 +312,6 @@
                     >
                 </div>
             </div>
-            <Emagram
-                column={selected}
-                width={chartWidth}
-                {yMin}
-                {yMax}
-                light={lightTheme}
-                xRange={emaRange}
-                {showAscent}
-            />
             {:else if tab === 'bulletin' && loc && days[dayIndex] && !days[dayIndex].outOfRange}
                 <Bulletin {days} {dayIndex} {columns} lat={loc.lat} lon={loc.lon} />
             {:else if payload}
@@ -1628,7 +1635,7 @@
             grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
             gap: 3px 14px;
             font-size: 12px;
-            margin-bottom: 8px;
+            margin-top: 8px;
             color: var(--wpp-fg-dim);
             font-variant-numeric: tabular-nums;
 
@@ -1652,6 +1659,10 @@
                 }
             }
         }
+        // Sur grand écran, les paires ne comptent pas : chaque valeur est une case de la grille
+        &__pair {
+            display: contents;
+        }
     }
 
     // --- Smartphone / écrans tactiles
@@ -1673,8 +1684,20 @@
             &__slider {
                 flex-basis: 100%;
             }
+            // Valeurs sous l'émagramme : deux par ligne, la première à gauche, la seconde calée à
+            // droite. Chaque ligne partage sa largeur à sa façon (le vario peut être long).
             &__summary {
-                gap: 2px 12px;
+                grid-template-columns: minmax(0, 1fr);
+                gap: 2px;
+            }
+            &__pair {
+                display: flex;
+                justify-content: space-between;
+                gap: 12px;
+
+                span:last-child {
+                    flex: none;
+                }
             }
             // Risque d'orage sur sa propre ligne, sous la CAPE et le LI : jamais coupé, et la hauteur
             // ne change pas d'une heure à l'autre
