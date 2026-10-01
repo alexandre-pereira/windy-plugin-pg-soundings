@@ -54,7 +54,7 @@
                     >
                         <b
                             >{d.label}{#if d.storm}<span class="wpp__daystorm"
-                                    ><StormIcon level={d.storm === 2 ? 2 : 1} size={12} /></span
+                                    ><StormIcon level={d.storm || 1} size={12} /></span
                                 >{/if}</b
                         >
                         {#if d.outOfRange}
@@ -64,30 +64,39 @@
                                     `${modelLabel} has no upper-air data for this day`,
                                 )}>{tr('Hors échéance', 'Out of range')}</small
                             >
-                        {:else if d.bestCeiling != null}
-                            <small title={tr('Plafond thermique le plus haut de la journée', 'Highest thermal ceiling of the day')}
-                                >{tr('Plafond', 'Ceiling')} {d.bestCeiling} m</small
-                            >
                         {:else}
-                            <small>{tr('Pas de thermique', 'No thermals')}</small>
-                        {/if}
-                        {#if d.bestClimb >= 0.2}
-                            <small
-                                class="wpp__w"
-                                style="background:{thermalColor(d.bestClimb)};color:{thermalTextColor(d.bestClimb)}"
-                                title={tr(
-                                    'Meilleure montée au vario estimée dans la journée (taux de chute en spirale déduit)',
-                                    'Best estimated vario climb of the day (circling sink deducted)',
-                                )}
-                                >{tr('Vario', 'Vario')} +{d.bestClimb.toFixed(1)} m/s</small
-                            >
+                            <div class="wpp__day-stats">
+                                {#if d.bestCeiling != null}
+                                    <small title={tr('Plafond thermique le plus haut de la journée', 'Highest thermal ceiling of the day')}
+                                        >{tr('Plafond', 'Ceiling')} {d.bestCeiling} m</small
+                                    >
+                                {:else}
+                                    <small>{tr('Pas de thermique', 'No thermals')}</small>
+                                {/if}
+                                {#if d.bestClimb >= 0.2}
+                                    <small
+                                        class="wpp__w"
+                                        style="background:{thermalColor(d.bestClimb)};color:{thermalTextColor(d.bestClimb)}"
+                                        title={tr(
+                                            'Meilleure montée au vario estimée dans la journée (taux de chute en spirale déduit)',
+                                            'Best estimated vario climb of the day (circling sink deducted)',
+                                        )}
+                                        >+{d.bestClimb.toFixed(1)} m/s</small
+                                    >
+                                {/if}
+                            </div>
                         {/if}
                     </button>
                 {/each}
             </div>
         {/if}
 
-        <!-- Onglets des trois fonctions, légende de l'onglet affiché à droite -->
+        <!-- Alerte d'orage du jour affiché, visible sur tous les onglets -->
+        {#if stormWatch}
+            <StormBanner watch={stormWatch} />
+        {/if}
+
+        <!-- Onglets des quatre fonctions, légende de l'onglet affiché à droite -->
         <div class="wpp__tabbar">
             <div class="wpp__tabs" role="tablist">
                 {#each TABS as t}
@@ -131,7 +140,6 @@
                     {yMin}
                     {yMax}
                     nowTs={Date.now()}
-                    selectedTs={chartSelectedTs}
                     sunrise={days[dayIndex]?.sunrise ?? null}
                     sunset={days[dayIndex]?.sunset ?? null}
                     utcOffset={dayColumns[Math.floor(dayColumns.length / 2)].utcOffset}
@@ -241,17 +249,13 @@
                     )}
                     >{tr('Vario', 'Vario')}
                     <b>{selected.climb >= 0.1 ? `+${selected.climb.toFixed(1)} m/s` : '—'}</b
-                    >{#if selected.wStar >= 0.2}<small>({tr('air', 'air')} {selected.wStar.toFixed(1)})</small>{/if}</span
-                >
-                <span
-                    class:wpp__choppy={selected.choppy > 0}
-                    title={tr(
-                        'Vent moyen dans la couche des thermiques ; au-delà de ~25 km/h, ou avec un vent au sol fort pour des thermiques faibles, ils sont hachés',
-                        'Mean wind in the thermal layer; above ~25 km/h, or with strong surface wind for weak thermals, thermals get choppy',
-                    )}
-                    >{tr('Vent couche', 'Layer wind')} <b>{Math.round(toKmh(selected.blSpeed))} km/h</b
-                    >{#if selected.choppy > 0}<small
-                            >{selected.choppy === 2 ? tr('très haché', 'very choppy') : tr('haché', 'choppy')}</small
+                    >{#if selected.wStar >= 0.2}<small>({tr('air', 'air')} {selected.wStar.toFixed(1)})</small
+                        >{/if}{#if selected.choppy > 0}<small
+                            class="wpp__choppy"
+                            title={tr(
+                                'Thermiques hachés par le vent : plus de ~25 km/h en moyenne dans la couche des thermiques, ou vent au sol fort pour des thermiques faibles',
+                                'Thermals broken up by the wind: more than ~25 km/h on average in the thermal layer, or strong surface wind for weak thermals',
+                            )}>{selected.choppy === 2 ? tr('très haché', 'very choppy') : tr('haché', 'choppy')}</small
                         >{/if}</span
                 >
                 <span>0 °C <b>{selected.freezing != null ? `${r50(selected.freezing)} m` : '—'}</b></span>
@@ -263,24 +267,55 @@
                             : ''}</b
                     ></span
                 >
-                <span
-                    title={tr(
-                        'Énergie disponible pour la convection et indice de soulèvement (négatif = instable), valeurs standard (air mélangé des 1 000 premiers mètres). La CAPE publiée par certains modèles, calculée avec l’air le plus instable, est souvent nettement plus forte.',
-                        'Convective available energy and lifted index (negative = unstable), standard values (mixed air of the lowest 1,000 m). The CAPE published by some models, computed with the most unstable air, is often much higher.',
-                    )}
-                    >CAPE <b>{selected.cape} J/kg</b>{#if selected.liftedIndex != null}
-                        · LI <b>{selected.liftedIndex > 0 ? '+' : ''}{selected.liftedIndex}</b>{/if}</span
-                >
-                <span class="wpp__storm wpp__storm--{selected.stormRisk}"
-                    >{#if selected.stormRisk > 0}<StormIcon level={selected.stormRisk === 2 ? 2 : 1} size={14} />
-                    {/if}{selected.stormRisk === 2
-                        ? tr('Orage probable', 'Thunderstorm likely')
-                        : selected.stormRisk === 1
-                          ? tr('Surdéveloppement possible', 'Overdevelopment possible')
-                          : tr('Pas de signal d’orage', 'No thunderstorm signal')}</span
-                >
+                <!-- Instabilité, sur toute la largeur : CAPE et LI standard avec la pastille de leur palier
+                     (voir la légende ; « max » : particule la plus instable, quand de l'air d'altitude a
+                     nettement plus d'énergie), puis risque d'orage de l'heure et orage attendu dans les 3 h
+                     qui suivent -->
+                <div class="wpp__instab">
+                    <span title={instabilityTitle(selected)}
+                        >CAPE <i class="wpp__dot" style="background:{capeColor(selected.cape)}"></i><b
+                            >{selected.cape} J/kg</b
+                        >{#if selected.muCape >= selected.cape + 100}<small>(max {selected.muCape})</small>{/if}</span
+                    >
+                    <span title={instabilityTitle(selected)}
+                        >LI {#if selected.liftedIndex != null}<i
+                                class="wpp__dot"
+                                style="background:{liftedIndexColor(selected.liftedIndex)}"
+                            ></i><b>{selected.liftedIndex > 0 ? '+' : ''}{selected.liftedIndex}</b>{:else}<b>—</b>{/if}</span
+                    >
+                    <span class="wpp__storm wpp__storm--{selected.stormRisk}"
+                        >{#if selected.stormRisk > 0}<StormIcon level={selected.stormRisk || 1} size={14} />
+                        {/if}{#if selected.stormRisk > 0 || !stormAhead}{STORM_LABELS[selected.stormRisk]}{/if}{#if stormAhead}<span
+                                class="wpp__storm-ahead"
+                                style="color:{STORM_COLORS[stormAhead.level]}"
+                                ><StormIcon level={stormAhead.level} size={14} />
+                                {stormAhead.level === 3
+                                    ? tr(`Orage violent possible dès ${stormAhead.at}`, `Severe thunderstorm possible from ${stormAhead.at}`)
+                                    : tr(`Orage probable dès ${stormAhead.at}`, `Thunderstorm likely from ${stormAhead.at}`)}</span
+                            >{/if}</span
+                    >
+                </div>
             </div>
-            <Emagram column={selected} width={chartWidth} {yMin} {yMax} light={lightTheme} xRange={emaRange} />
+            <Emagram
+                column={selected}
+                width={chartWidth}
+                {yMin}
+                {yMax}
+                light={lightTheme}
+                xRange={emaRange}
+                {showAscent}
+            />
+            {:else if tab === 'bulletin' && loc && days[dayIndex] && !days[dayIndex].outOfRange}
+                <Bulletin
+                    {days}
+                    {dayIndex}
+                    {columns}
+                    lat={loc.lat}
+                    lon={loc.lon}
+                    model={modelLabel}
+                    {nowTs}
+                    on:day={e => (pinnedDay = e.detail)}
+                />
             {:else if payload}
                 <div class="wpp__status">
                     {tr('Pas de données en altitude pour ce jour avec ce modèle.', 'No upper-air data for this day with this model.')}
@@ -307,7 +342,7 @@
                 {tr('Altitude max', 'Max altitude')}
                 <select bind:value={altChoice}>
                     <option value="auto">Auto</option>
-                    {#each [2500, 3000, 3500, 4000, 5000, 6000] as a}
+                    {#each [2500, 3000, 3500, 4000, 5000, 6000, 7000, 8000] as a}
                         <option value={a}>{a} m</option>
                     {/each}
                 </select>
@@ -316,6 +351,18 @@
                 <input type="checkbox" bind:checked={fullDay} />
                 {tr('Afficher 24 h', 'Show 24 h')}
             </label>
+            {#if tab === 'emagram'}
+                <label
+                    class="wpp__check"
+                    title={tr(
+                        'Trajet du thermique du sol à son sommet, son point de rosée (tirets bleus), le niveau de condensation où il passe de l’adiabatique sèche (jaune) à la saturée (jaune et bleu), et les zones où il est plus chaud que l’air',
+                        'Path of the thermal from the ground to its top, its dew point (blue dashes), the condensation level where it switches from the dry adiabat (yellow) to the moist one (yellow and blue), and where it is warmer than the air',
+                    )}
+                >
+                    <input type="checkbox" bind:checked={showAscent} />
+                    {tr('Ascension de la particule', 'Parcel ascent')}
+                </label>
+            {/if}
             <label class="wpp__check">
                 <input type="checkbox" bind:checked={lightTheme} />
                 {tr('Thème clair', 'Light theme')}
@@ -358,23 +405,29 @@
     import { onDestroy, onMount } from 'svelte';
 
     import config from './pluginConfig';
-    import { clockText, hourShort, lang, locale, tr } from './i18n';
+    import { clockText, hourShort, hourText, lang, locale, tr } from './i18n';
+    import Bulletin from './Bulletin.svelte';
     import Chart from './Chart.svelte';
     import Emagram, { emagramRange } from './Emagram.svelte';
     import Legend from './Legend.svelte';
     import ModelPicker from './ModelPicker.svelte';
     import XcLayer from './XcLayer.svelte';
-    import StormIcon from './StormIcon.svelte';
+    import StormBanner from './StormBanner.svelte';
+    import StormIcon, { STORM_LABELS } from './StormIcon.svelte';
     import { checkForUpdate, installUrl } from './update';
     import { payloadAt } from './interpolate';
     import {
         buildColumns,
+        capeColor,
+        liftedIndexColor,
+        STORM_COLORS,
+        stormWatchOf,
         sunElevation,
         thermalColor,
         thermalTextColor,
-        toKmh,
         type Column,
         type ForecastPayload,
+        type StormRisk,
     } from './physics';
     import { dayKey, makeOffsetAt } from './time';
 
@@ -419,8 +472,8 @@
     ];
     type ModelId = 'ecmwf' | 'icon' | 'gfs' | 'iconEu' | 'iconD2' | 'aromeFrance' | 'ukv';
 
-    /** Onglets : graphique vent & thermiques, émagramme, carte des meilleurs départs */
-    type Tab = 'chart' | 'emagram' | 'xc';
+    /** Onglets : graphique vent & thermiques, émagramme, carte des meilleurs départs, bulletin */
+    type Tab = 'chart' | 'emagram' | 'xc' | 'bulletin';
     /** label : texte complet ; short : texte court, sur téléphone */
     const TABS: { id: Tab; label: string; short: string; icon: string }[] = [
         {
@@ -443,6 +496,13 @@
             short: tr('Cross', 'XC'),
             // Décollage, trajectoire et drapeau d'arrivée
             icon: 'M6 20a2 2 0 1 0 0-4a2 2 0 0 0 0 4M8 17.5c4-1 3-6 7.5-7.5M16 11V4l4 1.8L16 7.6',
+        },
+        {
+            id: 'bulletin',
+            label: tr('Bulletin', 'Bulletin'),
+            short: tr('Bulletin', 'Bulletin'),
+            // Feuille et lignes de texte
+            icon: 'M6 3h9l4 4v14H6zM14.5 3v4.5H19M9 12h7M9 15.5h7M9 8.5h2.5',
         },
     ];
     const TAB_KEY = 'wpp-tab';
@@ -564,6 +624,23 @@
         }
     };
     $: saveTheme(lightTheme);
+
+    // Ascension de la particule sur l'émagramme : option, mémorisée dans le navigateur
+    const ASCENT_KEY = 'wpp-ascent';
+    let showAscent = false;
+    try {
+        showAscent = localStorage.getItem(ASCENT_KEY) === 'on';
+    } catch {
+        /* stockage indisponible : option décochée */
+    }
+    const saveAscent = (on: boolean) => {
+        try {
+            localStorage.setItem(ASCENT_KEY, on ? 'on' : 'off');
+        } catch {
+            /* stockage indisponible */
+        }
+    };
+    $: saveAscent(showAscent);
     let altChoice: 'auto' | number = 'auto';
     let chartWidth = 760;
     let marker: L.Marker | null = null;
@@ -643,7 +720,7 @@
                     /** Meilleure montée au vario de la journée (m/s) */
                     bestClimb: Math.max(0, ...list.map(c => c.climb)),
                     /** Risque d'orage le plus fort de la journée (heures de vol) */
-                    storm: Math.max(0, ...list.filter(c => c.hour >= 9 && c.hour <= 20).map(c => c.stormRisk)),
+                    storm: Math.max(0, ...list.filter(c => c.hour >= 9 && c.hour <= 20).map(c => c.stormRisk)) as StormRisk,
                     bestCeiling: ceilings.length
                         ? Math.round((Math.max(...ceilings) + list[0].ground) / 50) * 50
                         : null,
@@ -710,8 +787,6 @@
     const SLIDER_STEP = 5 * 60e3;
     let selectedTs: number | null = null;
     $: selected = pickSelected(dayColumns, selectedTs, payload, loc);
-    // Colonne du graphique à surligner : l'heure la plus proche de l'instant choisi
-    $: chartSelectedTs = selected ? nearestColumn(dayColumns, selected.ts)?.ts ?? null : null;
 
     const nearestColumn = (cols: Column[], t: number) =>
         cols.length ? cols.reduce((best, c) => (Math.abs(c.ts - t) < Math.abs(best.ts - t) ? c : best)) : null;
@@ -760,9 +835,34 @@
     };
 
     /** Plage de l'axe des températures de l'émagramme, commune à la journée affichée */
-    $: emaRange = emagramRange(dayColumns, yMin, yMax);
+    $: emaRange = emagramRange(dayColumns, yMin, yMax, showAscent);
 
     const nowTs = Date.now();
+
+    // --- Orages : alerte du jour affiché (heures à venir), et orage attendu dans les 3 h qui
+    // suivent l'heure de l'émagramme quand elle n'en a pas elle-même
+    $: stormWatch = days[dayIndex] && !days[dayIndex].outOfRange ? stormWatchOf(days[dayIndex].columns, nowTs) : null;
+    $: stormAhead = selected && selected.stormRisk < 2 ? nextStorm(columns, selected.ts) : null;
+
+    const nextStorm = (cols: Column[], t: number) => {
+        const storms = cols.filter(c => c.ts > t && c.ts <= t + 3 * HOUR_MS && c.stormRisk >= 2);
+        if (!storms.length) return null;
+        const level: 2 | 3 = storms.some(c => c.stormRisk === 3) ? 3 : 2;
+        return { level, at: hourText(storms[0].hour) };
+    };
+
+    /** Infobulle de la CAPE et du LI de l'émagramme */
+    const instabilityTitle = (c: Column) =>
+        tr(
+            'Énergie disponible pour la convection et indice de soulèvement (négatif = instable), valeurs standard (air mélangé des 1 000 premiers mètres). La CAPE publiée par certains modèles, calculée avec l’air le plus instable, est souvent nettement plus forte.',
+            'Convective available energy and lifted index (negative = unstable), standard values (mixed air of the lowest 1,000 m). The CAPE published by some models, computed with the most unstable air, is often much higher.',
+        ) +
+        (c.muCape >= c.cape + 100
+            ? tr(
+                  ` Ici, de l’air plus haut a plus d’énergie (max) : CAPE ${c.muCape} J/kg${c.muLiftedIndex != null ? `, LI ${c.muLiftedIndex}` : ''}. C’est lui qui nourrit un orage venu d’ailleurs.`,
+                  ` Here, air higher up has more energy (max): CAPE ${c.muCape} J/kg${c.muLiftedIndex != null ? `, LI ${c.muLiftedIndex}` : ''}. It is what feeds a storm arriving from elsewhere.`,
+              )
+            : '');
 
     /**
      * Fond de la piste du curseur : couleur de la force des thermiques heure par heure, gris la nuit.
@@ -974,10 +1074,9 @@
         --wpp-parcel: #ffd24a;
         --wpp-accent: #ffd24a;
         --wpp-accent-fg: #111111;
-        --wpp-ceiling: #ffffff;
-        --wpp-cloud: #eef2f7;
+        // Nuage de l'émagramme, à sa base (il s'éclaircit vers le sommet)
+        --wpp-cloud: rgba(238, 242, 247, 0.3);
         --wpp-freezing: #5fd3ff;
-        --wpp-sun: #ffc94a;
         --wpp-rain: #8fc3ff;
         --wpp-snow: #e4dcff;
         --wpp-dew: #7dbaff;
@@ -1012,10 +1111,8 @@
             --wpp-parcel: #c98a00;
             --wpp-accent: #e0a800;
             --wpp-accent-fg: #111111;
-            --wpp-ceiling: #1f2933;
-            --wpp-cloud: #ffffff;
+            --wpp-cloud: rgba(255, 255, 255, 0.9);
             --wpp-freezing: #0284c7;
-            --wpp-sun: #d98c00;
             --wpp-rain: #2563eb;
             --wpp-snow: #8b7cf0;
             --wpp-dew: #1d4ed8;
@@ -1139,8 +1236,13 @@
             min-width: 0;
             min-height: 200px;
         }
-        &__w {
+        &__day-stats {
+            display: flex;
+            align-items: center;
+            gap: 4px;
             margin-top: 2px;
+        }
+        &__w {
             padding: 0 4px;
             border-radius: 3px;
             color: #111;
@@ -1475,7 +1577,16 @@
                 color: #111;
             }
         }
+        // Instabilité (CAPE, LI, risque d'orage) : une ligne sur toute la largeur, sous les autres valeurs
+        &__instab {
+            grid-column: ~'1 / -1';
+            display: flex;
+            gap: 3px 14px;
+        }
+        // Le risque d'orage prend la place qui reste
         &__storm {
+            flex: 1;
+            min-width: 0;
             font-weight: 600;
 
             &--0 {
@@ -1488,6 +1599,25 @@
             &--2 {
                 color: #ef4444;
             }
+            &--3 {
+                color: #d946ef;
+            }
+        }
+        // Orage attendu dans les heures qui suivent
+        &__storm-ahead {
+            font-weight: 600;
+
+            &:not(:first-child) {
+                margin-left: 12px;
+            }
+        }
+        // Pastille du palier de la CAPE et du LI, aux couleurs de la légende
+        &__dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            margin-right: 4px;
+            border-radius: 50%;
         }
         &__summary {
             display: grid;
@@ -1511,12 +1641,12 @@
             small {
                 margin-left: 4px;
                 color: var(--wpp-fg-faint);
+
+                // Thermiques hachés par le vent : mention en orange
+                &.wpp__choppy {
+                    color: #f59e0b;
+                }
             }
-        }
-        // Thermiques hachés par le vent : valeur en orange
-        &__choppy small,
-        &__choppy b {
-            color: #f59e0b;
         }
     }
 
@@ -1541,6 +1671,15 @@
             }
             &__summary {
                 gap: 2px 12px;
+            }
+            // Risque d'orage sur sa propre ligne, sous la CAPE et le LI : jamais coupé, et la hauteur
+            // ne change pas d'une heure à l'autre
+            &__instab {
+                flex-wrap: wrap;
+                column-gap: 12px;
+            }
+            &__storm {
+                flex-basis: 100%;
             }
         }
     }
@@ -1569,18 +1708,18 @@
         display: none !important;
     }
 
-    // Titre du plugin discret (les styles Windy l'affichent en très grand)
+    // Titre du plugin discret (les styles Windy l'affichent en très grand, et avec leur propre
+    // couleur de thème : il faut forcer les deux pour que le thème clair du plugin soit respecté)
     .plugin__title.wpp-title,
     .plugin__mobile-header.wpp-title {
-        color: var(--wpp-fg-dim);
-        font-size: 13px;
-        font-weight: normal;
+        color: var(--wpp-fg-dim) !important;
+        font-size: 13px !important;
+        font-weight: normal !important;
         line-height: 1.4;
         opacity: 0.75;
     }
     .plugin__title.wpp-title {
-        margin-bottom: 4px;
-        padding-top: 4px;
-        padding-bottom: 4px;
+        margin: 0 !important;
+        padding: 0 !important;
     }
 </style>

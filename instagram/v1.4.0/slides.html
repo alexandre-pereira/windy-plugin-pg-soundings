@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>PG Soundings 1.4.0 slides</title>
+<!--
+  Visuels Instagram des nouveautés de PG Soundings 1.4.0. Une diapo par adresse :
+    slides.html?s=1..7&f=post   → carrousel 1080 × 1350
+    slides.html?s=1..7&f=story  → story 1080 × 1920 (f=reel : sans l'indication du sticker lien)
+  Captures du plugin en largeur de téléphone (450 px, rendu 3× ; émagramme : 560 px), prévisions réelles :
+    assets/bulletin-standre.png   bulletin GFS du 27/09 à Saint-André-les-Alpes
+    assets/bulletin-lakes.png     bulletin GFS du 30/09 dans le Lake District (front froid)
+    assets/orage-palma.png        ICON-EU à Palma de Majorque (orage violent possible)
+    assets/cape-genes.png         GFS à Gênes (bandeau « CAPE LI »)
+    assets/emagramme-standre.png  émagramme GFS du 27/09 à 11 h à Saint-André-les-Alpes
+-->
+<style>
+  :root { --bg1: #3b2a6b; --bg2: #16202c; --bg3: #0d141c; --fg: #eef2f7; --dim: #b5bfcc; --accent: #ffd24a; }
+  html, body { margin: 0; }
+  body { font-family: 'Segoe UI', Roboto, Arial, sans-serif; color: var(--fg); overflow: hidden;
+    background: radial-gradient(circle at 15% 0%, var(--bg1) 0%, var(--bg2) 48%, var(--bg3) 100%); }
+  .page { position: relative; width: 1080px; box-sizing: border-box; padding: 64px 70px 0; }
+  .post { height: 1350px; }
+  .story { height: 1920px; padding-top: 190px; }
+  .tag { display: inline-block; padding: 8px 18px; border-radius: 30px; background: var(--accent); color: #111;
+    font-weight: 800; font-size: 24px; letter-spacing: .5px; }
+  .num { position: absolute; top: 64px; right: 70px; font-size: 26px; color: var(--dim); font-weight: 600; }
+  .story .num { top: 190px; }
+  h1 { margin: 24px 0 10px; font-size: 96px; line-height: 1.02; letter-spacing: -2px; }
+  h2 { margin: 22px 0 10px; font-size: 62px; line-height: 1.08; letter-spacing: -1px; }
+  h2 em { font-style: normal; color: var(--accent); }
+  .sub { font-size: 34px; color: var(--dim); margin: 0 0 34px; line-height: 1.3; }
+  .card { border-radius: 22px; overflow: hidden; box-shadow: 0 30px 70px rgba(0,0,0,.6); border: 2px solid rgba(255,255,255,.12);
+    background: #2b2b2b; position: relative; margin-top: 28px; }
+  .crop { position: relative; overflow: hidden; }
+  .crop img { position: absolute; display: block; }
+  .cut { height: 0; border-top: 3px dashed rgba(255,255,255,.22); }
+  ul.checks { list-style: none; padding: 0; margin: 36px 0 0; display: grid; grid-template-columns: 1fr 1fr; gap: 14px 30px; font-size: 29px; }
+  ul.checks li::before, ul.points li::before { content: '✓ '; color: var(--accent); font-weight: 800; }
+  ul.points { list-style: none; padding: 0; margin: 30px 0 0; font-size: 31px; line-height: 1.35; }
+  ul.points li { margin: 0 0 12px; }
+  ul.points b { color: #fff; }
+  .foot { position: absolute; bottom: 44px; left: 70px; right: 70px; display: flex; justify-content: space-between;
+    font-size: 25px; color: #8f9bab; }
+  .story .foot { bottom: 250px; }
+  .foot b { color: var(--accent); }
+  .chips { display: flex; gap: 0; margin-top: 26px; border-radius: 10px; overflow: hidden; width: fit-content; }
+  .chips span { padding: 8px 18px; font-weight: 800; font-size: 22px; color: #111; }
+  .steps { counter-reset: s; list-style: none; padding: 0; margin: 40px 0 0; font-size: 36px; line-height: 1.35; }
+  .steps li { counter-increment: s; position: relative; padding: 0 0 0 86px; margin: 0 0 34px; min-height: 64px; }
+  .steps li::before { content: counter(s); position: absolute; left: 0; top: -4px; width: 60px; height: 60px; border-radius: 50%;
+    background: var(--accent); color: #111; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+  .steps small { display: block; color: var(--dim); font-size: 27px; margin-top: 6px; }
+  .link { margin-top: 20px; padding: 26px 28px; border-radius: 18px; background: rgba(255,255,255,.08); border: 2px dashed rgba(255,210,74,.6);
+    font: 600 25px/1.35 Consolas, 'Courier New', monospace; color: #fff; word-break: break-all; }
+  .also { margin: 40px 0 0; font-size: 28px; color: var(--dim); font-weight: 600; }
+  .badges { display: flex; gap: 14px; margin-top: 16px; flex-wrap: wrap; }
+  .badges span { padding: 12px 22px; border-radius: 40px; background: rgba(255,255,255,.1); font-size: 27px; font-weight: 600; }
+  .sticker { position: absolute; left: 50%; bottom: 470px; transform: translateX(-50%); width: 640px; height: 60px; border-radius: 26px;
+    display: flex; align-items: center; justify-content: center; color: var(--dim); font-size: 28px; }
+</style>
+</head>
+<body>
+<script>
+  const q = new URLSearchParams(location.search);
+  const S = Number(q.get('s') || 1);
+  const F = q.get('f') === 'story' || q.get('f') === 'reel' ? 'story' : 'post';
+  const story = F === 'story';
+  const reel = q.get('f') === 'reel';
+  const LINK = 'https://windy-plugins.com/2727410/windy-plugin-pg-soundings/1.4.0/plugin.min.js';
+  const N = 7;
+  const W = 940;
+
+  // Bande horizontale d'une capture (y et h en px de la capture), affichée sur toute la largeur de la carte
+  const band = (name, y, h, w = 1410) => {
+    const k = W / w;
+    return `<div class="crop" style="width:${W}px;height:${Math.round(h * k)}px"><img src="assets/${name}.png"
+      style="left:0;top:${-y * k}px;transform-origin:0 0;transform:scale(${k})"></div>`;
+  };
+  const card = (...bands) => `<div class="card">${bands.join('<div class="cut"></div>')}</div>`;
+  const num = `<div class="num">${S} / ${N}</div>`;
+  const foot = `<div class="foot"><span>Plugin gratuit pour <b>Windy.com</b></span><span>PG Soundings 🪂</span></div>`;
+
+  const slides = {
+    1: () => `
+      <div class="tag">NOUVELLE VERSION · 1.4</div>
+      <h1>PG Soundings 🪂</h1>
+      <p class="sub">Le bulletin de vol de la journée, l'alerte orage et la particule sur l'émagramme.</p>
+      ${card(band('bulletin-standre', 470, story ? 840 : 540))}
+      ${card(band('orage-palma', 345, 400))}
+      <ul class="checks">
+        <li>Bulletin de la journée</li><li>Passages de front</li>
+        <li>Ciel et précipitations</li><li>Alerte orage</li>
+        <li>CAPE &amp; LI heure par heure</li><li>Ascension de la particule</li>
+      </ul>`,
+    2: () => `${num}
+      <div class="tag">NOUVEAU · BULLETIN</div>
+      <h2>Le <em>bulletin de vol</em> du jour</h2>
+      ${card(band('bulletin-standre', 470, 1400))}
+      <ul class="points">
+        <li>Conditions <b>heure par heure</b>, créneaux, vent, thermiques</li>
+        ${story ? '<li>Rédigé à partir de la prévision du <b>modèle choisi</b></li><li>Un aperçu des <b>jours suivants</b>, cliquables</li>' : ''}
+      </ul>`,
+    3: () => `${num}
+      <div class="tag">BULLETIN</div>
+      <h2><em>Fronts</em>, ciel et pluie</h2>
+      ${card(band('bulletin-lakes', 470, 395), band('bulletin-lakes', 1320, 360), band('bulletin-lakes', 2250, 630))}
+      <ul class="points">
+        <li>Un <b>front</b> : son heure, le vent qui tourne, la pluie, les rafales</li>
+        ${story ? '<li><b>Étages de nuages</b>, cumulus, brume, limite pluie-neige, sol mouillé</li><li><b>Précipitations</b> épisode par épisode, températures, isotherme 0 °C</li>' : ''}
+      </ul>`,
+    4: () => `${num}
+      <div class="tag">ORAGES</div>
+      <h2>L'<em>alerte orage</em> du jour</h2>
+      ${card(band('orage-palma', 345, story ? 1530 : 1300))}
+      <ul class="points">
+        <li><b>Heure d'arrivée</b>, cause, déplacement, rafales</li>
+        <li>Nouveau niveau « <b>orage violent possible</b> »${story ? ', pictogramme violet à deux éclairs' : ''}</li>
+      </ul>`,
+    5: () => `${num}
+      <div class="tag">INSTABILITÉ</div>
+      <h2><em>CAPE et LI</em>, heure par heure</h2>
+      ${card(band('cape-genes', story ? 1100 : 1370, story ? 1395 : 1125))}
+      <div class="chips">${[['faible', '#4caf50'], ['modérée', '#f5c542'], ['forte', '#f59e0b'], ['très forte', '#ef4444']]
+        .map(([t, b]) => `<span style="background:${b}">${t}</span>`).join('')}<span style="background:none;color:var(--dim);font-weight:600">instabilité</span></div>
+      <ul class="points">
+        <li>Une case par heure : la <b>CAPE</b> à gauche, le <b>LI</b> à droite, chacun sur la couleur de son palier</li>
+        <li>La montée de l'instabilité se lit <b>d'un coup d'œil</b></li>
+      </ul>`,
+    6: () => `${num}
+      <div class="tag">ÉMAGRAMME</div>
+      <h2>L'<em>ascension</em> de la particule</h2>
+      ${card(band('emagramme-standre', story ? 490 : 760, story ? 1970 : 1700, 1740))}
+      <ul class="points">
+        <li>Trajet du thermique, <b>condensation</b> et <b>zone du nuage</b></li>
+        ${story ? '<li>Pastilles de couleur de la <b>CAPE</b> et du <b>LI</b>, vario à l\'altitude pointée</li>' : ''}
+      </ul>`,
+    7: () => `${num}
+      <div class="tag">GRATUIT · FR / EN</div>
+      <h2>Comment <em>mettre à jour</em> ?</h2>
+      <ol class="steps">
+        <li>Déjà installé ? Le plugin annonce la <b>nouvelle version</b><small>Touche « Copier le lien ».</small></li>
+        <li>Sur <b>windy.com/plugins</b>, « <b>Load plugin directly from URL</b> » et colle le lien :<div class="link">${LINK}</div></li>
+        <li>Ouvre l'onglet <b>Bulletin</b> 🪂<small>Première installation ? Les étapes 2 et 3 suffisent.</small></li>
+      </ol>
+      <p class="also">Aussi dans cette version :</p>
+      <div class="badges"><span>Altitude max 8 000 m</span><span>Infobulle rangée par thème</span><span>Vario sur l'émagramme</span></div>
+      <p class="sub" style="margin-top:44px;font-size:30px">Des estimations tirées des modèles : rien ne remplace l'observation au déco 😉<br>Vos retours sont les bienvenus !</p>`,
+  };
+
+  document.body.innerHTML = `<div class="page ${F}">${slides[S]()}${S === N && story && !reel ? `<div class="sticker">Lien d'installation 👇</div>` : ''}${foot}</div>`;
+</script>
+</body>
+</html>

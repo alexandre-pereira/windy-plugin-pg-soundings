@@ -1,0 +1,21 @@
+🪂 PG Soundings 1.4 : le bulletin de vol de la journée arrive dans Windy !
+
+Les nouveautés de cette version du plugin gratuit pour Windy.com :
+
+📝 Un onglet « Bulletin » : la journée rédigée à partir de la prévision du modèle choisi, avec la force des conditions heure par heure (calmes, modérées, fortes, défavorables), les créneaux, le vent, les thermiques et un aperçu des jours suivants
+🌦️ Ciel et précipitations : étages de nuages, cumulus, brume, pluie épisode par épisode, limite pluie-neige
+🌬️ Passages de front : l'heure, le vent qui tourne, la pluie et les rafales
+⛈️ Alerte orage au-dessus des onglets : heure d'arrivée, cause, déplacement, rafales, et un nouveau niveau « orage violent possible »
+🟩🟨🟧🟥 CAPE et LI heure par heure sous le graphique
+📈 Émagramme : ascension de la particule, niveau de condensation et zone de formation du nuage
+
+👉 Déjà installé ? Le plugin annonce la nouvelle version : « Copier le lien », puis windy.com/plugins → « Load plugin directly from URL ». Première installation : même chemin, avec ce lien :
+https://windy-plugins.com/2727410/windy-plugin-pg-soundings/1.4.0/plugin.min.js
+
+Ce sont des estimations tirées des modèles : rien ne remplace l'observation sur le déco 😉 Vos retours sont les bienvenus !
+
+—
+
+🇬🇧 PG Soundings 1.4, the free paragliding forecast plugin for Windy.com: a new daily bulletin written from the model forecast (conditions hour by hour, front passages, sky and rain, following days), a thunderstorm alert with a new "severe thunderstorm possible" level, CAPE and LI hour by hour, and the parcel ascent on the sounding. Update: go to windy.com/plugins → "Load plugin directly from URL" and paste the link above.
+
+#parapente #paragliding #parapentisme #vollibre #paraglider #cross #xc #xcparagliding #meteo #windy #thermiques #emagramme #orage #alpes #annecy #soaring #freeflight

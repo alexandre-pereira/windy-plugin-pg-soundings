@@ -5,6 +5,7 @@
       (T + 9,8 °C/km × z) : les adiabatiques sèches sont donc verticales et les isothermes obliques ;
     - courbe d'état colorée selon la stabilité (rouge : instabilité absolue, vert : instabilité
       conditionnelle, clair : stable), point de rosée en bleu ;
+    - zone de formation du nuage : couche claire à sommet bourgeonnant, de la base au sommet du cumulus ;
     - colonne de vent à droite, flèches dimensionnées par la force, couche convective en jaune.
 
     Mise en page : axe des altitudes fixe à gauche, courbes au centre (défilement horizontal sur
@@ -52,6 +53,16 @@
                 <stop offset="0" style="stop-color: var(--wpp-sky-top)" />
                 <stop offset="1" style="stop-color: var(--wpp-sky-bottom)" />
             </linearGradient>
+            <!-- Nuage : dense à la base, plus léger vers le sommet -->
+            <linearGradient id="wpp-ema-cloud" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" style="stop-color: var(--wpp-cloud)" stop-opacity="0.5" />
+                <stop offset="1" style="stop-color: var(--wpp-cloud)" />
+            </linearGradient>
+            <!-- Voile hachuré de la zone située au-dessus du dernier niveau fourni par le modèle -->
+            <pattern id="wpp-ema-nodata" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                <rect width="7" height="7" style="fill: var(--wpp-halo)" fill-opacity="0.45" />
+                <rect width="1.2" height="7" fill="currentColor" fill-opacity="0.22" />
+            </pattern>
         </defs>
 
         <rect x={left} y={top} width={plotW} height={plotH} rx="3" fill="url(#wpp-ema-sky)" />
@@ -97,16 +108,21 @@
                 <path d={m.d} class="wpp-mixing" />
             {/each}
 
-            <!-- Couche nuageuse convective (cumulus) -->
-            {#if column.cuBase != null && column.cuTop != null && column.cuTop > column.cuBase}
-                <rect
-                    x={left}
-                    y={y(column.cuTop)}
-                    width={plotW}
-                    height={y(column.cuBase) - y(column.cuTop)}
-                    fill="currentColor"
-                    opacity="0.07"
-                />
+            <!-- Au-dessus du dernier niveau fourni par le modèle : les courbes s'arrêtent, la zone est
+                 voilée (seul le fond de l'émagramme y reste tracé) -->
+            {#if zProfileTop < yMax}
+                <rect x={left} y={top} width={plotW} height={y(zProfileTop) - top} fill="url(#wpp-ema-nodata)" />
+                <!-- Écrit dans la zone si elle est assez haute pour passer sous les étiquettes des isothermes ;
+                     sur smartphone, où les courbes défilent, le texte serait coupé : l'infobulle le dit -->
+                {#if !narrow && y(zProfileTop) - top >= 28}
+                    <text x={left + 8} y={y(zProfileTop) - 6} class="wpp-nodata">{noDataText}</text>
+                {/if}
+            {/if}
+
+            <!-- Zone de formation du nuage (cumulus des thermiques) : de sa base, plate, à son sommet -->
+            {#if cloud}
+                <path d={cloud.fill} fill="url(#wpp-ema-cloud)" />
+                <path d={cloud.edge} class="wpp-cloud-edge" />
             {/if}
 
             <!-- Sol vu par le modèle -->
@@ -126,18 +142,49 @@
                 stroke-width="1.5"
             />
 
+            <!-- Ascension de la particule : zones où elle est plus chaude que l'air -->
+            {#each buoyant as d}
+                <path {d} class="wpp-buoyant" />
+            {/each}
+
             <!-- Point de rosée -->
             <path d={dewPath} class="wpp-halo" />
             <path d={dewPath} class="wpp-curve wpp-curve--dew" />
 
-            <!-- Chemin de la particule -->
+            <!-- Chemin de la particule ; avec l'option, sa partie saturée alterne jaune et bleu -->
             <path d={parcelD} class="wpp-curve wpp-curve--parcel" />
+            {#if showAscent && parcel.length > 2}
+                <path d={toPath(parcel.slice(1))} class="wpp-curve wpp-curve--parcel wpp-curve--parcel-sat" />
+            {/if}
 
             <!-- Courbe d'état colorée selon la stabilité -->
             <path d={tempHalo} class="wpp-halo" />
             {#each tempSegments as s}
                 <path d={s.d} class="wpp-curve wpp-curve--temp" style="stroke: {stabilityColor(s.kind)}" />
             {/each}
+
+            <!-- Ascension de la particule : son point de rosée, puis son trajet du sol à son sommet -->
+            {#if ascent}
+                <path d={toPath(ascent.dew)} class="wpp-halo wpp-halo--thin" />
+                <path d={toPath(ascent.dew)} class="wpp-curve wpp-curve--parcel-dew" />
+                <path d={toPath(ascent.path)} class="wpp-curve wpp-curve--ascent" />
+                <!-- Dans le cumulus (adiabatique saturée) : le même trait, rayé de bleu -->
+                {#if ascent.base != null && ascent.path.length > 2}
+                    <path d={toPath(ascent.path.slice(1))} class="wpp-curve wpp-curve--ascent-sat" />
+                {/if}
+                {#each ascentDots as p}
+                    <circle
+                        cx={px(xOf(p.t, p.z))}
+                        cy={y(p.z)}
+                        r="3.6"
+                        class="wpp-ascent-dot"
+                        class:wpp-ascent-dot--open={p.open}
+                    />
+                {/each}
+                {#each ascentLabels as l}
+                    <text x={l.x} y={l.y} class="wpp-mark wpp-mark--ascent" text-anchor={l.anchor}>{l.text}</text>
+                {/each}
+            {/if}
 
             <!-- Niveaux remarquables -->
             {#each marks as m}
@@ -315,6 +362,9 @@
     {#if hover && readout}
         <div class="wpp-tip" style="left:{tipX}px;top:{tipY}px">
             <div class="wpp-tip__title">{r50(hover.z)} m <span>· {readout.p.toFixed(0)} hPa</span></div>
+            {#if hover.z > zProfileTop}
+                <div class="wpp-tip__nodata">{noDataText}</div>
+            {/if}
             {#if readout.stability}
                 <div class="wpp-tip__stab" style="color:{stabilityColor(readout.stability)}">
                     {STABILITY[readout.stability].label}
@@ -349,6 +399,13 @@
                     >
                 </div>
             {/if}
+            {#if readout.vario > 0.05}
+                <div class="wpp-tip__row">
+                    <span>{tr('Vario', 'Vario')}</span><b
+                        ><i class="wpp-sw" style="background:{thermalColor(readout.vario)}"></i>+{readout.vario.toFixed(1)} m/s</b
+                    >
+                </div>
+            {/if}
             {#if readout.wind}
                 <div class="wpp-tip__row">
                     <span>{tr('Vent', 'Wind')}</span><b style="color:{windColor(readout.wind.kmh, light)}"
@@ -379,7 +436,12 @@
      * Plage de l'axe des températures redressées commune à toute une journée : en faisant défiler
      * l'heure, le cadre reste fixe et seules les courbes bougent (sinon l'axe se recale par crans).
      */
-    export const emagramRange = (cols: ColumnM[], yMin: number, yMax: number): [number, number] | null => {
+    export const emagramRange = (
+        cols: ColumnM[],
+        yMin: number,
+        yMax: number,
+        showAscent = false,
+    ): [number, number] | null => {
         const xs: number[] = [];
         const xOf = (tK: number, z: number) => tK - 273.15 + 0.0098 * z;
         for (const col of cols) {
@@ -393,6 +455,8 @@
                 if (td != null) xs.push(xOf(td, z));
             }
             for (const p of parcelPathM(col, zTop)) xs.push(xOf(p.t, p.z));
+            // Point de rosée de la particule : son départ au sol est le point le plus à gauche
+            if (showAscent && col.thermalTop != null && col.parcelDew != null) xs.push(xOf(col.parcelDew, col.ground));
         }
         if (!xs.length) return null;
         const lo = Math.floor((Math.min(...xs) - 1) / 5) * 5;
@@ -409,13 +473,16 @@
         interpProfile,
         moistAdiabat,
         moistLapse,
+        parcelAscent,
         parcelPath,
         pressureAt,
+        thermalColor,
         toKmh,
+        varioAt,
         windAt,
         windColor,
     } from './physics';
-    import { arrowPath } from './svg';
+    import { arrowPath, cloudBand } from './svg';
     import { tick } from 'svelte';
 
     export let column: Column;
@@ -426,6 +493,11 @@
     export let light = false;
     /** Plage fixe de l'axe des températures (toute la journée) ; sinon calculée pour l'heure affichée */
     export let xRange: [number, number] | null = null;
+    /**
+     * Ascension de la particule : son trajet du sol à son sommet, son point de rosée et les zones où
+     * elle est plus chaude que l'air, en plus de son chemin prolongé jusqu'en haut du cadre
+     */
+    export let showAscent = false;
 
     const K = 273.15;
     /** Gradient adiabatique sec (°C/m) : sert au « redressement » de l'axe des températures */
@@ -480,7 +552,18 @@
 
     // --- Chemin de la particule
     $: zProfileTop = column.profile[column.profile.length - 1].z;
+    $: noDataText = tr(
+        `Le modèle ne fournit rien au-dessus de ${r50(zProfileTop)} m`,
+        `The model provides nothing above ${r50(zProfileTop)} m`,
+    );
     $: parcel = parcelPath(column, Math.min(yMax, zProfileTop));
+    $: ascent = showAscent ? parcelAscent(column) : null;
+
+    /** Zone de formation du nuage : cumulus des thermiques, de la base au sommet ; null sans cumulus */
+    $: cloud =
+        column.cuBase != null && column.cuTop != null && column.cuTop > column.cuBase
+            ? cloudBand(left, left + plotW, y(column.cuBase), y(column.cuTop))
+            : null;
 
     /** Échantillonne une variable du profil tous les DZ mètres (courbe interpolée) */
     const sample = (col: Column, key: 't' | 'td', zTop: number) => {
@@ -505,6 +588,7 @@
         ...tempPts.filter(p => p.z >= yMin && p.z <= yMax).map(p => xOf(p.t, p.z)),
         ...parcel.filter(p => p.z <= yMax).map(p => xOf(p.t, p.z)),
         ...dewPts.filter(p => p.z <= column.ground + 1000).map(p => xOf(p.t, p.z)),
+        ...(ascent ? ascent.dew.slice(0, 1).map(p => xOf(p.t, p.z)) : []),
     ];
     // Marges réduites au strict nécessaire autour des courbes
     $: xLo = Math.floor((Math.min(...xValues) - 1) / 5) * 5;
@@ -590,6 +674,84 @@
         return parcel[parcel.length - 1].t;
     };
 
+    // --- Ascension de la particule (option)
+    /** Zones où la particule est plus chaude que l'air, du sol au sommet de son ascension */
+    $: buoyant = (() => {
+        const areas: string[] = [];
+        if (!ascent) return areas;
+        let run: { z: number; parcel: number; air: number }[] = [];
+        const close = () => {
+            if (run.length > 1) {
+                const up = toPath(run.map(r => ({ z: r.z, t: r.parcel })));
+                const down = toPath(run.map(r => ({ z: r.z, t: r.air })).reverse());
+                areas.push(`${up}L${down.slice(1)}Z`);
+            }
+            run = [];
+        };
+        for (let z = column.ground; z <= ascent.top; z += DZ) {
+            const p = parcelAt(z);
+            const t = interpProfile(column.profile, z, 't');
+            if (p != null && t != null && p > t) run.push({ z, parcel: p, air: t });
+            else close();
+        }
+        close();
+        return areas;
+    })();
+
+    /**
+     * Niveau de condensation, où la particule passe de l'adiabatique sèche à la saturée : le point
+     * où son point de rosée la rejoint ; null s'il est au-dessus du profil ou sans humidité connue
+     */
+    $: condensation =
+        ascent && ascent.condensation != null && ascent.dew[ascent.dew.length - 1].z === ascent.condensation
+            ? ascent.dew[ascent.dew.length - 1]
+            : null;
+
+    /**
+     * Départ au sol, sommet de l'ascension et niveau de condensation : point plein si la particule
+     * l'atteint (base des cumulus), creux s'il reste au-dessus de son sommet
+     */
+    $: ascentDots = ascent
+        ? [
+              { ...ascent.path[0], open: false },
+              { ...ascent.path[ascent.path.length - 1], open: false },
+              ...(condensation ? [{ ...condensation, open: ascent.base == null }] : []),
+          ]
+        : [];
+
+    /**
+     * Étiquettes de l'ascension, à gauche de la courbe (les niveaux remarquables sont étiquetés à
+     * droite) : sommet des thermiques et niveau de condensation. Sous un cumulus, sa base et son
+     * sommet sont déjà marqués.
+     */
+    $: ascentLabels = (() => {
+        if (!ascent || ascent.base != null) return [];
+        const side = (x: number) => (x - left > 150 ? { x: x - 9, anchor: 'end' } : { x: x + 9, anchor: 'start' });
+        const labels: { x: number; y: number; anchor: string; text: string }[] = [];
+        const end = ascent.path[ascent.path.length - 1];
+        const yTop = y(ascent.top) + 3.5;
+        if (ascent.top <= yMax) {
+            labels.push({
+                ...side(px(xOf(end.t, end.z))),
+                y: yTop,
+                text: `${tr('Sommet thermique', 'Thermal top')} ${r50(ascent.top)} m`,
+            });
+        }
+        if (ascent.condensation != null) {
+            const text = `${tr('Condensation', 'Condensation')} ${r50(ascent.condensation)} m`;
+            // La particule monte à la verticale (adiabatique sèche) jusqu'à la condensation
+            const pos = side(px(xOf(ascent.path[0].t, ascent.path[0].z)));
+            if (ascent.condensation <= yMax) {
+                // Jamais sur l'étiquette du sommet quand les deux niveaux sont proches
+                labels.push({ ...pos, y: Math.min(y(ascent.condensation) + 3.5, yTop - 13), text });
+            } else {
+                // Au-dessus du cadre : rappelée en haut, sous les valeurs des isothermes
+                labels.push({ ...pos, y: top + 26, text: `↑ ${text}` });
+            }
+        }
+        return labels;
+    })();
+
     /** Abscisse de l'étiquette d'un niveau : juste à droite de la courbe d'état à cette altitude */
     $: markX = (z: number) => {
         const t = interpProfile(column.profile, z, 't');
@@ -671,6 +833,8 @@
                   parcel: p == null ? null : p - K,
                   lapse: s ? s.lapse * 1000 : null,
                   stability: s?.kind ?? null,
+                  // Montée nette au vario à cette altitude, comme sur le graphique « Vent & thermiques »
+                  vario: varioAt(column, z),
                   wind: w ? { kmh: Math.round(toKmh(w.speed)), dir: w.dir } : null,
               };
           })()
@@ -748,6 +912,14 @@
             stroke-width: calc(3px * var(--wpp-text-halo-k));
             stroke-linejoin: round;
         }
+        .wpp-nodata {
+            fill: var(--wpp-fg-dim);
+            font-size: 10px;
+            paint-order: stroke;
+            stroke: var(--wpp-text-halo);
+            stroke-width: calc(3px * var(--wpp-text-halo-k));
+            stroke-linejoin: round;
+        }
         .wpp-dry {
             stroke: #4caf50;
             stroke-opacity: 0.45;
@@ -800,6 +972,54 @@
                 stroke-dasharray: 6 4;
                 stroke-opacity: 0.85;
             }
+            // Partie saturée du chemin : des tirets bleus dans les intervalles des tirets jaunes
+            &--parcel-sat {
+                stroke: var(--wpp-dew);
+                stroke-dasharray: 4 6;
+                stroke-dashoffset: -6;
+                stroke-linecap: butt;
+                stroke-opacity: 1;
+            }
+            &--ascent {
+                stroke: var(--wpp-parcel);
+                stroke-width: 2.6;
+            }
+            &--ascent-sat {
+                stroke: var(--wpp-dew);
+                stroke-width: 2.6;
+                stroke-dasharray: 6 6;
+                stroke-linecap: butt;
+            }
+            &--parcel-dew {
+                stroke: var(--wpp-dew);
+                stroke-width: 2;
+                stroke-dasharray: 7 5;
+            }
+        }
+        .wpp-halo--thin {
+            stroke-width: 4.5;
+            stroke-opacity: 0.8;
+        }
+        .wpp-cloud-edge {
+            fill: none;
+            stroke: currentColor;
+            stroke-opacity: 0.4;
+            stroke-width: 1;
+            stroke-linejoin: round;
+        }
+        .wpp-buoyant {
+            fill: var(--wpp-parcel);
+            fill-opacity: 0.22;
+        }
+        .wpp-ascent-dot {
+            fill: var(--wpp-parcel);
+            stroke: var(--wpp-halo);
+            stroke-width: 1.2;
+            &--open {
+                fill: var(--wpp-halo);
+                stroke: var(--wpp-parcel);
+                stroke-width: 2;
+            }
         }
         .wpp-ring {
             fill: none;
@@ -832,6 +1052,9 @@
             stroke: var(--wpp-text-halo);
             stroke-width: calc(3px * var(--wpp-text-halo-k));
             stroke-linejoin: round;
+            &--ascent {
+                fill: var(--wpp-parcel);
+            }
         }
         .wpp-wind {
             font-size: 9.5px;
@@ -873,6 +1096,11 @@
             font-weight: bold;
             margin-bottom: 3px;
         }
+        &__nodata {
+            font-size: 10.5px;
+            line-height: 1.35;
+            color: var(--wpp-fg-faint);
+        }
         &__row {
             display: flex;
             justify-content: space-between;
@@ -881,6 +1109,14 @@
                 color: var(--wpp-fg);
                 white-space: nowrap;
             }
+        }
+        .wpp-sw {
+            display: inline-block;
+            width: 9px;
+            height: 9px;
+            margin-right: 5px;
+            border-radius: 2px;
+            vertical-align: 0;
         }
         .wpp-c-dew {
             color: var(--wpp-dew);

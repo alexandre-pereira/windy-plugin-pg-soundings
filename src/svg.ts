@@ -42,6 +42,30 @@ export const arrowPath = (len: number, head = 6, headW = 4, shaftW = 1.1): strin
     return `M0,${t}L${headW},${t + h}L${shaftW},${t + h}L${shaftW},${b}L${-shaftW},${b}L${-shaftW},${t + h}L${-headW},${t + h}Z`;
 };
 
+/**
+ * Couche de nuage vue de côté, de `x0` à `x1` : base plate à `yBase`, sommet bourgeonnant dont les
+ * bosses, de largeurs et de hauteurs inégales, culminent à `yTop`. `fill` : la couche fermée ;
+ * `edge` : son sommet seul, pour en tracer le contour.
+ */
+export const cloudBand = (x0: number, x1: number, yBase: number, yTop: number) => {
+    const f = (v: number) => v.toFixed(1);
+    // Une couche mince garde des bosses à sa mesure
+    const bump = Math.min(12, Math.max(0, yBase - yTop) * 0.6);
+    const widths = [1, 0.7, 1.2, 0.85, 1.1, 0.65];
+    const heights = [1, 0.7, 0.9, 0.75, 1, 0.6];
+    const n = Math.max(1, Math.round((x1 - x0) / Math.max(bump * 2.4, 8)));
+    let total = 0;
+    for (let i = 0; i < n; i++) total += widths[i % widths.length];
+    const yb = yTop + bump;
+    let edge = `M${f(x0)},${f(yb)}`;
+    let x = x0;
+    for (let i = 0; i < n; i++) {
+        const w = (widths[i % widths.length] / total) * (x1 - x0);
+        x += w;
+        edge += `A${f(w / 2)},${f(bump * heights[i % heights.length])} 0 0 1 ${f(x)},${f(yb)}`;
+    }
+    return { fill: `${edge}L${f(x1)},${f(yBase)}L${f(x0)},${f(yBase)}Z`, edge };
+};
 
 /**
  * « Bourgeons » d'un cumulus, du bas vers le haut : cercles empilés dont les plus bas débordent

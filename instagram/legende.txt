@@ -9,7 +9,7 @@ J'ai développé un plugin gratuit pour Windy.com qui réunit en un seul écran 
 🇫🇷🇬🇧 En français et en anglais
 
 👉 Pour l'installer : va sur windy.com/plugins (ou menu de Windy → « Install Windy plugin »), choisis « Load plugin directly from URL » et colle ce lien :
-https://windy-plugins.com/2727410/windy-plugin-pg-soundings/1.3.0/plugin.min.js
+https://windy-plugins.com/2727410/windy-plugin-pg-soundings/1.4.0/plugin.min.js
 
 Ce sont des estimations tirées des modèles : rien ne remplace l'observation sur le déco 😉 Vos retours sont les bienvenus !
 
