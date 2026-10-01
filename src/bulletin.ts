@@ -1,10 +1,10 @@
 /**
- * Bulletin de vol d'une journée : l'essentiel de la prévision du modèle, sous forme de faits
- * chiffrés (force des conditions heure par heure, créneaux, vent, thermiques, ciel, passages de
- * front). Les phrases sont écrites par Bulletin.svelte.
+ * Bulletin météo d'une journée : l'essentiel de la prévision du modèle, sous forme de faits
+ * chiffrés (ciel, précipitations, passages de front, orage, vent, thermiques, températures). Le
+ * texte est écrit par Bulletin.svelte.
  *
- * Le bulletin décrit des conditions, jamais un niveau de pilote ni une aptitude à voler : ni
- * « débutant », ni « confirmé », ni « volable ».
+ * Le bulletin décrit le temps prévu. Il n'évalue pas les conditions de vol : ni niveau de
+ * conditions, ni créneau, ni appréciation de la journée, ni niveau de pilote.
  */
 
 import {
@@ -14,133 +14,17 @@ import {
     type StormWatch,
     stormWatchOf,
     sunElevation,
-    type ThermalEase,
-    thermalEase,
-    toKmh,
     uvToWind,
     windAt,
 } from './physics';
 
 const HOUR = 3600e3;
-
-// ---------------------------------------------------------------------------
-// Force des conditions de chaque heure
-// ---------------------------------------------------------------------------
-
-/** Conditions d'une heure : 0 calmes, 1 modérées, 2 fortes, 3 défavorables (vent très fort, pluie, orage) */
-export type Level = 0 | 1 | 2 | 3;
-
-/**
- * Ce qui impose le niveau d'une heure : orage, vent (au sol ou dans les basses couches), rafales,
- * pluie, force des thermiques, thermiques hachés par le vent, surdéveloppement
- */
-export type Limit = 'storm' | 'wind' | 'gust' | 'rain' | 'thermal' | 'choppy' | 'overdev';
-
-/**
- * Seuils à partir desquels les conditions sont modérées, fortes puis défavorables (en dessous du
- * premier : calmes), en km/h : vent à 10 m, vent le plus fort des basses couches, rafales du modèle
- */
-export const WIND_LIMITS = [10, 15, 25] as const;
-export const LOW_WIND_LIMITS = [15, 20, 30] as const;
-export const GUST_LIMITS = [20, 30, 40] as const;
-/** Montée au vario (m/s) à partir de laquelle les thermiques ne sont plus calmes, puis sont forts */
-export const CLIMB_LIMITS = [1, 2.5] as const;
-/** Épaisseur (m au-dessus du sol) des basses couches, où se trouvent les décollages */
-export const LOW_LAYER = 1000;
-/** Pluie (mm/h) à partir de laquelle les conditions d'une heure sont défavorables */
+/** Précipitations (mm/h) à partir desquelles une heure est une heure de pluie */
 const RAIN = 0.1;
-/**
- * Un orage est mal daté : les 2 h qui précèdent et qui suivent un orage probable sont
- * défavorables, et à moins de 4 h d'un orage les conditions ne sont plus calmes
- */
-const STORM_MARGIN = 2;
-const STORM_APPROACH = 4;
-/** Durée minimale d'un créneau (h) */
-const MIN_SLOT = 2;
 
-export interface HourRating {
-    col: Column;
-    /** Le soleil est levé au milieu de l'heure */
-    daylight: boolean;
-    level: Level;
-    /** Ce qui impose ce niveau ; null pour une heure calme */
-    limit: Limit | null;
-    /** Vent le plus fort des basses couches, du sol à LOW_LAYER (m/s) */
-    lowWind: number;
-}
-
-/** Niveau d'une valeur : nombre de seuils atteints */
-const levelOf = (value: number, limits: readonly number[]) => limits.filter(l => value >= l).length as Level;
-
-/** Vent le plus fort (m/s) entre le sol et LOW_LAYER, tous les 250 m */
-const lowLayerWind = (c: Column) => {
-    let max = c.windSurf;
-    for (let z = c.ground + 250; z <= c.ground + LOW_LAYER; z += 250) {
-        max = Math.max(max, windAt(c.profile, z)?.speed ?? 0);
-    }
-    return max;
-};
-
-/**
- * Conditions de chaque heure (`cols` : heures qui se suivent). Le niveau est celui du
- * facteur le plus exigeant ; à égalité, le premier de la liste l'emporte (orage, vent, rafales,
- * pluie, thermiques, thermiques hachés, surdéveloppement).
- */
-export const rateHours = (cols: Column[], lat: number, lon: number): HourRating[] =>
-    cols.map(c => {
-        const lowWind = lowLayerWind(c);
-        const stormWithin = (h: number) => cols.some(o => o.stormRisk >= 2 && Math.abs(o.ts - c.ts) <= h * HOUR);
-        const factors: [Limit, Level][] = [
-            ['storm', stormWithin(STORM_MARGIN) ? 3 : stormWithin(STORM_APPROACH) ? 1 : 0],
-            ['wind', Math.max(levelOf(toKmh(c.windSurf), WIND_LIMITS), levelOf(toKmh(lowWind), LOW_WIND_LIMITS)) as Level],
-            ['gust', c.gust == null ? 0 : levelOf(toKmh(c.gust), GUST_LIMITS)],
-            ['rain', c.precip >= RAIN ? 3 : 0],
-            ['thermal', levelOf(c.climb, CLIMB_LIMITS)],
-            ['choppy', c.choppy],
-            ['overdev', c.stormRisk === 1 ? 2 : 0],
-        ];
-        const [limit, level] = factors.reduce((worst, f) => (f[1] > worst[1] ? f : worst));
-        return {
-            col: c,
-            daylight: sunElevation(c.ts + HOUR / 2, lat, lon) > -0.833,
-            level,
-            limit: level ? limit : null,
-            lowWind,
-        };
-    });
-
-/** Créneau : de l'heure locale `from` à l'heure locale `to` (fin de la dernière heure : 24 pour minuit) */
-export interface Slot {
-    from: number;
-    to: number;
-    hours: number;
-}
-
-/** Créneaux d'au moins MIN_SLOT heures de jour consécutives qui satisfont `ok` */
-const slotsOf = (hours: HourRating[], ok: (h: HourRating) => boolean): Slot[] => {
-    const slots: Slot[] = [];
-    let run: HourRating[] = [];
-    const close = () => {
-        if (run.length >= MIN_SLOT) {
-            slots.push({ from: run[0].col.hour, to: run[run.length - 1].col.hour + 1, hours: run.length });
-        }
-        run = [];
-    };
-    hours.forEach((h, i) => {
-        if (h.daylight && ok(h)) run.push(h);
-        else close();
-        // Fin de la série, ou trou dans les heures
-        const after = hours[i + 1];
-        if (!after || after.col.ts - h.col.ts !== HOUR) close();
-    });
-    return slots;
-};
-
-/**
- * Créneaux dont les conditions ne dépassent pas le niveau `max`. Ils suivent les cases du bandeau
- * des heures : une seule heure d'un niveau au-dessus coupe un créneau.
- */
-const levelSlots = (hours: HourRating[], max: Level) => slotsOf(hours, h => h.level <= max);
+/** Heures de jour de `cols` : le soleil est levé au milieu de l'heure */
+export const daylightOf = (cols: Column[], lat: number, lon: number): Column[] =>
+    cols.filter(c => sunElevation(c.ts + HOUR / 2, lat, lon) > -0.833);
 
 // ---------------------------------------------------------------------------
 // Passages de front
@@ -381,39 +265,22 @@ export interface CumulusSummary {
     depth: number;
 }
 
+/** Thermiques exploitables de la journée (heures de jour où le modèle donne un plafond) */
 export interface ThermalSummary {
     /** De la première à la dernière heure de thermiques exploitables (heures locales, `to` : fin) */
     from: number;
     to: number;
-    hours: number;
     /** Heure locale de la meilleure montée, et cette montée au vario (m/s) */
     bestHour: number;
     climb: number;
-    /** Plafond exploitable le plus haut (m AMSL) et sa hauteur au-dessus du sol (m) */
+    /** Plafond exploitable le plus haut (m AMSL) */
     ceiling: number;
-    depth: number;
-    /** Nombre d'heures par facilité d'exploitation */
-    ease: Record<ThermalEase, number>;
-    /** Créneau le plus long de thermiques faciles ; null s'il n'y en a pas */
-    easy: Slot | null;
 }
 
-/**
- * Appréciation de la journée : conditions défavorables, fortes, orageuses, calmes à modérées par
- * créneaux seulement, belle ou bonne journée thermique, calme, ou modérée
- */
-export type Verdict = 'adverse' | 'strong' | 'storm' | 'windows' | 'great' | 'thermal' | 'calm' | 'moderate';
-
 export interface DayBulletin {
-    /** Heures de la journée, avec le niveau de leurs conditions */
-    hours: HourRating[];
-    verdict: Verdict;
-    /** Ce qui rend le plus souvent les heures de jour fortes ou défavorables, puis ce qui les empêche d'être calmes */
-    strongLimit: Limit | null;
-    calmLimit: Limit | null;
-    /** Créneaux de conditions calmes (niveau 0) et créneaux de conditions calmes à modérées (niveaux 0 et 1) */
-    calm: Slot[];
-    moderate: Slot[];
+    /** Altitude du sol du modèle (m AMSL) */
+    ground: number;
+    /** Thermiques exploitables ; null sans thermique */
     thermals: ThermalSummary | null;
     wind: WindSummary;
     sky: { am: SkyPart | null; pm: SkyPart | null };
@@ -522,6 +389,19 @@ const cumulusOf = (cols: Column[]): CumulusSummary | null => {
     };
 };
 
+const thermalsOf = (cols: Column[]): ThermalSummary | null => {
+    const th = cols.filter(c => c.ceiling != null);
+    if (!th.length) return null;
+    const best = th.reduce((a, c) => (c.climb > a.climb ? c : a));
+    return {
+        from: th[0].hour,
+        to: th[th.length - 1].hour + 1,
+        bestHour: best.hour,
+        climb: best.climb,
+        ceiling: Math.max(...th.map(c => c.ceiling as number)),
+    };
+};
+
 /** Écart T − Td au sol (K) et vent (m/s) sous lesquels l'air du matin, s'il ne pleut pas, peut donner brume ou brouillard */
 const FOG_SPREAD = 0.5;
 const FOG_WIND = 3;
@@ -531,46 +411,6 @@ const EARLY_MORNING = 9;
 const WET_GROUND = 2;
 /** La limite pluie-neige se tient environ 300 m sous l'isotherme 0 °C */
 const SNOW_LINE_BELOW = 300;
-
-/** Valeur la plus fréquente d'une liste ; null si elle est vide */
-const mostCommon = <T>(items: T[]): T | null => {
-    const counts = new Map<T, number>();
-    for (const it of items) counts.set(it, (counts.get(it) ?? 0) + 1);
-    let best: T | null = null;
-    let n = 0;
-    for (const [it, k] of counts) {
-        if (k > n) {
-            best = it;
-            n = k;
-        }
-    }
-    return best;
-};
-
-const thermalsOf = (hours: HourRating[], ground: number): ThermalSummary | null => {
-    const eased = hours
-        .map(h => ({ h, ease: thermalEase(h.col) }))
-        .filter((e): e is { h: HourRating; ease: ThermalEase } => e.ease != null);
-    if (!eased.length) return null;
-    const cols = eased.map(e => e.h.col);
-    const best = cols.reduce((a, c) => (c.climb > a.climb ? c : a));
-    const top = cols.reduce((a, c) => ((c.ceiling ?? 0) > (a.ceiling ?? 0) ? c : a));
-    const ease: Record<ThermalEase, number> = { easy: 0, weak: 0, low: 0, choppy: 0, rough: 0 };
-    for (const e of eased) ease[e.ease]++;
-    const easy = slotsOf(hours, h => thermalEase(h.col) === 'easy').sort((a, b) => b.hours - a.hours)[0] ?? null;
-    const ceiling = top.ceiling ?? ground;
-    return {
-        from: cols[0].hour,
-        to: cols[cols.length - 1].hour + 1,
-        hours: cols.length,
-        bestHour: best.hour,
-        climb: best.climb,
-        ceiling,
-        depth: ceiling - ground,
-        ease,
-        easy,
-    };
-};
 
 /** Heures de pluie (dans l'ordre) résumées en un épisode */
 const episodeOf = (wet: Column[]): RainEpisode => {
@@ -606,35 +446,13 @@ const rainOf = (cols: Column[]): RainSummary | null => {
     };
 };
 
-/** Une bonne journée thermique : au moins 2 h de thermiques faciles, en conditions calmes ou modérées ; belle à partir de +2 m/s et 1 500 m de hauteur exploitable */
-const GREAT_CLIMB = 2;
-const GREAT_DEPTH = 1500;
-/** Part des heures de jour dans un créneau calme à modéré sous laquelle la journée n'offre que des créneaux */
-const WINDOWS_SHARE = 2 / 3;
-
-const verdictOf = (day: HourRating[], moderate: Slot[], storm: StormWatch | null): Verdict => {
-    if (day.filter(h => h.level <= 2).length < MIN_SLOT) return 'adverse';
-    if (!moderate.length) return 'strong';
-    if (storm && storm.level >= 2) return 'storm';
-    if (moderate.reduce((n, s) => n + s.hours, 0) < day.length * WINDOWS_SHARE) return 'windows';
-    const soarable = day.filter(h => h.level <= 1 && thermalEase(h.col) === 'easy').map(h => h.col);
-    const climb = Math.max(0, ...soarable.map(c => c.climb));
-    if (soarable.length >= MIN_SLOT && climb >= CLIMB_LIMITS[0]) {
-        const depth = Math.max(0, ...soarable.map(c => (c.ceiling ?? c.ground) - c.ground));
-        return climb >= GREAT_CLIMB && depth >= GREAT_DEPTH ? 'great' : 'thermal';
-    }
-    return day.filter(h => h.level === 0).length >= day.length / 2 ? 'calm' : 'moderate';
-};
-
 /**
  * Bulletin d'une journée (`cols` : ses heures, dans l'ordre) ; `fronts` : ceux de toute la
  * prévision (frontsOf). null sans heure de jour.
  */
 export const bulletinOf = (cols: Column[], lat: number, lon: number, fronts: Front[] = []): DayBulletin | null => {
-    const hours = rateHours(cols, lat, lon);
-    const day = hours.filter(h => h.daylight);
-    if (!day.length) return null;
-    const dayCols = day.map(h => h.col);
+    const dayCols = daylightOf(cols, lat, lon);
+    if (!dayCols.length) return null;
     const ground = cols[0].ground;
 
     const am = dayCols.filter(c => c.hour < AFTERNOON);
@@ -650,7 +468,6 @@ export const bulletinOf = (cols: Column[], lat: number, lon: number, fronts: Fro
 
     const storm = stormWatchOf(cols);
     const overdev = dayCols.find(c => c.stormRisk === 1);
-    const thermals = thermalsOf(hours, ground);
     const nearest = (hour: number) => dayCols.reduce((a, c) => (Math.abs(c.hour - hour) < Math.abs(a.hour - hour) ? c : a));
     const early = dayCols.filter(c => c.hour <= EARLY_MORNING);
 
@@ -658,16 +475,9 @@ export const bulletinOf = (cols: Column[], lat: number, lon: number, fronts: Fro
     const end = cols[cols.length - 1].ts;
     const before = fronts.filter(f => f.kind === 'cold' && f.at.ts < start && f.at.ts >= start - FRONT_BEFORE * HOUR);
 
-    const moderate = levelSlots(hours, 1);
-
     return {
-        hours,
-        verdict: verdictOf(day, moderate, storm),
-        strongLimit: mostCommon(day.filter(h => h.level >= 2).map(h => h.limit)),
-        calmLimit: mostCommon(day.filter(h => h.level >= 1).map(h => h.limit)),
-        calm: levelSlots(hours, 0),
-        moderate,
-        thermals,
+        ground,
+        thermals: thermalsOf(dayCols),
         wind: {
             surface: halves(c => c.profile[0]),
             levels: [z1, z1 + 1000].map(z => ({ z, ...halves(uvAt(z)) })).filter(l => l.am || l.pm),
