@@ -1,6 +1,6 @@
 {
     "name": "windy-plugin-pg-soundings",
-    "version": "1.4.0",
+    "version": "1.4.1",
     "description": "Paragliding forecast for Windy.com: wind & thermals by altitude, sounding, best cross-country take-offs",
     "main": "dist/plugin.min.js",
     "type": "module",

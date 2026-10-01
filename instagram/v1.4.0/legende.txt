@@ -10,7 +10,7 @@ Les nouveautés de cette version du plugin gratuit pour Windy.com :
 📈 Émagramme : ascension de la particule, niveau de condensation et zone de formation du nuage
 
 👉 Déjà installé ? Le plugin annonce la nouvelle version : « Copier le lien », puis windy.com/plugins → « Load plugin directly from URL ». Première installation : même chemin, avec ce lien :
-https://windy-plugins.com/2727410/windy-plugin-pg-soundings/1.4.0/plugin.min.js
+https://windy-plugins.com/2727410/windy-plugin-pg-soundings/1.4.1/plugin.min.js
 
 Ce sont des estimations tirées des modèles : rien ne remplace l'observation sur le déco 😉 Vos retours sont les bienvenus !
 

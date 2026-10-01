@@ -50,7 +50,7 @@ L'interface est en français ou en anglais, selon la langue de Windy.
 Sur <https://www.windy.com/plugins>, choisissez « Load plugin directly from URL » et collez :
 
 ```
-https://windy-plugins.com/2727410/windy-plugin-pg-soundings/1.4.0/plugin.min.js
+https://windy-plugins.com/2727410/windy-plugin-pg-soundings/1.4.1/plugin.min.js
 ```
 
 Le plugin signale ensuite lui-même les nouvelles versions. L'historique est dans
@@ -127,8 +127,8 @@ de pression (souvent 7 niveaux seulement pour ECMWF : rien entre 850 et 700 hPa,
   Un seuil atteint fait passer au niveau suivant : des rafales de 30 km/h sont déjà des conditions
   fortes. À partir des valeurs de la dernière colonne pour le vent et les rafales, ou dès 0,1 mm de
   pluie ou de neige dans l'heure, les conditions sont défavorables. Un **créneau**
-  réunit au moins 2 heures de jour consécutives ; une heure isolée d'un seul niveau au-dessus ne le
-  coupe pas
+  réunit au moins 2 heures de jour consécutives du niveau voulu : il suit les cases du bandeau des
+  heures, et une seule heure d'un niveau au-dessus le coupe
 - repère un **passage de front** au changement de masse d'air qu'il apporte : la température moyenne
   entre 1 500 et 3 000 m au-dessus du sol (à l'écart du cycle jour / nuit) varie sur 6 heures. Front
   froid : −3 °C avec au moins 1 mm de pluie, ou avec un vent qui tourne d'au moins 40° sous un ciel

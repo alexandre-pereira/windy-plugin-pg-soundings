@@ -29,9 +29,13 @@
                 <span class="wpp-bl__now" title={tr('Maintenant', 'Now')} style="left:{nowAt * 100}%"></span>
             {/if}
         </div>
+        <!-- Heures au bord gauche de leur case : une case va de son heure à la suivante, comme un créneau -->
         <div class="wpp-bl__hours" aria-hidden="true">
-            {#each strip as h}
-                <span>{h.col.hour % 3 === 0 ? hourShort(h.col.hour) : ''}</span>
+            {#each strip as h, k}
+                <span
+                    >{#if h.col.hour % 3 === 0}<span class="wpp-bl__tick" class:first={k === 0}>{hourShort(h.col.hour)}</span
+                        >{/if}</span
+                >
             {/each}
         </div>
         <div class="wpp-bl__levels">
@@ -46,7 +50,7 @@
                 {#each s.items as it}
                     <p>
                         {#if it.label}<b
-                                >{#if it.level != null}<i style="background:{LEVEL_COLORS[it.level]}"></i>{/if}{it.label}</b
+                                >{#each it.levels ?? [] as lv}<i style="background:{LEVEL_COLORS[lv]}"></i>{/each}{it.label}</b
                             >{' '}{/if}{it.text}
                     </p>
                 {/each}
@@ -532,24 +536,31 @@
     // --- Rubriques
     interface Item {
         label?: string;
-        level?: number;
+        /** Niveaux de conditions dont la couleur précède le libellé : ceux des cases du bandeau que la ligne décrit */
+        levels?: number[];
         text: string;
     }
 
     const windowsOf = (d: DayBulletin): Item[] => {
-        const n = daylightOf(d).length;
-        const allDay = (slots: Slot[]) => slots.reduce((s, x) => s + x.hours, 0) >= n;
-        /** Créneaux d'un niveau de conditions, et ce qui limite le reste de la journée */
-        const text = (slots: Slot[], limit: Limit | null) => {
+        const day = daylightOf(d);
+        const allDay = (slots: Slot[]) => slots.reduce((s, x) => s + x.hours, 0) >= day.length;
+        /** Créneaux des conditions de niveau `max` au plus, et ce qui limite le reste de la journée */
+        const text = (slots: Slot[], max: number, limit: Limit | null) => {
             const why = limitText(d, limit);
-            if (!slots.length) return tr(`aucun créneau${why ? ` (${why})` : ''}.`, `no window${why ? ` (${why})` : ''}.`);
+            if (!slots.length) {
+                // Des heures isolées ont ce niveau dans le bandeau : aucune ne fait un créneau
+                const none = day.some(h => h.level <= max)
+                    ? tr('aucun créneau d’au moins 2 h', 'no window of at least 2 h')
+                    : tr('aucun créneau', 'no window');
+                return `${none}${why ? ` (${why})` : ''}.`;
+            }
             const rest = !allDay(slots) && why ? tr(` En dehors : ${why}.`, ` Outside these hours: ${why}.`) : '';
             return `${slotsText(d, slots)}.${rest}`;
         };
         const t = d.thermals;
         return [
-            { label: tr('Conditions calmes :', 'Calm conditions:'), level: 0, text: text(d.calm, d.calmLimit) },
-            { label: tr('Calmes à modérées :', 'Calm to moderate:'), level: 1, text: text(d.moderate, d.strongLimit) },
+            { label: tr('Conditions calmes :', 'Calm conditions:'), levels: [0], text: text(d.calm, 0, d.calmLimit) },
+            { label: tr('Calmes à modérées :', 'Calm to moderate:'), levels: [0, 1], text: text(d.moderate, 1, d.strongLimit) },
             {
                 label: tr('Thermiques exploitables :', 'Usable thermals:'),
                 text: !t
@@ -778,11 +789,19 @@
             font-size: 10.5px;
             color: var(--wpp-fg-faint);
 
-            span {
+            > span {
                 flex: 1 1 0;
                 min-width: 0;
-                text-align: center;
                 white-space: nowrap;
+            }
+        }
+        // Heure centrée sur le bord gauche de sa case (la première : alignée, pour ne pas déborder)
+        &__tick {
+            display: inline-block;
+            transform: translateX(-50%);
+
+            &.first {
+                transform: none;
             }
         }
         &__levels {
@@ -798,6 +817,11 @@
             height: 9px;
             margin-right: 5px;
             border-radius: 2px;
+
+            // Deux couleurs devant un libellé (« calmes à modérées ») : côte à côte
+            + i {
+                margin-left: -3px;
+            }
         }
         &__section {
             margin-top: 12px;

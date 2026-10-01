@@ -115,17 +115,8 @@ export interface Slot {
     hours: number;
 }
 
-/**
- * Créneaux d'au moins MIN_SLOT heures de jour consécutives qui satisfont `ok`. Une heure isolée
- * qui satisfait `almost` (un seuil franchi de peu, entre deux heures qui conviennent) ne coupe pas
- * un créneau.
- */
-const slotsOf = (
-    hours: HourRating[],
-    ok: (h: HourRating) => boolean,
-    almost: (h: HourRating) => boolean = () => false,
-): Slot[] => {
-    const next = (i: number) => (hours[i + 1] && hours[i + 1].col.ts - hours[i].col.ts === HOUR ? hours[i + 1] : null);
+/** Créneaux d'au moins MIN_SLOT heures de jour consécutives qui satisfont `ok` */
+const slotsOf = (hours: HourRating[], ok: (h: HourRating) => boolean): Slot[] => {
     const slots: Slot[] = [];
     let run: HourRating[] = [];
     const close = () => {
@@ -135,22 +126,20 @@ const slotsOf = (
         run = [];
     };
     hours.forEach((h, i) => {
-        const after = next(i);
-        const bridge = run.length > 0 && almost(h) && !!after && after.daylight && ok(after);
-        if (h.daylight && (ok(h) || bridge)) run.push(h);
+        if (h.daylight && ok(h)) run.push(h);
         else close();
-        if (!after) close();
+        // Fin de la série, ou trou dans les heures
+        const after = hours[i + 1];
+        if (!after || after.col.ts - h.col.ts !== HOUR) close();
     });
     return slots;
 };
 
-/** Créneaux dont les conditions ne dépassent pas le niveau `max` ; une heure isolée d'un seul niveau au-dessus ne les coupe pas */
-const levelSlots = (hours: HourRating[], max: Level) =>
-    slotsOf(
-        hours,
-        h => h.level <= max,
-        h => h.level === max + 1,
-    );
+/**
+ * Créneaux dont les conditions ne dépassent pas le niveau `max`. Ils suivent les cases du bandeau
+ * des heures : une seule heure d'un niveau au-dessus coupe un créneau.
+ */
+const levelSlots = (hours: HourRating[], max: Level) => slotsOf(hours, h => h.level <= max);
 
 // ---------------------------------------------------------------------------
 // Passages de front

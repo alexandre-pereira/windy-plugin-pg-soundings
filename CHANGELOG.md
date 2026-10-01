@@ -8,6 +8,23 @@ Le dépôt git ne commence qu'après la 1.2.7 : les entrées plus anciennes ont 
 coup à partir des notes de publication. Chaque version reste installable depuis Windy à l'adresse
 `https://windy-plugins.com/2727410/<nom-du-plugin>/<version>/plugin.min.js`.
 
+## [1.4.1] - 2026-10-01
+
+Les créneaux du bulletin sont plus stricts qu'en 1.4.0 : ils peuvent être plus courts, ou
+disparaître, et l'appréciation de la journée peut changer avec eux. Les autres valeurs affichées
+ne changent pas.
+
+### Corrigé
+
+- Bulletin : les créneaux correspondent maintenant aux cases de couleur du bandeau des heures. Un
+  créneau « conditions calmes » ne couvre plus une heure affichée en conditions modérées (ni un
+  créneau « calmes à modérées » une heure de conditions fortes) : une seule heure d'un niveau
+  au-dessus le coupe. L'appréciation de la journée, qui compte ces créneaux, peut changer.
+- Bulletin : les heures sous le bandeau sont placées au début de leur case, plus au milieu. Un
+  créneau « de 8h à 13h » se lit tel quel sur le bandeau.
+- Bulletin : « calmes à modérées » est précédé des deux couleurs que le créneau réunit, et « aucun
+  créneau d'au moins 2 h » remplace « aucun créneau » quand des heures isolées ont ce niveau.
+
 ## [1.4.0] - 2026-10-01
 
 Les plafonds et les ascendances affichés ne changent pas. Le risque d'orage, lui, peut être plus
