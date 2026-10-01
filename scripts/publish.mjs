@@ -53,9 +53,14 @@ fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
 fs.copyFileSync(path.join(root, 'package.json'), path.join(dist, 'package.json'));
 
 console.log(`Création de l'archive de ${manifest.name} v${manifest.version}...`);
-// Chemins relatifs : le tar GNU de Git Bash prendrait « C: » pour un hôte distant
+// Chemins relatifs : le tar GNU de Git Bash prendrait « C: » pour un hôte distant. Le cache de
+// TypeScript n'a rien à faire dans l'archive, que Windy refuse à partir de 3 Mo.
 const archive = path.join(root, 'plugin.tar');
-execFileSync('tar', ['-cf', '../plugin.tar', '.'], { cwd: dist, stdio: 'inherit' });
+execFileSync('tar', ['--exclude=*.tsbuildinfo', '-cf', '../plugin.tar', '.'], {
+    cwd: dist,
+    stdio: 'inherit',
+});
+console.log(`Archive : ${(fs.statSync(archive).size / 1024 / 1024).toFixed(2)} Mo`);
 
 console.log('Envoi à Windy...');
 const form = new FormData();
