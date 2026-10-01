@@ -46,22 +46,7 @@
         {/if}
     </div>
 
-    {#if visible && top.length}
-        <div class="wpp-xc__toptitle">{tr('Meilleurs départs de la carte visible', 'Best take-offs on the visible map')}</div>
-        <ol class="wpp-xc__top">
-            {#each top as t, k}
-                <li>
-                    <button class="wpp-xc__toplink" on:click={() => focus(t)}>
-                        <b>{k + 1}.</b>
-                        <span style="color:{kmColor(t.km)}">~{roundKm(t.km)} km</span>
-                        {t.turn ? tr('aller vers le', 'out towards') : tr('vers le', 'towards')}
-                        {headingName(t.heading)}, {tr('décollage', 'take-off')} {hourLabel(t.launch)}
-                        <small>({t.lat.toFixed(2)}, {t.lon.toFixed(2)})</small>
-                    </button>
-                </li>
-            {/each}
-        </ol>
-    {:else if visible && field && !loading}
+    {#if visible && field && !loading && !anyCross}
         <div class="wpp-xc__toptitle">
             {tr('Pas de cross possible sur la carte visible ce jour-là', 'No cross-country possible on the visible map that day')}
         </div>
@@ -96,7 +81,7 @@
     export type PointData = { byDay: Record<string, HourlyXc>; days: number; t: number };
 
     /** À changer si le calcul change, pour ignorer les anciens résultats */
-    const CACHE_KEY = 'wpp-xc-cache-v3';
+    const CACHE_KEY = 'wpp-xc-cache-v4';
     export const CACHE_TTL_MS = 3 * 3600e3;
     const CACHE_MAX_ENTRIES = 8000;
 
@@ -146,6 +131,7 @@
         hourlyXc,
         hourLabel,
         KM_LEGEND,
+        KM_NONE_COLOR,
         kmColor,
         kmRGBA,
         XC_HOURS,
@@ -154,7 +140,8 @@
         type XcMode,
     } from './cross';
     import { tr } from './i18n';
-    import { dayKey, gridPoint, makeGrid, renderGridImage, runPool, type GridSpec } from './xc';
+    import { dayKey } from './time';
+    import { gridPoint, makeGrid, renderGridImage, runPool, type GridSpec } from './xc';
 
     /** Modèle météo choisi dans le panneau */
     export let model: string;
@@ -174,11 +161,10 @@
     /** Étendue maximale (degrés) de la zone visible calculée */
     const MAX_SPAN_LAT = 12;
     const MAX_SPAN_LON = 18;
-    /** Nombre de meilleurs départs mis en avant, et écart minimal entre eux (en mailles) */
-    const TOP_COUNT = 3;
-    const TOP_MIN_CELLS = 4;
-
-    type TopStart = FlightResult & { lat: number; lon: number };
+    /** Distance (km) à partir de laquelle un point compte comme un cross possible */
+    const MIN_CROSS_KM = 5;
+    /** Distance (km) à partir de laquelle la valeur est écrite sur la carte */
+    const MIN_LABEL_KM = 15;
 
     /** Type de vol simulé, mémorisé dans le navigateur */
     const MODES: { id: XcMode; label: string }[] = [
@@ -224,10 +210,10 @@
     let gridModel = '';
     let points: (PointData | null)[] = [];
     let field: XcField | null = null;
-    let top: TopStart[] = [];
-    /** Résultats de la dernière simulation, par point de grille */
-    let results: (FlightResult | null)[] = [];
+    /** Distances de la dernière simulation, par point de grille (null : sans donnée) */
     let values: (number | null)[] = [];
+    /** Au moins un point de la carte permet un cross */
+    let anyCross = false;
     let siteFlight: FlightResult | null = null;
     let run = { cancelled: false };
     /** Jour pour lequel la carte a été simulée */
@@ -275,20 +261,19 @@
         const key = cacheKey(m, lat, lon);
         const hit = cache.get(key);
         if (hit && hit.days >= days && Date.now() - hit.t < CACHE_TTL_MS) return hit;
-        const { payload, columns: cols } = await loadForecast(
+        const { columns: cols } = await loadForecast(
             m,
             lat,
             lon,
             { header: true, sounding: true },
             days,
-            // Seules les heures de vol comptent : bien moins de calcul par point
-            h => h >= XC_HOURS[0] && h <= XC_HOURS[1],
+            // Seules les heures de vol comptent : bien moins de calcul par point, et pas de CAPE
+            { keepHour: h => h >= XC_HOURS[0] && h <= XC_HOURS[1], stability: false },
         );
-        // On ne garde que l'utile : vitesse de cross et vent, heure par heure, pour chaque jour
-        const utcOffset = payload.header.utcOffset || 0;
+        // On ne garde que l'utile : vitesse de cross, vent et hauteur, heure par heure, pour chaque jour
         const groups = new Map<string, Column[]>();
         for (const c of cols) {
-            const k = dayKey(c.ts, utcOffset);
+            const k = dayKey(c.ts, c.utcOffset);
             if (!groups.has(k)) groups.set(k, []);
             groups.get(k)!.push(c);
         }
@@ -333,9 +318,9 @@
         simulating = false;
         loading = false;
         field = f;
-        results = res;
 
         values = res.map((r, k) => (f.data[k] ? (r?.km ?? 0) : null));
+        anyCross = values.some(v => v != null && v > MIN_CROSS_KM);
         const url = renderGridImage(g, values, visibleWidth * 0.5, kmRGBA, 50);
         const bounds: L.LatLngBoundsExpression = [
             [g.south, g.west],
@@ -350,39 +335,15 @@
             overlay.bringToFront();
         }
 
-        pickTop();
+        drawLayers(g, values);
         drawSite();
     };
 
-    /** Meilleurs départs de la zone visible, suffisamment éloignés les uns des autres, puis dessin */
-    const pickTop = () => {
-        const g = grid;
-        if (!g || !field) return;
-        const b = viewBounds();
-        const ranked = results
-            .map((r, k) => ({ r, k }))
-            .filter((x): x is { r: FlightResult; k: number } => {
-                if (!x.r || x.r.km <= 5) return false;
-                const { lat, lon } = gridPoint(g, x.k % g.cols, Math.floor(x.k / g.cols));
-                return lat >= b.south && lat <= b.north && lon >= b.west && lon <= b.east;
-            })
-            .sort((a, b) => b.r.km - a.r.km);
-        const picked: { r: FlightResult; k: number }[] = [];
-        for (const x of ranked) {
-            const xi = x.k % g.cols;
-            const xj = Math.floor(x.k / g.cols);
-            const far = picked.every(
-                p => Math.max(Math.abs((p.k % g.cols) - xi), Math.abs(Math.floor(p.k / g.cols) - xj)) >= TOP_MIN_CELLS,
-            );
-            if (far) picked.push(x);
-            if (picked.length === TOP_COUNT) break;
-        }
-        top = picked.map(({ r, k }) => ({ ...r, ...gridPoint(g, k % g.cols, Math.floor(k / g.cols)) }));
+    /** Bulle d'une distance, à la couleur de l'échelle (texte sombre sur les teintes claires) */
+    const kmBubble = (km: number, unit = '') =>
+        `<span class="km" style="background:${kmColor(km)};color:${km >= 100 ? '#fff' : '#111'}">${roundKm(km)}${unit}</span>`;
 
-        drawLayers(g, values);
-    };
-
-    /** Distances écrites sur la carte, puis trajectoires et numéros des meilleurs départs */
+    /** Distances écrites sur la carte */
     const drawLayers = (g: GridSpec, values: (number | null)[]) => {
         removeLayers(mapLayers);
         const step = Math.max(1, Math.ceil(100 / (visibleWidth / g.cols)));
@@ -390,28 +351,17 @@
         for (let j = offset; j < g.rows; j += step) {
             for (let i = offset; i < g.cols; i += step) {
                 const v = values[j * g.cols + i];
-                if (v == null || v < 15) continue;
+                if (v == null || v < MIN_LABEL_KM) continue;
                 const { lat, lon } = gridPoint(g, i, j);
                 const icon = new L.DivIcon({
                     className: 'wpp-xc-label',
-                    html: `<span>${roundKm(v)}</span>`,
+                    html: kmBubble(v),
                     iconSize: [40, 18],
                     iconAnchor: [20, 9],
                 });
                 mapLayers.push(L.marker([lat, lon], { icon, interactive: false }).addTo(map));
             }
         }
-        // Meilleurs départs : trajectoire fléchée, arrivée (ou demi-tour), numéro et distance
-        top.forEach((t, k) => {
-            mapLayers.push(...flightLayers(t, '#1f2933'));
-            const icon = new L.DivIcon({
-                className: 'wpp-xc-rank',
-                html: `<span class="n">${k + 1}</span><span class="km">${roundKm(t.km)} km</span>`,
-                iconSize: [0, 0],
-                iconAnchor: [13, 13],
-            });
-            mapLayers.push(L.marker([t.lat, t.lon], { icon, interactive: false, zIndexOffset: 1000 }).addTo(map));
-        });
         showMapLegend();
     };
 
@@ -464,14 +414,17 @@
         } catch {
             return;
         }
-        const chips = KM_LEGEND.map(
-            (km, k) =>
-                `<span style="background:${kmColor(km)};color:${km >= 100 ? '#fff' : '#111'}">${km}${k === KM_LEGEND.length - 1 ? '+' : ''}</span>`,
-        ).join('');
+        const chips =
+            `<span style="background:${KM_NONE_COLOR};color:#fff">0</span>` +
+            KM_LEGEND.map(
+                (km, k) =>
+                    `<span style="background:${kmColor(km)};color:${km >= 100 ? '#fff' : '#111'}">${km}${k === KM_LEGEND.length - 1 ? '+' : ''}</span>`,
+            ).join('');
         legendEl.innerHTML = `
             <div class="t">${mode === 'outReturn' ? tr('Aller-retour possible depuis chaque point', 'Out & return from each point') : tr('Distance libre possible depuis chaque point', 'Free distance from each point')}</div>
             <div class="c">${chips}<em>km</em></div>
-            <div class="h">${tr('① ② ③ meilleurs départs · touchez la carte pour voir le vol depuis un point', '① ② ③ best take-offs · tap the map to see the flight from a point')}</div>`;
+            <div class="h">${tr('Gris : pas de cross possible ce jour-là', 'Grey: no cross-country possible that day')}</div>
+            <div class="h">${tr('Touchez la carte pour voir le vol depuis un point', 'Tap the map to see the flight from a point')}</div>`;
     };
 
     const hideMapLegend = () => {
@@ -503,8 +456,8 @@
             siteLayers = flightLayers(siteFlight, '#2563eb', true);
             // Distance au bout du trajet du site choisi
             const icon = new L.DivIcon({
-                className: 'wpp-xc-rank wpp-xc-rank--site',
-                html: `<span class="km">${roundKm(siteFlight.km)} km</span>`,
+                className: 'wpp-xc-site',
+                html: kmBubble(siteFlight.km, ' km'),
                 iconSize: [0, 0],
                 iconAnchor: [-10, 10],
             });
@@ -518,15 +471,6 @@
     const removeLayers = (layers: L.Layer[]) => {
         layers.forEach(l => l.remove());
         layers.length = 0;
-    };
-
-    /** Centre la carte sur un des meilleurs départs */
-    const focus = (t: TopStart) => {
-        try {
-            map.setView([t.lat, t.lon], map.getZoom(), { animate: true });
-        } catch {
-            /* rien */
-        }
     };
 
     /** Charge la zone actuellement visible (en arrière-plan), puis simule les vols */
@@ -626,10 +570,9 @@
         overlay = null;
         removeLayers(mapLayers);
         removeLayers(siteLayers);
-        top = [];
         field = null;
-        results = [];
         values = [];
+        anyCross = false;
         siteFlight = null;
         hideMapLegend();
         hideBackdrop();
@@ -707,11 +650,8 @@
         const b = viewBounds();
         const outside =
             !grid || b.south < grid.south || b.north > grid.north || b.west < grid.west || b.east > grid.east;
-        if (!zoomChanged && !outside) {
-            // Simple déplacement dans la zone déjà calculée : meilleurs départs de la nouvelle vue
-            if (!loading) pickTop();
-            return;
-        }
+        // Simple déplacement dans la zone déjà calculée : rien à refaire
+        if (!zoomChanged && !outside) return;
         if (moveTimer) clearTimeout(moveTimer);
         moveTimer = setTimeout(() => {
             moveTimer = null;
@@ -838,35 +778,6 @@
             cursor: pointer;
             text-decoration: underline;
         }
-        &__top {
-            margin: 4px 0 0;
-            padding: 0;
-            list-style: none;
-            li {
-                margin: 3px 0;
-            }
-        }
-        &__toplink {
-            padding: 0;
-            border: none;
-            background: none;
-            color: var(--wpp-fg-dim);
-            font-size: 12px;
-            text-align: left;
-            cursor: pointer;
-            b {
-                color: var(--wpp-fg);
-            }
-            span {
-                font-weight: 700;
-            }
-            small {
-                opacity: 0.6;
-            }
-            &:hover {
-                text-decoration: underline;
-            }
-        }
         &__error {
             margin-top: 8px;
             color: #ff8a80;
@@ -880,53 +791,32 @@
         text-align: center;
         pointer-events: none;
     }
-    :global(.wpp-xc-label span) {
+    // Bulle de distance, à la couleur de l'échelle (fond et texte posés en ligne) ; le liseré blanc
+    // la détache de la carte, de la même teinte dessous
+    :global(.wpp-xc-label .km) {
         display: inline-block;
         padding: 1px 5px;
-        border-radius: 8px;
-        background: rgba(255, 255, 255, 0.72);
-        color: #1f2933;
+        border: 1.5px solid #ffffff;
+        border-radius: 9px;
         font: 700 11.5px/14px -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
         white-space: nowrap;
     }
 
-    // Numéro des meilleurs départs posé sur la carte
-    :global(.wpp-xc-rank) {
+    // Distance du vol depuis le site choisi, au bout de sa trajectoire : liseré bleu comme elle
+    :global(.wpp-xc-site) {
         background: none;
         border: none;
         pointer-events: none;
-    }
-    // Meilleur départ : pastille numérotée + distance
-    :global(.wpp-xc-rank) {
         white-space: nowrap;
     }
-    :global(.wpp-xc-rank .n) {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 26px;
-        height: 26px;
-        border-radius: 50%;
-        background: #1f2933;
-        border: 2px solid #ffffff;
-        color: #ffffff;
-        font: 800 14px/1 -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
-        vertical-align: middle;
-    }
-    :global(.wpp-xc-rank .km) {
+    :global(.wpp-xc-site .km) {
         display: inline-block;
-        margin-left: 4px;
         padding: 2px 7px;
-        border-radius: 10px;
-        background: #1f2933;
-        color: #ffffff;
+        border: 2px solid #2563eb;
+        border-radius: 11px;
         font: 700 12.5px/16px -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
         box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
-        vertical-align: middle;
-    }
-    :global(.wpp-xc-rank--site .km) {
-        background: #2563eb;
     }
     // Flèches de sens et point d'arrivée / de demi-tour
     :global(.wpp-xc-arrow),

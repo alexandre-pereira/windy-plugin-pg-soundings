@@ -6,12 +6,16 @@
  * calculés pour chaque heure avec la vraie hauteur du soleil, au lieu d'interpoler des résultats.
  * - grandeurs continues (températures, humidité, nuages, altitudes, vitesse du vent) : linéaire ;
  * - direction du vent : par le vecteur vent (350° → 10° passe par 0°, pas par 180°) ;
- * - précipitations : le cumul d'un pas de 3 h est réparti sur ses 3 heures (pas de triple compte) ;
- *   chez Windy, l'horodatage d'un pas est son début : le cumul vaut pour les heures qui suivent ;
+ * - précipitations : chez Windy, la valeur d'un pas est le cumul de la période qui le PRÉCÈDE (pluie
+ *   « de l'heure écoulée »). Chaque heure reçoit ici la pluie de l'heure qui la SUIT, même quand la
+ *   prévision est déjà horaire : la colonne « 15h » du graphique montre le ciel de 15 h et la pluie
+ *   de 15 h à 16 h, au lieu de la pluie déjà tombée entre 14 h et 15 h. Le cumul d'un pas de 3 h
+ *   est réparti sur ses 3 heures (pas de triple compte) ;
  * - autres valeurs (jour/nuit, pictogrammes…) : pas de temps le plus proche.
  */
 
-import type { ForecastPayload } from './physics';
+import { type ForecastPayload, snowPart } from './physics';
+import { localHour, makeOffsetAt } from './time';
 
 type Hash = { [key: string]: unknown };
 
@@ -29,13 +33,38 @@ const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFin
 /** Clé de vitesse associée à une clé de direction : windDir → wind, windDir-850h → wind-850h */
 const speedKeyOf = (dirKey: string) => dirKey.replace(/^windDir/, 'wind');
 
-const interpolateHash = (hash: Hash, utcOffset: number): Hash => {
+/**
+ * Cumul (mm) de l'heure qui suit chaque instant de `hours` (croissants), à partir d'une série Windy
+ * où la valeur d'un pas est le cumul de la période qui le précède : débit horaire du premier pas qui
+ * se termine après l'instant. null au-delà du dernier pas (pluie pas encore prévue).
+ * Vérifié sur ECMWF : mêmes valeurs, aux mêmes heures, que les cumuls « de l'heure écoulée » de la
+ * même prévision publiés par une autre source.
+ */
+const followingHour = (src: number[], serie: unknown[], hours: number[]): (number | null)[] => {
+    let j = 0;
+    return hours.map(t => {
+        while (j < src.length && src[j] <= t) j++;
+        const v = serie[j];
+        if (j >= src.length || !isNum(v)) return null;
+        const stepMs = j > 0 ? src[j] - src[j - 1] : src[1] - src[0];
+        return v / Math.max(1, stepMs / HOUR);
+    });
+};
+
+const interpolateHash = (hash: Hash, offsetAt: (ts: number) => number): Hash => {
     const ts = hash.ts;
     if (!Array.isArray(ts) || ts.length < 2 || !ts.every(isNum)) return hash;
     const src = ts as number[];
-    // Déjà horaire et calé sur les heures pleines : rien à faire
+    // Déjà horaire et calé sur les heures pleines : seuls les cumuls changent (heure qui suit)
     const onHour = (t: number) => t % HOUR === 0;
-    if (src.every((t, i) => onHour(t) && (i === 0 || t - src[i - 1] <= HOUR))) return hash;
+    if (src.every((t, i) => onHour(t) && (i === 0 || t - src[i - 1] <= HOUR))) {
+        const shifted: Hash = { ...hash };
+        for (const key of ACCUMULATED) {
+            const serie = hash[key];
+            if (Array.isArray(serie) && serie.length === src.length) shifted[key] = followingHour(src, serie, src);
+        }
+        return shifted;
+    }
 
     // Grille des heures pleines (UTC) couvertes par la série. Le premier pas peut commencer à une
     // heure quelconque (« maintenant ») : on ne part pas de lui, sinon toutes les heures seraient
@@ -59,16 +88,7 @@ const interpolateHash = (hash: Hash, utcOffset: number): Hash => {
         const serie = raw as unknown[];
 
         if (ACCUMULATED.has(key)) {
-            // Valeur de l'heure t = cumul du pas qui la contient (pas qui commence avant ou à t),
-            // divisé par le nombre d'heures de ce pas
-            out[key] = hours.map(t => {
-                let j = 0;
-                while (j < src.length - 1 && src[j + 1] <= t) j++;
-                const v = serie[j];
-                if (!isNum(v)) return null;
-                const stepMs = j < src.length - 1 ? src[j + 1] - src[j] : src[j] - src[j - 1];
-                return v / Math.max(1, stepMs / HOUR);
-            });
+            out[key] = followingHour(src, serie, hours);
             continue;
         }
 
@@ -104,7 +124,7 @@ const interpolateHash = (hash: Hash, utcOffset: number): Hash => {
     }
 
     out.ts = hours;
-    if (Array.isArray(hash.hour)) out.hour = hours.map(t => new Date(t + utcOffset * HOUR).getUTCHours());
+    if (Array.isArray(hash.hour)) out.hour = hours.map(t => localHour(t, offsetAt(t)));
     return out;
 };
 
@@ -112,21 +132,20 @@ const interpolateHash = (hash: Hash, utcOffset: number): Hash => {
  * Toutes les séries de la prévision (sol et altitude) ramenées au pas horaire si besoin.
  * En cas de souci, la prévision est rendue telle quelle : mieux vaut un pas de 3 h que rien.
  */
-export const toHourly = (payload: ForecastPayload): ForecastPayload => {
+export const toHourly = (payload: ForecastPayload, lat: number, lon: number): ForecastPayload => {
     try {
-        return interpolateAll(payload);
+        return interpolateAll(payload, makeOffsetAt(payload, lat, lon));
     } catch (e) {
         console.error('PG Soundings : interpolation horaire impossible', e);
         return payload;
     }
 };
 
-const interpolateAll = (payload: ForecastPayload): ForecastPayload => {
-    const offset = payload.header?.utcOffset || 0;
-    const res: ForecastPayload = { ...payload, data: interpolateHash(payload.data as Hash, offset) as ForecastPayload['data'] };
+const interpolateAll = (payload: ForecastPayload, offsetAt: (ts: number) => number): ForecastPayload => {
+    const res: ForecastPayload = { ...payload, data: interpolateHash(payload.data as Hash, offsetAt) as ForecastPayload['data'] };
     for (const k of ['sounding', 'airgram', 'meteogram'] as const) {
         const h = payload[k];
-        if (h) res[k] = interpolateHash(h as Hash, offset) as ForecastPayload['data'];
+        if (h) res[k] = interpolateHash(h as Hash, offsetAt) as ForecastPayload['data'];
     }
     return res;
 };
@@ -135,9 +154,11 @@ const interpolateAll = (payload: ForecastPayload): ForecastPayload => {
  * Prévision réduite à un seul instant quelconque (à la minute près), par interpolation linéaire
  * entre les deux pas qui l'encadrent : sert au curseur de l'émagramme. Mêmes règles que ci-dessus
  * (vent par le vecteur, cumuls au pas qui contient l'instant, le reste au pas le plus proche).
+ * `payload` est une prévision déjà passée par toHourly : ses cumuls valent pour l'heure qui suit.
  */
-export const payloadAt = (payload: ForecastPayload, t: number): ForecastPayload | null => {
-    const offset = payload.header?.utcOffset || 0;
+export const payloadAt = (payload: ForecastPayload, t: number, lat: number, lon: number): ForecastPayload | null => {
+    // Décalage horaire en vigueur à cet instant (changement d'heure compris)
+    const offset = makeOffsetAt(payload, lat, lon)(t);
     const sample = (hash: Hash | undefined): Hash | undefined => {
         const ts = hash?.ts;
         if (!hash || !Array.isArray(ts) || !ts.length || !ts.every(isNum)) return hash;
@@ -177,7 +198,7 @@ export const payloadAt = (payload: ForecastPayload, t: number): ForecastPayload 
             }
         }
         out.ts = [t];
-        if (Array.isArray(hash.hour)) out.hour = [new Date(t + offset * HOUR).getUTCHours()];
+        if (Array.isArray(hash.hour)) out.hour = [localHour(t, offset)];
         return out;
     };
     try {
@@ -192,9 +213,28 @@ export const payloadAt = (payload: ForecastPayload, t: number): ForecastPayload 
                 if (ts >= t - 24 * HOUR && ts < t && isNum(rain[k])) sum += rain[k] as number;
             });
             data.recentRain = [sum];
+            // Pluie la plus forte (mm/h) du pas qui contient l'instant et de ceux à ±1 h (risque d'orage)
+            let near = 0;
+            allTs.forEach((ts, k) => {
+                const end = k < allTs.length - 1 ? allTs[k + 1] : ts + HOUR;
+                if (end > t - HOUR && ts <= t + HOUR && isNum(rain[k])) {
+                    near = Math.max(near, (rain[k] as number) / Math.max(1, (end - ts) / HOUR));
+                }
+            });
+            data.rainNear = [near];
+            // Et neige des 48 h précédentes (sol enneigé)
+            let snow = 0;
+            const temp = (payload.data as Hash).temperature as unknown[] | undefined;
+            allTs.forEach((ts, k) => {
+                const tk = temp?.[k];
+                if (ts >= t - 48 * HOUR && ts < t) snow += snowPart(payload.data, k, isNum(tk) ? tk : 280);
+            });
+            data.recentSnow = [snow];
         }
         return {
             ...payload,
+            // L'instant isolé garde son propre décalage horaire
+            header: { ...payload.header, utcOffset: offset },
             data: data as ForecastPayload['data'],
             sounding: sample(payload.sounding as Hash) as ForecastPayload['data'] | undefined,
             airgram: sample(payload.airgram as Hash) as ForecastPayload['data'] | undefined,

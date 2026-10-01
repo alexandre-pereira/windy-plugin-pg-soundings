@@ -1,126 +1,8 @@
 /**
- * Ascendances moyennes (Vz, m/s) de la journée, pour le site choisi et pour la carte en couleur.
- *
- * Vz = montée nette qu'un parapente lit au vario au cœur des thermiques : les cœurs sont plus
- * forts que la vitesse convective moyenne w* (facteur 1,25), moins le taux de chute en spirale
- * (1,1 m/s). Vz est nulle si la hauteur exploitable est trop faible ou s'il pleut franchement.
- * La moyenne porte sur le cœur de la journée thermique (11 h – 17 h locales), les heures sans
- * thermique comptant pour 0 : une journée courte ou irrégulière ressort donc plus faible.
+ * Grille de points de la carte des cross, image colorée posée sur la carte, et file de requêtes.
  */
 
-import { CIRCLING_SINK, CORE_FACTOR, type Column, thermalShape } from './physics';
-
-/** Hauteur exploitable minimale (m sol) pour tenir en l'air */
-const MIN_DEPTH = 300;
-
-/** Heures locales sur lesquelles porte la moyenne */
-export const VZ_WINDOW: readonly [number, number] = [11, 17];
-
-export interface VzDay {
-    /** Vz moyenne sur la fenêtre 11 h – 17 h (m/s) */
-    mean: number;
-    /** Vz la plus forte de la journée (m/s) et son heure */
-    max: number;
-    maxHour: number | null;
-}
-
-/**
- * Hauteur exploitable (m AMSL) : plafond, limité à l'altitude où l'ascendance au cœur des
- * thermiques ne compense plus le taux de chute en spirale (« Hcrit » des prévisions RASP)
- */
-export const usableTop = (c: Column): number | null => {
-    if (c.ceiling == null || c.thermalTop == null) return null;
-    const depth = c.thermalTop - c.ground;
-    let top = c.ground;
-    for (let z = c.ground + 25; z <= c.ceiling; z += 25) {
-        if (CORE_FACTOR * c.wStar * thermalShape((z - c.ground) / depth) < CIRCLING_SINK) {
-            // Sous 15 % de la couche, la montée en puissance du thermique n'est pas limitante
-            if ((z - c.ground) / depth > 0.15) break;
-        }
-        top = z;
-    }
-    return top;
-};
-
-/** Vz (m/s) pour un pas de temps */
-export const vzAt = (c: Column): number => {
-    const top = usableTop(c);
-    if (top == null || top - c.ground < MIN_DEPTH || c.precip >= 0.5) return 0;
-    const climb = CORE_FACTOR * c.wStar - CIRCLING_SINK;
-    // Averses faibles : thermiques cassés par l'ombre et l'air refroidi
-    return Math.max(0, c.precip >= 0.1 ? climb * 0.6 : climb);
-};
-
-/** Vz moyenne et maximale d'une journée à partir de ses colonnes (heure par heure ou par 3 h) */
-export const vzDay = (dayCols: Column[]): VzDay => {
-    const inWindow = dayCols.filter(c => c.hour >= VZ_WINDOW[0] && c.hour <= VZ_WINDOW[1]);
-    const values = inWindow.map(vzAt);
-    const mean = values.length ? values.reduce((a, b) => a + b, 0) / values.length : 0;
-    let max = 0;
-    let maxHour: number | null = null;
-    for (const c of dayCols) {
-        const v = vzAt(c);
-        if (v > max) {
-            max = v;
-            maxHour = c.hour;
-        }
-    }
-    return { mean, max, maxHour };
-};
-
-/** Clé de jour local (même format que les onglets du panneau) */
-export const dayKey = (ts: number, utcOffsetHours: number) => {
-    const d = new Date(ts + utcOffsetHours * 3600e3);
-    return `${d.getUTCFullYear()}-${d.getUTCMonth()}-${d.getUTCDate()}`;
-};
-
-// ---------------------------------------------------------------------------
-// Couleurs de la carte (Vz en m/s)
-// ---------------------------------------------------------------------------
-
-type RGBA = [number, number, number, number];
-
-/**
- * Dégradé continu, même famille de couleurs que les ascendances du graphique principal
- * (jaune pâle → orange → rouge → rose → violet). L'opacité monte avec la Vz : sans ascendance,
- * la carte reste visible dessous.
- */
-const VZ_STOPS: [number, RGBA][] = [
-    [0.1, [254, 249, 195, 0]],
-    [0.3, [254, 240, 138, 95]],
-    [0.6, [253, 224, 71, 130]],
-    [1.0, [251, 146, 60, 150]],
-    [1.5, [239, 68, 68, 160]],
-    [2.0, [219, 39, 119, 168]],
-    [2.5, [162, 28, 175, 175]],
-    [3.0, [124, 58, 237, 182]],
-    [3.5, [76, 29, 149, 188]],
-];
-
-/** Valeurs montrées dans la légende */
-export const VZ_LEGEND = [0.3, 0.6, 1, 1.5, 2, 2.5, 3, 3.5];
-
-/** Pas des isolignes (m/s) */
-export const VZ_CONTOUR_STEP = 0.5;
-
-export const vzRGBA = (vz: number): RGBA => {
-    if (!(vz > VZ_STOPS[0][0])) return VZ_STOPS[0][1];
-    for (let i = 0; i < VZ_STOPS.length - 1; i++) {
-        const [v0, c0] = VZ_STOPS[i];
-        const [v1, c1] = VZ_STOPS[i + 1];
-        if (vz <= v1) {
-            const f = (vz - v0) / (v1 - v0);
-            return c0.map((c, k) => Math.round(c + (c1[k] - c) * f)) as RGBA;
-        }
-    }
-    return VZ_STOPS[VZ_STOPS.length - 1][1];
-};
-
-/** Couleur opaque (légende, texte) d'une Vz */
-export const vzColor = (vz: number) => {
-    const [r, g, b] = vzRGBA(Math.max(vz, 0.3));
-    return `rgb(${r},${g},${b})`;
-};
+export type RGBA = [number, number, number, number];
 
 // ---------------------------------------------------------------------------
 // Grille et image de la couche
@@ -200,14 +82,14 @@ const cubicWeights = (t: number): [number, number, number, number] => {
 /**
  * Image de la couche, en data-URL PNG, à la résolution de l'écran (`targetWidth` pixels) :
  * interpolation bicubique entre les points (pas de losanges), dégradé continu, et isolignes
- * gris foncé discrètes tous les 0,5 m/s. `values[j * cols + i]` ; null = sans donnée (transparent).
+ * gris foncé discrètes tous les `contourStep`. `values[j * cols + i]` ; null = sans donnée (transparent).
  */
 export const renderGridImage = (
     g: GridSpec,
     values: (number | null)[],
-    targetWidth = 1200,
-    colorOf: (v: number) => RGBA = vzRGBA,
-    contourStep = VZ_CONTOUR_STEP,
+    targetWidth: number,
+    colorOf: (v: number) => RGBA,
+    contourStep: number,
 ): string => {
     const pxPerCell = Math.max(8, Math.min(96, Math.round(Math.min(2400, targetWidth) / g.cols)));
     const W = g.cols * pxPerCell;
@@ -266,7 +148,7 @@ export const renderGridImage = (
         }
     }
 
-    // 2) Couleurs + isolignes (1 px, gris foncé et discrètes) là où l'on change de palier de 0,5 m/s
+    // 2) Couleurs + isolignes (1 px, gris foncé et discrètes) là où l'on change de palier
     const img = ctx.createImageData(W, H);
     const level = (v: number) => (Number.isNaN(v) ? -1 : Math.floor(v / contourStep));
     for (let y = 0; y < H; y++) {

@@ -33,12 +33,23 @@
                         values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -10"
                         result="goo"
                     />
-                    <feDropShadow dx="0" dy="1.5" stdDeviation="1.5" flood-color="#0b1118" flood-opacity="0.35" />
+                    <!-- Contour sombre : la tour se détache nettement des nuages en couches du fond -->
+                    <feMorphology in="goo" operator="dilate" radius="1.1" result="fat" />
+                    <feFlood flood-color="#243244" flood-opacity="0.85" />
+                    <feComposite in2="fat" operator="in" result="edge" />
+                    <feMerge>
+                        <feMergeNode in="edge" />
+                        <feMergeNode in="goo" />
+                    </feMerge>
                 </filter>
                 <linearGradient id="wpp-ground-grad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0" stop-color="#7a5f45" />
                     <stop offset="1" stop-color="#3f3025" />
                 </linearGradient>
+                <!-- Hachures du bandeau des thermiques, quand le vent les hache -->
+                <pattern id="wpp-ease-hatch" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                    <rect width="1.6" height="4" fill="#111" fill-opacity="0.5" />
+                </pattern>
             </defs>
 
             <!-- Grille altitude -->
@@ -104,17 +115,40 @@
                     >
                 {/if}
 
-                <!-- Cumulus : empilement de « bourgeons » ronds, base plate, qui s'affine vers le sommet -->
+                <!-- Cumulus : empilement de « bourgeons » ronds, base plate et sombre, qui s'affine vers
+                     le sommet. Blancs par beau temps, gris avec des traits de pluie pour les averses -->
                 {#each cols as col, i}
                     {#if col.cu}
                         <clipPath id="wpp-cu-clip-{i}">
                             <rect x={col.cu.x - col.cu.w} y={top} width={col.cu.w * 2} height={col.cu.yb - top} />
                         </clipPath>
-                        <g clip-path="url(#wpp-cu-clip-{i})" opacity="0.95">
+                        <linearGradient
+                            id="wpp-cu-grad-{i}"
+                            gradientUnits="userSpaceOnUse"
+                            x1="0"
+                            x2="0"
+                            y1={col.cu.yb}
+                            y2={col.cu.yb - col.cu.w * 0.7}
+                        >
+                            <stop offset="0" stop-color={col.cu.base} />
+                            <stop offset="1" stop-color={col.cu.body} />
+                        </linearGradient>
+                        {#if col.cu.shower}
+                            {#each [-0.28, -0.04, 0.2] as dx}
+                                <line
+                                    x1={col.cu.x + dx * col.cu.w + 2.5}
+                                    x2={col.cu.x + dx * col.cu.w - 1.5}
+                                    y1={col.cu.yb + 3}
+                                    y2={col.cu.yb + 13}
+                                    class="wpp-streak"
+                                />
+                            {/each}
+                        {/if}
+                        <g clip-path="url(#wpp-cu-clip-{i})">
                             <!-- Les bourgeons fusionnent en une seule silhouette lisse (filtre « goo ») -->
                             <g filter="url(#wpp-cu-goo)">
                                 {#each col.cu.puffs as p}
-                                    <circle cx={p.x} cy={p.y} r={p.r} style="fill: var(--wpp-cloud)" />
+                                    <circle cx={p.x} cy={p.y} r={p.r} fill="url(#wpp-cu-grad-{i})" />
                                 {/each}
                             </g>
                         </g>
@@ -123,7 +157,8 @@
                             x2={col.cu.x + col.cu.w * 0.46}
                             y1={col.cu.yb}
                             y2={col.cu.yb}
-                            stroke="#aebccb"
+                            stroke="#243244"
+                            stroke-opacity="0.85"
                             stroke-width="1.5"
                             stroke-linecap="round"
                         />
@@ -159,7 +194,7 @@
                 {/each}
 
                 <!-- Nuages situés au-dessus du haut du graphique (souvent ceux qui donnent la pluie) :
-                     bande blanche en haut, d'autant plus opaque que la couche est épaisse -->
+                     bande claire en haut, d'autant plus opaque que la couche est épaisse -->
                 {#each shown as c, i}
                     {@const above = cloudAbove(c, yMax)}
                     {#if above > 0.05}
@@ -168,7 +203,7 @@
                             y={top}
                             width={colW + 0.5}
                             height="7"
-                            style="fill: var(--wpp-cloud)"
+                            fill={rgbCss(skyColors(light, nightFactor(c.sunElev)).cloud)}
                             opacity={0.25 + 0.75 * above}
                         />
                     {/if}
@@ -229,12 +264,31 @@
                 stroke-opacity="0.25"
             />
 
+            <!-- Facilité d'exploitation des thermiques de chaque heure : du vert (faciles) au rouge,
+                 hachuré quand le vent les hache -->
+            <rect x={left} y={easeTop} width={plotW} height={EASE_H} rx="3" fill="currentColor" opacity="0.05" />
+            {#each cols as col, i}
+                {#if col.ease}
+                    <rect x={left + i * colW + 1} y={easeTop} width={colW - 2} height={EASE_H} rx="2" fill={col.ease.color} />
+                    {#if col.ease.hatch}
+                        <rect
+                            x={left + i * colW + 1}
+                            y={easeTop}
+                            width={colW - 2}
+                            height={EASE_H}
+                            rx="2"
+                            fill="url(#wpp-ease-hatch)"
+                        />
+                    {/if}
+                {/if}
+            {/each}
+
             <!-- Heures -->
             {#each cols as col, i}
                 {#if colW >= 22 || i % 2 === 0}
                     <text
                         x={cx(i)}
-                        y={top + mainH + 14}
+                        y={hoursY}
                         class="wpp-hour"
                         class:wpp-hour--selected={col.src.ts === selectedTs}
                         text-anchor="middle">{hourShort(col.src.hour)}</text
@@ -362,10 +416,10 @@
                 {#if tip.alt.t != null}
                     <div class="wpp-tip__row"><span>{tr('Température', 'Temperature')}</span><b>{tip.alt.t.toFixed(1)} °C</b></div>
                 {/if}
-                {#if tip.alt.w > 0.1}
+                {#if tip.alt.w > 0.05}
                     <div class="wpp-tip__row">
-                        <span>{tr('Ascendance', 'Climb')}</span>
-                        <b><i class="wpp-sw" style="background:{thermalColor(tip.alt.w)}"></i>{tip.alt.w.toFixed(1)} m/s</b>
+                        <span>{tr('Vario', 'Vario')}</span>
+                        <b><i class="wpp-sw" style="background:{thermalColor(tip.alt.w)}"></i>+{tip.alt.w.toFixed(1)} m/s</b>
                     </div>
                 {/if}
                 {#if tip.alt.cloud > 3}
@@ -375,7 +429,17 @@
             {/if}
             {#if tip.col.cloudCover > 0.03}
                 <div class="wpp-tip__row">
-                    <span>{tr('Nuages (total)', 'Clouds (total)')}</span><b>{Math.round(tip.col.cloudCover * 100)} %</b>
+                    <span
+                        title={tip.col.cloudTop != null
+                            ? tr(
+                                  'Le modèle ne fournit pas les nuages plus hauts : les voiles de cirrus ne sont pas comptés',
+                                  'The model does not provide higher clouds: cirrus veils are not counted',
+                              )
+                            : undefined}
+                        >{tip.col.cloudTop != null
+                            ? tr(`Nuages (sous ${Math.floor(tip.col.cloudTop / 500) * 500} m)`, `Clouds (below ${Math.floor(tip.col.cloudTop / 500) * 500} m)`)
+                            : tr('Nuages (total)', 'Clouds (total)')}</span
+                    ><b>{Math.round(tip.col.cloudCover * 100)} %</b>
                 </div>
             {/if}
             {#if cloudAbove(tip.col, yMax) > 0.05}
@@ -386,6 +450,12 @@
                 </div>
             {/if}
             {#if tip.col.ceiling != null}
+                {#if tip.ease}
+                    <div class="wpp-tip__row">
+                        <span>{tr('Thermiques', 'Thermals')}</span>
+                        <b><i class="wpp-sw" style="background:{tip.ease.color}"></i>{tip.ease.label}</b>
+                    </div>
+                {/if}
                 <div class="wpp-tip__row">
                     <span>{tr('Plafond exploitable', 'Usable ceiling')}</span><b>{r50(tip.col.ceiling)} m</b>
                 </div>
@@ -400,13 +470,37 @@
             {#if tip.col.cuBase != null}
                 <div class="wpp-tip__row">
                     <span>Cumulus</span><b
-                        >{r50(tip.col.cuBase)}{tip.col.cuTop != null ? `–${r50(tip.col.cuTop)}` : ''} m</b
+                        title={tip.col.cuTopCapped
+                            ? tr('Sommet au-delà du dernier niveau fourni par le modèle', 'Top beyond the highest level provided by the model')
+                            : undefined}
+                        >{r50(tip.col.cuBase)}{tip.col.cuTop != null ? `–${r50(tip.col.cuTop)}${tip.col.cuTopCapped ? '+' : ''}` : ''} m</b
                     >
                 </div>
             {/if}
-            {#if tip.col.wStar >= 0.2}
+            {#if tip.col.showerBase != null && tip.col.showerTop != null}
                 <div class="wpp-tip__row">
-                    <span>{tr('Ascendance max', 'Max climb')}</span><b><i class="wpp-sw" style="background:{thermalColor(tip.col.wStar)}"></i>{tip.col.wStar.toFixed(1)} m/s</b>
+                    <span>{tr('Nuage d’averses', 'Shower cloud')}</span><b
+                        title={showerCapped(tip.col)
+                            ? tr('Sommet au-delà du dernier niveau fourni par le modèle', 'Top beyond the highest level provided by the model')
+                            : undefined}
+                        >{r50(tip.col.showerBase)}–{r50(tip.col.showerTop)}{showerCapped(tip.col) ? '+' : ''} m</b
+                    >
+                </div>
+            {/if}
+            {#if tip.col.climb >= 0.1}
+                <div class="wpp-tip__row">
+                    <span>{tr('Vario max', 'Max vario')}</span><b
+                        ><i class="wpp-sw" style="background:{thermalColor(tip.col.climb)}"></i>+{tip.col.climb.toFixed(1)} m/s
+                        <small>({tr('air', 'air')} {tip.col.wStar.toFixed(1)})</small></b
+                    >
+                </div>
+            {/if}
+            {#if tip.col.ceiling != null}
+                <div class="wpp-tip__row">
+                    <span>{tr('Vent couche', 'Layer wind')}</span>
+                    <b style="color:{windColor(toKmh(tip.col.blSpeed), light)}"
+                        >{Math.round(toKmh(tip.col.blSpeed))} km/h</b
+                    >
                 </div>
             {/if}
             <div class="wpp-tip__row">
@@ -437,12 +531,23 @@
                     <span style="color:{tip.col.stormRisk === 2 ? '#ef4444' : '#f59e0b'}"
                         ><StormIcon level={tip.col.stormRisk === 2 ? 2 : 1} size={13} />
                         {tip.col.stormRisk === 2 ? tr('Orage probable', 'Storm likely') : tr('Surdéveloppement', 'Overdevelopment')}</span
-                    ><b>CAPE {tip.col.cape}</b>
+                    >
+                </div>
+            {/if}
+            {#if tip.col.cape >= 100}
+                <div class="wpp-tip__row">
+                    <span>CAPE{tip.col.liftedIndex != null ? ' / LI' : ''}</span><b
+                        >{tip.col.cape} J/kg{tip.col.liftedIndex != null
+                            ? ` / ${tip.col.liftedIndex > 0 ? '+' : ''}${tip.col.liftedIndex}`
+                            : ''}</b
+                    >
                 </div>
             {/if}
             {#if tip.col.precip - tip.col.snow >= 0.1}
                 <div class="wpp-tip__row">
-                    <span>{tr('Pluie', 'Rain')}</span><b>{(tip.col.precip - tip.col.snow).toFixed(1)} mm</b>
+                    <span>{tip.col.showerBase != null ? tr('Averses', 'Showers') : tr('Pluie', 'Rain')}</span><b
+                        >{(tip.col.precip - tip.col.snow).toFixed(1)} mm</b
+                    >
                 </div>
             {/if}
             {#if tip.col.snow >= 0.1}
@@ -493,6 +598,9 @@
                     >{ground}</text
                 >
             {/if}
+            <text x={left - 6} y={easeTop + EASE_H - 1} class="wpp-axis wpp-axis--ease" text-anchor="end"
+                >Therm.</text
+            >
             <text x={left - 6} y={rainTop + 13} class="wpp-axis wpp-axis--rain" text-anchor="end"
                 >{tr('Pluie', 'Rain')}</text
             >
@@ -510,26 +618,43 @@
 </div>
 
 <script context="module" lang="ts">
+    import { tr } from './i18n';
+    import type { ThermalEase } from './physics';
+
     /** Défilement horizontal du graphique, gardé quand on change de jour, d'onglet ou de lieu */
     let savedScroll: number | null = null;
+
+    /** Facilité d'exploitation des thermiques : couleur et libellé, hachures quand le vent les hache */
+    export const EASE: Record<ThermalEase, { color: string; label: string; hatch: boolean }> = {
+        easy: { color: '#4caf50', label: tr('faciles', 'easy'), hatch: false },
+        weak: { color: '#f5c542', label: tr('faibles', 'weak'), hatch: false },
+        low: { color: '#f5c542', label: tr('plafond bas', 'low ceiling'), hatch: false },
+        choppy: { color: '#f59e0b', label: tr('hachés', 'choppy'), hatch: true },
+        rough: { color: '#ef4444', label: tr('très hachés', 'very choppy'), hatch: true },
+    };
 </script>
 
 <script lang="ts">
     import { createEventDispatcher, tick } from 'svelte';
 
-    import { clockText, hourShort, hourText, tr } from './i18n';
+    import { clockText, hourShort, hourText } from './i18n';
     import StormIcon from './StormIcon.svelte';
     import {
         type Column,
         cardinal,
         interpProfile,
         nightFactor,
+        rgbCss,
         skyColors,
         thermalColor,
+        thermalEase,
+        netClimb,
         thermalRGB,
         thermalShape,
         toCelsius,
         toKmh,
+        towerColors,
+        varioAt,
         windAt,
         windColor,
     } from './physics';
@@ -565,6 +690,9 @@
     const mainH = 430;
     /** Taille (px) d'une maille du champ de fond, lissée ensuite par le navigateur */
     const FIELD_RES = 1 / Math.min(2, (typeof window !== 'undefined' && window.devicePixelRatio) || 1);
+    /** Stries des nuages en couches : une ligne plus sombre de 2 px tous les STRIPE_PX px */
+    const STRIPE_PX = 7;
+    const STRIPE_SHADE = 0.86;
 
     let canvasEl: HTMLCanvasElement | undefined;
     let svgEl: SVGSVGElement;
@@ -580,9 +708,13 @@
     $: n = shown.length;
     $: plotW = Math.max(100, W - left - right);
     $: colW = n ? plotW / n : 0;
+    /** Bandeau de facilité d'exploitation des thermiques, entre le graphique et les heures */
+    const EASE_H = 9;
+    const easeTop = top + mainH + 6;
+    const hoursY = easeTop + EASE_H + 13;
     /** Bandeau de pluviométrie sous les heures */
     const RAIN_H = 30;
-    $: rainTop = top + mainH + 21;
+    const rainTop = hoursY + 7;
     $: height = rainTop + RAIN_H + 3;
     /** Hauteur de barre (px) : racine carrée pour voir aussi les faibles pluies, plein à 5 mm */
     const rainBarH = (mm: number) => Math.max(2, Math.min(1, Math.sqrt(mm / 5)) * (RAIN_H - 13));
@@ -601,12 +733,6 @@
     $: showWindText = colW >= 20;
     $: arrow = arrowPath(Math.max(9, Math.min(17, colW * 0.6)), 6, 4.2, 1.2);
 
-    /** Ascendance (m/s) estimée à l'altitude z dans une colonne */
-    const thermalAt = (c: Column, z: number) =>
-        c.thermalTop != null && c.wStar > 0 && z > c.ground && z < c.thermalTop
-            ? c.wStar * thermalShape((z - c.ground) / (c.thermalTop - c.ground))
-            : 0;
-
     $: cols = shown.map((src, i) => {
         const winds: { y: number; dir: number; kmh: number; color: string }[] = [];
         const firstRow = Math.ceil((src.ground + windStep * 0.5) / windStep) * windStep;
@@ -622,20 +748,52 @@
             winds.push({ y: y(z), dir: wind.dir, kmh, color: windColor(kmh, light) });
         }
 
-        let cu: { x: number; yb: number; w: number; puffs: { x: number; y: number; r: number }[] } | null = null;
-        if (src.cuBase != null && src.cuBase < yMax) {
-            const yb = y(src.cuBase);
-            const w = Math.min(colW * 0.95, 64);
-            const h = Math.min(yb - top, Math.max(w * 0.45, yb - y(src.cuTop ?? src.cuBase)));
-            cu = { x: cx(i), yb, w, puffs: cumulusPuffs(cx(i), yb, w, h) };
+        // Tour de cumulus : cumulus des thermiques, sinon nuage d'averses du modèle. Quand il en tombe
+        // des averses, elle est grise et monte jusqu'au plus haut des deux sommets
+        let cu: {
+            x: number;
+            yb: number;
+            w: number;
+            shower: boolean;
+            body: string;
+            base: string;
+            puffs: { x: number; y: number; r: number }[];
+        } | null = null;
+        const cuBase = src.cuBase ?? src.showerBase;
+        if (cuBase != null && cuBase < yMax) {
+            const shower = src.showerBase != null;
+            const cuTop = Math.max(src.cuTop ?? cuBase, src.showerTop ?? cuBase);
+            const yb = y(cuBase);
+            // Nuage d'averses seul : d'autant plus étroit que la pluie est faible (même échelle que les
+            // barres de pluie), pour que des heures d'averses ne forment pas un mur devant le ciel
+            const share = src.cuBase != null ? 0.95 : 0.45 + 0.5 * Math.min(1, Math.sqrt(src.precip / 5));
+            const w = Math.min(colW * share, 64);
+            // Une tour qui dépasse le haut du graphique y est coupée net (pas de sommet arrondi)
+            const h = Math.min(yb - top + w, Math.max(w * 0.45, yb - y(cuTop)));
+            const colors = towerColors(shower, nightFactor(src.sunElev));
+            cu = {
+                x: cx(i),
+                yb,
+                w,
+                shower,
+                body: rgbCss(colors.body),
+                base: rgbCss(colors.base),
+                puffs: cumulusPuffs(cx(i), yb, w, h),
+            };
         }
 
-        return { src, winds, cu };
+        const ease = thermalEase(src);
+        return { src, winds, cu, ease: ease && EASE[ease] };
     });
 
+    /** Sommet du nuage d'averses au dernier niveau des données : le vrai sommet est plus haut */
+    const showerCapped = (c: Column) =>
+        c.showerTop != null && c.showerTop >= c.profile[c.profile.length - 1].z - 25;
+
     /** Nébulosité maximale (0-1) des niveaux du modèle situés au-dessus du haut du graphique */
+    // Niveaux du profil au-dessus du graphique, et nébulosité seule plus haut encore (cirrus)
     const cloudAbove = (c: Column, zTop: number) =>
-        Math.max(0, ...c.profile.filter(p => p.z > zTop).map(p => p.cloud / 100));
+        Math.max(c.highCloud, ...c.profile.filter(p => p.z > zTop).map(p => p.cloud / 100));
 
     // --- Champ de fond (canvas) : ciel, thermiques, nuages, nuit — interpolé entre colonnes
     const mix = (a: number[], b: number[], t: number) => {
@@ -668,12 +826,11 @@
             for (let row = 0; row < gh; row++) {
                 cloud[row] = (interpProfile(c.profile, zAt(row), 'cloud') ?? 0) / 100;
             }
-            const night = nightFactor(c.sunElev);
             // Paramètres de la couche thermique : sans thermique, sommet au sol et force nulle
-            const hasThermal = c.thermalTop != null && c.wStar > 0;
+            const hasThermal = c.thermalTop != null && c.climb > 0;
             return {
                 cloud,
-                night,
+                sunElev: c.sunElev,
                 ground: c.ground,
                 top: hasThermal ? (c.thermalTop as number) : c.ground,
                 wStar: hasThermal ? c.wStar : 0,
@@ -702,6 +859,7 @@
 
         const img = ctx.createImageData(gw, gh);
         const px = [0, 0, 0];
+        const cloudPx = [0, 0, 0];
         const cw = w / cols.length;
         for (let gx = 0; gx < gw; gx++) {
             const pos = Math.min(cols.length - 1, Math.max(0, ((gx + 0.5) * FIELD_RES) / cw - 0.5));
@@ -710,7 +868,9 @@
             const f = pos - i0;
             const a = data[i0];
             const b = data[i1];
-            const night = a.night + (b.night - a.night) * f;
+            // On interpole la hauteur du soleil (quasi linéaire sur une heure), pas la part de nuit :
+            // le fondu garde sa vraie durée au lieu de s'étaler sur tout l'intervalle entre deux heures
+            const night = nightFactor(a.sunElev + (b.sunElev - a.sunElev) * f);
             const gz = spline('ground', i0, f);
             const topZ = spline('top', i0, f);
             const wStar = spline('wStar', i0, f);
@@ -726,7 +886,8 @@
 
                 const z = zAt(gy);
                 const zr = (z - gz) / depth;
-                const wv = depth > 20 && wStar > 0 ? wStar * thermalShape(zr) : 0;
+                // Montée au vario (cœur du thermique moins le taux de chute en spirale)
+                const wv = depth > 20 && wStar > 0 ? netClimb(wStar * thermalShape(zr)) : 0;
                 if (wv > 0.03) {
                     // Fondu doux sur les derniers ~3 % de la couche : bord supérieur net mais sans escalier
                     const edge = Math.min(1, Math.max(0, (1 - zr) / 0.03));
@@ -735,7 +896,15 @@
 
                 const cl = a.cloud[gy] + (b.cloud[gy] - a.cloud[gy]) * f;
                 // Courbe légèrement bombée : les couvertures moyennes se voient mieux, 100 % est presque opaque
-                if (cl > 0.02) mix(px, sky.cloud, Math.pow(Math.min(1, cl), 0.8) * cloudAlpha);
+                if (cl > 0.02) {
+                    // Fines stries horizontales : un nuage en couches (stratiforme) ne se confond pas
+                    // avec une tour de cumulus, même quand il s'étale sur une grande épaisseur
+                    const k = Math.floor(gy * FIELD_RES) % STRIPE_PX < 2 ? STRIPE_SHADE : 1;
+                    cloudPx[0] = sky.cloud[0] * k;
+                    cloudPx[1] = sky.cloud[1] * k;
+                    cloudPx[2] = sky.cloud[2] * k;
+                    mix(px, cloudPx, Math.pow(Math.min(1, cl), 0.8) * cloudAlpha);
+                }
 
                 const k = (gy * gw + gx) * 4;
                 img.data[k] = px[0];
@@ -764,16 +933,16 @@
     })();
 
     $: stepMs = shown.length > 1 ? shown[1].ts - shown[0].ts : 3600e3;
-    $: nowX =
-        n && nowTs >= shown[0].ts && nowTs < shown[n - 1].ts + stepMs
-            ? left + ((nowTs - shown[0].ts) / (shown[n - 1].ts + stepMs - shown[0].ts)) * plotW
-            : null;
-
-    /** Position horizontale d'un instant sur l'axe des heures (null s'il est hors du graphique) */
-    $: xOfTs = (ts: number) =>
-        n && ts >= shown[0].ts && ts <= shown[n - 1].ts + stepMs
-            ? left + ((ts - shown[0].ts) / (shown[n - 1].ts + stepMs - shown[0].ts)) * plotW
-            : null;
+    /**
+     * Position horizontale d'un instant sur l'axe des heures (null s'il est hors du graphique).
+     * Comme pour le fond, les courbes et les libellés, l'heure d'une colonne est au centre de la colonne.
+     */
+    $: xOfTs = (ts: number) => {
+        if (!n) return null;
+        const x = cx((ts - shown[0].ts) / stepMs);
+        return x >= left && x <= left + plotW ? x : null;
+    };
+    $: nowX = xOfTs(nowTs);
 
     const hhmm = (ts: number, offset: number) => {
         const d = new Date(ts + offset * 3600e3);
@@ -815,16 +984,19 @@
     $: tip = hover && shown[hover.i] ? buildTip(shown[hover.i], hover.z) : null;
 
     const buildTip = (col: Column, z: number | null) => {
-        if (z == null || z <= col.ground) return { col, alt: null };
+        const key = thermalEase(col);
+        const ease = key && EASE[key];
+        if (z == null || z <= col.ground) return { col, ease, alt: null };
         const wind = windAt(col.profile, z);
         const t = interpProfile(col.profile, z, 't');
         return {
             col,
+            ease,
             alt: {
                 z,
                 wind: wind ? { kmh: Math.round(toKmh(wind.speed)), dir: wind.dir } : null,
                 t: t == null ? null : toCelsius(t),
-                w: thermalAt(col, z),
+                w: varioAt(col, z),
                 cloud: interpProfile(col.profile, z, 'cloud') ?? 0,
             },
         };
@@ -833,7 +1005,7 @@
     // --- Position de l'infobulle, toujours dans le cadre. Au doigt, on la place dans la moitié
     // du graphique opposée au point touché pour ne pas le masquer.
     const TIP_W = 196;
-    const TIP_H = 250;
+    const TIP_H = 336;
     let pointerType = 'mouse';
     let wrapEl: HTMLDivElement;
     let scrollEl: HTMLDivElement;
@@ -910,6 +1082,9 @@
                 fill: var(--wpp-rain);
                 font-size: 10px;
             }
+            &--ease {
+                font-size: 9.5px;
+            }
             &--unit {
                 fill: var(--wpp-fg-faint);
                 font-size: 9px;
@@ -963,8 +1138,9 @@
             font-weight: bold;
             fill: var(--wpp-sun);
             paint-order: stroke;
-            stroke: var(--wpp-halo);
-            stroke-width: 3px;
+            stroke: var(--wpp-text-halo);
+            stroke-width: calc(3px * var(--wpp-text-halo-k));
+            stroke-linejoin: round;
         }
         .wpp-rain--snow {
             fill: var(--wpp-snow);
@@ -974,15 +1150,17 @@
             font-weight: bold;
             fill: var(--wpp-rain);
             paint-order: stroke;
-            stroke: var(--wpp-halo);
-            stroke-width: 2.5px;
+            stroke: var(--wpp-text-halo);
+            stroke-width: calc(2.5px * var(--wpp-text-halo-k));
+            stroke-linejoin: round;
         }
         .wpp-wind {
             font-size: 9.5px;
             font-weight: bold;
             paint-order: stroke;
-            stroke: var(--wpp-halo);
-            stroke-width: 2.8px;
+            stroke: var(--wpp-text-halo);
+            stroke-width: calc(2.8px * var(--wpp-text-halo-k));
+            stroke-linejoin: round;
             stroke-opacity: 0.85;
         }
         .wpp-ceiling {
@@ -1003,13 +1181,19 @@
             stroke-width: 1.6;
             stroke-dasharray: 6 4;
         }
+        .wpp-streak {
+            stroke: #2f7cf6;
+            stroke-width: 1.6;
+            stroke-linecap: round;
+        }
         .wpp-freezing-label {
             fill: var(--wpp-freezing);
             font-size: 10px;
             font-weight: bold;
             paint-order: stroke;
-            stroke: var(--wpp-halo);
-            stroke-width: 3px;
+            stroke: var(--wpp-text-halo);
+            stroke-width: calc(3px * var(--wpp-text-halo-k));
+            stroke-linejoin: round;
         }
         .wpp-hit {
             cursor: pointer;
@@ -1066,6 +1250,11 @@
             margin-top: 4px;
             font-size: 10px;
             opacity: 0.55;
+        }
+        &__row small {
+            margin-left: 3px;
+            font-weight: normal;
+            color: var(--wpp-fg-faint);
         }
     }
 

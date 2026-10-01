@@ -31,4 +31,6 @@
         }
     },
     "include": ["**/*.ts", "**/*.svelte"],
+    // Les tests tournent sous Node avec vitest (types Node), pas dans Windy
+    "exclude": ["node_modules", "tests", "vitest.config.ts"],
 }

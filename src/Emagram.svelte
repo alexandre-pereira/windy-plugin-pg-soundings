@@ -603,7 +603,15 @@
     // --- Niveaux remarquables
     type Mark = { z: number; label: string; color: string; dash: string };
     $: marks = [
-        column.cuTop != null ? { z: column.cuTop, label: tr('Sommet Cu', 'Cu top'), color: 'var(--wpp-fg-dim)', dash: '2 3' } : null,
+        column.cuTop != null
+            ? {
+                  z: column.cuTop,
+                  // Sommet au-delà du dernier niveau des données : la ligne n'est qu'un minimum
+                  label: column.cuTopCapped ? tr('Sommet Cu ≥', 'Cu top ≥') : tr('Sommet Cu', 'Cu top'),
+                  color: 'var(--wpp-fg-dim)',
+                  dash: '2 3',
+              }
+            : null,
         column.cuBase != null ? { z: column.cuBase, label: tr('Base Cu', 'Cu base'), color: 'var(--wpp-fg)', dash: '6 3' } : null,
         column.cuBase == null && column.ceiling != null
             ? { z: column.ceiling, label: tr('Plafond', 'Ceiling'), color: 'var(--wpp-fg)', dash: '' }
@@ -736,8 +744,9 @@
             fill: var(--wpp-fg-faint);
             font-size: 9px;
             paint-order: stroke;
-            stroke: var(--wpp-halo);
-            stroke-width: 3px;
+            stroke: var(--wpp-text-halo);
+            stroke-width: calc(3px * var(--wpp-text-halo-k));
+            stroke-linejoin: round;
         }
         .wpp-dry {
             stroke: #4caf50;
@@ -762,8 +771,9 @@
             fill: #f0b13a;
             font-size: 9.5px;
             paint-order: stroke;
-            stroke: var(--wpp-halo);
-            stroke-width: 3px;
+            stroke: var(--wpp-text-halo);
+            stroke-width: calc(3px * var(--wpp-text-halo-k));
+            stroke-linejoin: round;
         }
         .wpp-halo {
             fill: none;
@@ -805,8 +815,9 @@
             font-size: 10.5px;
             font-weight: bold;
             paint-order: stroke;
-            stroke: var(--wpp-halo);
-            stroke-width: 3px;
+            stroke: var(--wpp-text-halo);
+            stroke-width: calc(3px * var(--wpp-text-halo-k));
+            stroke-linejoin: round;
             &--temp {
                 fill: var(--wpp-stable);
             }
@@ -818,15 +829,17 @@
             font-size: 10.5px;
             font-weight: bold;
             paint-order: stroke;
-            stroke: var(--wpp-halo);
-            stroke-width: 3px;
+            stroke: var(--wpp-text-halo);
+            stroke-width: calc(3px * var(--wpp-text-halo-k));
+            stroke-linejoin: round;
         }
         .wpp-wind {
             font-size: 9.5px;
             font-weight: bold;
             paint-order: stroke;
-            stroke: var(--wpp-halo);
-            stroke-width: 2.5px;
+            stroke: var(--wpp-text-halo);
+            stroke-width: calc(2.5px * var(--wpp-text-halo-k));
+            stroke-linejoin: round;
         }
         .wpp-hit {
             cursor: crosshair;
