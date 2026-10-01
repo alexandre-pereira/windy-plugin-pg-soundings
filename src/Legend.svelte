@@ -237,26 +237,39 @@
                 )}
             </p>
         {:else if kind === 'bulletin'}
-            <div class="wpp-lg__title">{tr('Bulletin de vol', 'Flying bulletin')}</div>
+            <div class="wpp-lg__title">{tr('Bulletin météo', 'Weather bulletin')}</div>
             <p class="wpp-lg__note">
                 {tr(
-                    'Rédigé à partir de la prévision du modèle choisi, heure par heure, pour les heures de jour du site.',
-                    'Written from the chosen model’s forecast, hour by hour, for the daylight hours of the site.',
+                    'Texte rédigé automatiquement à partir de la prévision du modèle choisi, pour les heures de jour du site : ciel, précipitations, fronts, orage, vent, thermiques et températures. Il décrit le temps prévu et n’évalue pas les conditions de vol : la décision de décoller appartient au pilote.',
+                    'Text written automatically from the chosen model’s forecast, for the daylight hours of the site: sky, precipitation, fronts, thunderstorms, wind, thermals and temperatures. It describes the forecast weather and does not assess flying conditions: the decision to take off is the pilot’s.',
                 )}
             </p>
-            <div class="wpp-lg__subtitle">{tr('Conditions de chaque heure', 'Conditions of each hour')}</div>
-            <ul class="wpp-lg__list">
-                {#each flyLevels as lv, k}
-                    <li>
-                        <svg width="26" height="14"><rect x="3" y="3" width="20" height="9" rx="2" fill={LEVEL_COLORS[k]} /></svg>
-                        <span><b>{LEVEL_LABELS[k]}</b> — {lv}</span>
-                    </li>
-                {/each}
-            </ul>
+            <div class="wpp-lg__subtitle">{tr('Ciel', 'Sky')}</div>
             <p class="wpp-lg__note">
                 {tr(
-                    'Une heure prend le niveau de son critère le plus marqué ; passez sur une case du bandeau pour le lire. Un créneau dure au moins 2 heures.',
-                    'An hour takes the level of its most marked criterion; hover a cell of the strip to read it. A window lasts at least 2 hours.',
+                    'Donné pour le matin (jusqu’à 13 h) et l’après-midi, d’après la couverture nuageuse du modèle. Les étages cités sont ceux où il met au moins 40 % de nuages : bas (sous 3 000 m environ), moyens, élevés (au-dessus de 6 000 m environ).',
+                    'Given for the morning (until 1 PM) and the afternoon, from the model’s cloud cover. The layers named are those where it puts at least 40% of cloud: low (below about 3,000 m), mid-level, high (above about 6,000 m).',
+                )}
+            </p>
+            <div class="wpp-lg__subtitle">{tr('Précipitations', 'Precipitation')}</div>
+            <p class="wpp-lg__note">
+                {tr(
+                    'Découpées en épisodes, qualifiés par leur heure la plus arrosée : faibles sous 1 mm/h, modérées sous 4 mm/h, fortes au-delà. Averses quand l’essentiel tombe de nuages convectifs, pluie quand il tombe de nuages en couches.',
+                    'Split into episodes, described by their wettest hour: light under 1 mm/h, moderate under 4 mm/h, heavy beyond. Showers when most of it falls from convective cloud, rain when it falls from layered cloud.',
+                )}
+            </p>
+            <div class="wpp-lg__subtitle">{tr('Vent', 'Wind')}</div>
+            <p class="wpp-lg__note">
+                {tr(
+                    'Vent moyen des heures de jour, le matin puis l’après-midi, à 10 m du sol et à deux altitudes au-dessus du site, avec son secteur sur huit directions. Sous 10 km/h, il est dit faible et sa direction n’est pas donnée. Les rafales sont celles du modèle.',
+                    'Mean wind of the daylight hours, morning then afternoon, at 10 m above the ground and at two altitudes above the site, with its sector on eight directions. Under 10 km/h it is called light and its direction is not given. Gusts are those of the model.',
+                )}
+            </p>
+            <div class="wpp-lg__subtitle">{tr('Thermiques', 'Thermals')}</div>
+            <p class="wpp-lg__note">
+                {tr(
+                    'Heures, montée au vario, plafond et cumulus sont ceux du graphique « Vent & thermiques » : première et dernière heure de thermiques exploitables, meilleure montée et plafond le plus haut de la journée.',
+                    'Hours, vario climb, ceiling and cumulus are those of the “Wind & thermals” chart: first and last hour of usable thermals, best climb and highest ceiling of the day.',
                 )}
             </p>
             <div class="wpp-lg__subtitle">{tr('Passages de front', 'Front passages')}</div>
@@ -267,9 +280,9 @@
                 )}
             </p>
             <p class="wpp-lg__note">
-                {@html tr(
-                    'Ces seuils <b>décrivent des conditions</b>, pas l’aptitude d’un pilote à voler : cette décision lui appartient. Le modèle lisse le relief : le vent au décollage, les brises et le foehn peuvent être très différents de ce qu’il prévoit.',
-                    'These thresholds <b>describe conditions</b>, not a pilot’s ability to fly: that decision is the pilot’s. The model smooths out the terrain: wind at take-off, breezes and foehn can differ widely from what it forecasts.',
+                {tr(
+                    'Le modèle lisse le relief : le vent au décollage, les brises de vallée, le foehn et les effets de site ne sont pas décrits. Le bulletin ne remplace ni l’observation sur place ni l’avis des pilotes locaux.',
+                    'The model smooths out the terrain: wind at take-off, valley breezes, foehn and local effects are not described. The bulletin replaces neither observation on site nor the advice of local pilots.',
                 )}
             </p>
         {:else}
@@ -420,8 +433,6 @@
 {/if}
 
 <script lang="ts">
-    import { LEVEL_COLORS, LEVEL_LABELS } from './Bulletin.svelte';
-    import { CLIMB_LIMITS, GUST_LIMITS, LOW_WIND_LIMITS, WIND_LIMITS } from './bulletin';
     import { EASE } from './Chart.svelte';
     import { STABILITY } from './Emagram.svelte';
     import { INSTABILITY_COLORS, thermalColor, windColor } from './physics';
@@ -517,28 +528,6 @@
         },
         { ...STABILITY.stable, color: 'var(--wpp-stable)', text: tr("l'air se refroidit lentement : les thermiques sont freinés", 'air cools slowly: thermals are damped'),
         },
-    ];
-
-    // Conditions du bulletin : critères des conditions calmes, modérées et fortes (limites de
-    // bulletin.ts), puis des conditions défavorables
-    const climb = (v: number) => tr(String(v).replace('.', ','), String(v));
-    const flyLevels = [
-        tr(
-            `vent de moins de ${WIND_LIMITS[0]} km/h au sol et ${LOW_WIND_LIMITS[0]} km/h dans les 1 000 premiers mètres, rafales de moins de ${GUST_LIMITS[0]} km/h, thermiques de moins de +${climb(CLIMB_LIMITS[0])} m/s au vario et non hachés, ni pluie ni surdéveloppement, pas d’orage probable à moins de 4 h`,
-            `wind under ${WIND_LIMITS[0]} km/h at the surface and ${LOW_WIND_LIMITS[0]} km/h in the lowest 1,000 m, gusts under ${GUST_LIMITS[0]} km/h, thermals under +${climb(CLIMB_LIMITS[0])} m/s on the vario and not choppy, no rain or overdevelopment, no thunderstorm likely within 4 h`,
-        ),
-        tr(
-            `vent de moins de ${WIND_LIMITS[1]} km/h au sol et ${LOW_WIND_LIMITS[1]} km/h dans les 1 000 premiers mètres, rafales de moins de ${GUST_LIMITS[1]} km/h, thermiques de moins de +${climb(CLIMB_LIMITS[1])} m/s, hachés ou non`,
-            `wind under ${WIND_LIMITS[1]} km/h at the surface and ${LOW_WIND_LIMITS[1]} km/h in the lowest 1,000 m, gusts under ${GUST_LIMITS[1]} km/h, thermals under +${climb(CLIMB_LIMITS[1])} m/s, choppy or not`,
-        ),
-        tr(
-            `vent de moins de ${WIND_LIMITS[2]} km/h au sol et ${LOW_WIND_LIMITS[2]} km/h dans les 1 000 premiers mètres, rafales de moins de ${GUST_LIMITS[2]} km/h, thermiques plus forts ou très hachés, surdéveloppement possible`,
-            `wind under ${WIND_LIMITS[2]} km/h at the surface and ${LOW_WIND_LIMITS[2]} km/h in the lowest 1,000 m, gusts under ${GUST_LIMITS[2]} km/h, stronger or very choppy thermals, overdevelopment possible`,
-        ),
-        tr(
-            'vent ou rafales plus forts, pluie ou neige, orage probable à moins de 2 h',
-            'stronger wind or gusts, rain or snow, thunderstorm likely within 2 h',
-        ),
     ];
 
     // Seuils usuels de la CAPE et de l'indice de soulèvement, du plus calme au plus orageux

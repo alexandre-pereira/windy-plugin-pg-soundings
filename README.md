@@ -38,11 +38,11 @@ Plugin Windy.com qui affiche, pour un site de vol, un graphique **altitude × he
   plus chaude que l'air
 - **Carte des meilleurs départs de cross** (distance libre ou aller-retour), simulée sur une grille
   de la zone visible
-- **Bulletin** de la journée, rédigé à partir de la prévision du modèle : appréciation, force des
-  conditions heure par heure (calmes, modérées, fortes, défavorables), créneaux qui en découlent,
-  passages de front, orage, vent au sol et en altitude, thermiques, ciel (étages de nuages, cumulus,
-  brume), précipitations épisode par épisode, températures, puis un aperçu des jours suivants. Il
-  décrit des conditions, pas l'aptitude d'un pilote à voler
+- **Bulletin météo** de la journée : un seul texte, rédigé à partir de la prévision du modèle et
+  tourné vers le vol libre. Ciel (étages de nuages, brume) et précipitations épisode par épisode,
+  passages de front et orage, vent au sol et en altitude, thermiques (heures, montée au vario,
+  plafond), cumulus, températures et isotherme 0 °C. Il décrit le temps prévu, sans évaluer les
+  conditions de vol
 - Légendes accessibles par le bouton **ⓘ Légende** de chaque onglet
 
 L'interface est en français ou en anglais, selon la langue de Windy.
@@ -52,7 +52,7 @@ L'interface est en français ou en anglais, selon la langue de Windy.
 Sur <https://www.windy.com/plugins>, choisissez « Load plugin directly from URL » et collez :
 
 ```
-https://windy-plugins.com/2727410/windy-plugin-pg-soundings/1.5.0/plugin.min.js
+https://windy-plugins.com/2727410/windy-plugin-pg-soundings/1.6.0/plugin.min.js
 ```
 
 Le plugin signale ensuite lui-même les nouvelles versions. L'historique est dans
@@ -125,24 +125,6 @@ de pression (souvent 7 niveaux seulement pour ECMWF : rien entre 850 et 700 hPa,
   L'émagramme, lui, montre toujours l'ascension de la particule
 - simule les **cross** avec la théorie de MacCready (35 km/h et 1,4 m/s en transition), la dérive du
   vent de la couche, et une dernière transition depuis la hauteur exploitable
-- classe les conditions de chaque heure de jour du **bulletin**, d'après son critère le plus
-  marqué :
-
-  | | Calmes | Modérées | Fortes |
-  | --- | --- | --- | --- |
-  | Vent à 10 m | < 10 km/h | < 15 km/h | < 25 km/h |
-  | Vent le plus fort des 1 000 premiers mètres | < 15 km/h | < 20 km/h | < 30 km/h |
-  | Rafales du modèle | < 20 km/h | < 30 km/h | < 40 km/h |
-  | Montée au vario | < +1 m/s | < +2,5 m/s | à partir de +2,5 m/s |
-  | Thermiques hachés | non | hachés | très hachés |
-  | Surdéveloppement | non | non | possible |
-  | Orage probable | à plus de 4 h | à plus de 2 h | à plus de 2 h |
-
-  Un seuil atteint fait passer au niveau suivant : des rafales de 30 km/h sont déjà des conditions
-  fortes. À partir des valeurs de la dernière colonne pour le vent et les rafales, ou dès 0,1 mm de
-  pluie ou de neige dans l'heure, les conditions sont défavorables. Un **créneau**
-  réunit au moins 2 heures de jour consécutives du niveau voulu : il suit les cases du bandeau des
-  heures, et une seule heure d'un niveau au-dessus le coupe
 - repère un **passage de front** au changement de masse d'air qu'il apporte : la température moyenne
   entre 1 500 et 3 000 m au-dessus du sol (à l'écart du cycle jour / nuit) varie sur 6 heures. Front
   froid : −3 °C avec au moins 1 mm de pluie, ou avec un vent qui tourne d'au moins 40° sous un ciel
@@ -150,10 +132,6 @@ de pression (souvent 7 niveaux seulement pour ECMWF : rien entre 850 et 700 hPa,
   rotation de 30°. Front chaud : +3 °C sous un ciel couvert, avec au moins 1 mm de pluie de nuages en
   couches. Seuils calés sur GFS et ICON (16 sites d'Europe, trois semaines) ; le bulletin ne voit que
   le point choisi, pas la carte : un front peu actif, ou qui passe à côté, peut lui échapper
-- qualifie la **journée** du bulletin : conditions défavorables, fortes, orageuses, calmes à
-  modérées par créneaux seulement (moins des deux tiers des heures de jour), bonne journée thermique
-  (au moins 2 heures de thermiques faciles en conditions calmes ou modérées, +1 m/s au vario), belle
-  à partir de +2 m/s et 1 500 m de hauteur exploitable, sinon calme ou modérée
 - décrit le **ciel** du bulletin par demi-journée : couverture totale, étages où le modèle met au
   moins 40 % de nuages (bas sous 700 hPa, moyens jusqu'à 450 hPa, élevés au-dessus) et altitude du
   niveau couvert le plus bas ; brume ou brouillard possible quand l'air du début de matinée est
@@ -162,6 +140,14 @@ de pression (souvent 7 niveaux seulement pour ECMWF : rien entre 850 et 700 hPa,
   par leur heure la plus arrosée (faible sous 1 mm/h, modérée sous 4 mm/h, forte au-delà) ; la limite
   pluie-neige est placée 300 m sous l'isotherme 0 °C des heures de pluie, et le sol est dit mouillé
   au lever du jour à partir de 2 mm tombés dans les 24 heures précédentes
+- résume le **vent** du bulletin par demi-journée (heures de jour, avant puis à partir de 13 h) :
+  direction du vecteur moyen et vitesse moyenne, à 10 m du sol et à deux altitudes rondes au-dessus
+  du site (le premier multiple de 500 m à 700 m au moins du sol, puis 1 000 m plus haut), avec le
+  secteur sur huit directions ; sous 10 km/h le vent est dit faible, et la plus forte rafale du
+  modèle est citée à partir de 20 km/h
+- résume les **thermiques** du bulletin sur les heures de jour où le modèle donne un plafond
+  exploitable : première et dernière heure, meilleure montée au vario et son heure, plafond le plus
+  haut
 
 Ce sont des **ordres de grandeur**, pas des mesures. Ils ne remplacent ni un vrai modèle
 aérologique ni l'observation sur le terrain.

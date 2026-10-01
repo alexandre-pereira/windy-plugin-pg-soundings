@@ -2,7 +2,7 @@
 
 Plugin Windy.com pour le vol libre (`windy-plugin-pg-soundings`) : graphique altitude × heure du
 vent et des thermiques, émagramme redressé, risque d'orage, carte des meilleurs départs de cross,
-bulletin de vol de la journée. Svelte + TypeScript, compilé par Rollup. Ce que le plugin affiche et la façon dont chaque
+bulletin météo de la journée. Svelte + TypeScript, compilé par Rollup. Ce que le plugin affiche et la façon dont chaque
 estimation est calculée sont décrits dans [README.md](README.md).
 
 ## Commandes
@@ -23,9 +23,9 @@ estimation est calculée sont décrits dans [README.md](README.md).
 - `src/Chart.svelte`, `src/Emagram.svelte`, `src/Legend.svelte`, `src/StormBanner.svelte`,
   `src/StormIcon.svelte`, `src/ModelPicker.svelte`, `src/svg.ts` : affichage
 - `src/cross.ts`, `src/xc.ts`, `src/XcLayer.svelte` : simulation des cross et couche de la carte
-- `src/bulletin.ts`, `src/Bulletin.svelte` : bulletin de la journée. Le premier tire les faits des
-  colonnes (force des conditions de chaque heure, créneaux, fronts, résumés), le second écrit les
-  phrases
+- `src/bulletin.ts`, `src/Bulletin.svelte` : bulletin météo de la journée. Le premier tire les
+  faits des colonnes (ciel, fronts, précipitations, vent, thermiques, températures), le second
+  écrit le texte
 - `src/update.ts` : recherche d'une version plus récente sur windy-plugins.com
 - `src/pluginConfig.ts` : nom, version et description envoyés à Windy
 - `scripts/publish.mjs` : envoi à Windy
@@ -45,10 +45,13 @@ estimation est calculée sont décrits dans [README.md](README.md).
 - Classes CSS préfixées `wpp-`. Prettier : 4 espaces, guillemets simples, 100 colonnes.
 - Les textes publiés (interface, README, changelog, Instagram) décrivent le plugin dans ses propres
   termes, sans le comparer à d'autres sites ou outils de prévision.
-- Le bulletin décrit des conditions (calmes, modérées, fortes, défavorables), jamais un niveau de
-  pilote ni une aptitude à voler : pas de « débutant », de « pilote confirmé » ni de « volable » dans
-  les textes publiés. En cas d'accident, le plugin ne doit pas avoir dit qu'un créneau convenait à
-  quelqu'un.
+- Le bulletin est un seul texte suivi, tourné vers le vol libre (ciel, précipitations, fronts,
+  orage, vent, thermiques, températures), et l'onglet ne montre rien d'autre : ni cadre, ni
+  rubriques, ni liste. Il décrit le temps prévu et n'évalue rien. Pas de niveau de conditions (calmes,
+  fortes, défavorables…), de créneau, d'appréciation de la journée ni de couleur qui classe une
+  heure ; pas non plus de niveau de pilote ni d'aptitude à voler (« débutant », « pilote confirmé »,
+  « volable ») dans les textes publiés. En cas d'accident, le plugin ne doit pas avoir dit qu'un
+  moment convenait pour voler.
 - `.windy-api-key` contient la clé de publication : ne jamais l'afficher ni la versionner.
 
 ## Changelog

@@ -8,6 +8,31 @@ Le dépôt git ne commence qu'après la 1.2.7 : les entrées plus anciennes ont 
 coup à partir des notes de publication. Chaque version reste installable depuis Windy à l'adresse
 `https://windy-plugins.com/2727410/<nom-du-plugin>/<version>/plugin.min.js`.
 
+## [1.6.0] - 2026-10-01
+
+Le bulletin ne classe plus les conditions : il décrit le temps prévu, dans un seul texte. Les
+valeurs qu'il cite (nuages, pluie, fronts, vent, thermiques, températures) ne changent pas, ni
+celles des autres onglets ; le secteur du vent y est maintenant donné en toutes lettres, sur huit
+directions (« sud-ouest »).
+
+### Modifié
+
+- Bulletin : c'est maintenant un bulletin météo rédigé d'un seul tenant, tourné vers le vol libre.
+  Le texte décrit le ciel et les précipitations de la journée, les fronts et l'orage éventuels, le
+  vent au sol et à deux altitudes avec ses rafales, puis les thermiques (heures, montée au vario,
+  plafond), les cumulus, les températures et l'isotherme 0 °C. L'onglet ne montre plus que ce
+  texte.
+- Légende du bulletin : elle explique comment le ciel, les précipitations, le vent, les thermiques
+  et les fronts sont décrits, et rappelle les limites du modèle.
+
+### Supprimé
+
+- Bulletin : le niveau des conditions (calmes, modérées, fortes, défavorables), le bandeau de
+  couleur heure par heure, les créneaux et l'appréciation de la journée. Le bulletin n'évalue plus
+  les conditions de vol.
+- Bulletin : le cadre de résumé, les rubriques et l'aperçu des jours suivants. Le bulletin d'un
+  autre jour s'ouvre par son onglet, en haut du panneau.
+
 ## [1.5.0] - 2026-10-01
 
 Les plafonds et les ascendances affichés ne changent pas. Les nuages dessinés, eux, peuvent

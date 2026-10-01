@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
-import { bulletinOf, type Front, frontsOf, GUST_LIMITS, LOW_WIND_LIMITS, rateHours, WIND_LIMITS } from '../src/bulletin';
+import { bulletinOf, daylightOf, type Front, frontsOf } from '../src/bulletin';
 import { toHourly } from '../src/interpolate';
 import { buildColumns, type Column, type ForecastPayload } from '../src/physics';
 import { dayKey } from '../src/time';
@@ -46,144 +46,45 @@ const calm = (c: Column): Column => ({
 const calmDay = (hours: number[] = [], change: Partial<Column> = {}) =>
     dayOf(doussard, 0).map(c => (hours.includes(c.hour) ? { ...calm(c), ...change } : calm(c)));
 
-const rate = (cols: Column[]) => rateHours(cols, DOUSSARD.lat, DOUSSARD.lon);
-const at = (cols: Column[], hour: number) => rate(cols).find(h => h.col.hour === hour)!;
-
-describe('conditions de chaque heure', () => {
-    it('air calme : niveau 0 à toute heure, heures de jour entre le lever et le coucher du soleil', () => {
-        const hours = rate(calmDay());
-        expect(hours.every(h => h.level === 0 && h.limit === null)).toBe(true);
+describe('heures de jour', () => {
+    it('du lever au coucher du soleil : le soleil est levé au milieu de l’heure', () => {
         // Fin septembre à Doussard : soleil levé de 7 h 30 à 19 h 20 environ
-        expect(hours.filter(h => h.daylight).map(h => h.col.hour)).toEqual([8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]);
-    });
-
-    it('le critère le plus exigeant fixe le niveau', () => {
-        const cases: [Partial<Column>, number, string][] = [
-            [{ gust: (GUST_LIMITS[0] + 2) * KMH }, 1, 'gust'],
-            [{ gust: (GUST_LIMITS[1] + 2) * KMH }, 2, 'gust'],
-            [{ gust: (GUST_LIMITS[2] + 2) * KMH }, 3, 'gust'],
-            [{ windSurf: (WIND_LIMITS[0] + 2) * KMH }, 1, 'wind'],
-            [{ windSurf: (WIND_LIMITS[2] + 2) * KMH }, 3, 'wind'],
-            [{ climb: 1.5 }, 1, 'thermal'],
-            [{ climb: 3 }, 2, 'thermal'],
-            [{ choppy: 1 }, 1, 'choppy'],
-            [{ choppy: 2 }, 2, 'choppy'],
-            [{ stormRisk: 1 }, 2, 'overdev'],
-            [{ precip: 0.5 }, 3, 'rain'],
-        ];
-        for (const [change, level, limit] of cases) {
-            const h = at(calmDay([14], change), 14);
-            expect([h.level, h.limit], JSON.stringify(change)).toEqual([level, limit]);
-        }
-    });
-
-    it('un seuil atteint fait passer au niveau suivant : rafales de 20 km/h modérées, de 30 km/h fortes', () => {
-        expect(GUST_LIMITS).toEqual([20, 30, 40]);
-        const cases: [Partial<Column>, number][] = [
-            [{ gust: 19 * KMH }, 0],
-            [{ gust: 20 * KMH }, 1],
-            [{ gust: 29 * KMH }, 1],
-            [{ gust: 30 * KMH }, 2],
-            [{ gust: 40 * KMH }, 3],
-            [{ windSurf: WIND_LIMITS[1] * KMH }, 2],
-            [{ climb: 1 }, 1],
-        ];
-        for (const [change, level] of cases) {
-            expect(at(calmDay([14], change), 14).level, JSON.stringify(change)).toBe(level);
-        }
-    });
-
-    it('le vent des basses couches compte autant que le vent au sol', () => {
-        const speed = (LOW_WIND_LIMITS[1] + 5) * KMH;
-        const windy = calmDay().map(c =>
-            c.hour === 14 ? { ...c, profile: c.profile.map((p, k) => (k === 0 ? p : { ...p, u: speed, v: 0 })) } : c,
-        );
-        const h = at(windy, 14);
-        expect([h.level, h.limit]).toEqual([2, 'wind']);
-        expect(h.lowWind / KMH).toBeCloseTo(LOW_WIND_LIMITS[1] + 5, 0);
-    });
-
-    it('vent et pluie ensemble : c’est le vent qui est retenu', () => {
-        expect(at(calmDay([14], { precip: 2, windSurf: 50 * KMH }), 14).limit).toBe('wind');
-    });
-
-    it('orage probable : conditions défavorables à ±2 h, plus de conditions calmes à moins de 4 h', () => {
-        const levels = rate(calmDay([15], { stormRisk: 2 })).map(h => [h.col.hour, h.level, h.limit]);
-        const byHour = new Map(levels.map(([hour, level, limit]) => [hour, [level, limit]]));
-        for (const hour of [13, 14, 15, 16, 17]) expect(byHour.get(hour)).toEqual([3, 'storm']);
-        for (const hour of [11, 12, 18, 19]) expect(byHour.get(hour)).toEqual([1, 'storm']);
-        expect(byHour.get(10)).toEqual([0, null]);
-        expect(byHour.get(20)).toEqual([0, null]);
+        expect(daylightOf(calmDay(), DOUSSARD.lat, DOUSSARD.lon).map(c => c.hour)).toEqual([8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]);
     });
 });
 
-describe('créneaux', () => {
-    const slots = (cols: Column[]) => bulletinOf(cols, DOUSSARD.lat, DOUSSARD.lon)!;
+describe('vent', () => {
+    const bulletin = (cols: Column[]) => bulletinOf(cols, DOUSSARD.lat, DOUSSARD.lon)!;
+    /** Vent de `speed` m/s venant de `dir`° à tous les niveaux */
+    const blowing = (c: Column, dir: number, speed: number): Column => {
+        const rad = (dir * Math.PI) / 180;
+        return { ...c, profile: c.profile.map(p => ({ ...p, u: -speed * Math.sin(rad), v: -speed * Math.cos(rad) })) };
+    };
 
-    it('journée d’air calme : un seul créneau, sur toutes les heures de jour', () => {
-        const b = slots(calmDay());
-        expect(b.calm).toEqual([{ from: 8, to: 19, hours: 11 }]);
-        expect(b.moderate).toEqual(b.calm);
-        expect(b.verdict).toBe('calm');
+    it('vent du matin et de l’après-midi : moyenne des heures de jour avant et à partir de 13 h', () => {
+        // Ouest 2 m/s jusqu'à 12 h, sud 6 m/s ensuite ; la nuit, un vent de nord fort qui ne compte pas
+        const cols = calmDay().map(c => (c.hour < 8 || c.hour > 18 ? blowing(c, 0, 20) : c.hour < 13 ? blowing(c, 270, 2) : blowing(c, 180, 6)));
+        const { surface, levels } = bulletin(cols).wind;
+        expect(surface.am!.dir).toBeCloseTo(270, 3);
+        expect(surface.am!.speed).toBeCloseTo(2, 6);
+        expect(surface.pm!.dir).toBeCloseTo(180, 3);
+        expect(surface.pm!.speed).toBeCloseTo(6, 6);
+        // En altitude : deux niveaux ronds au-dessus du sol, à 1 000 m d'écart
+        expect(levels).toHaveLength(2);
+        expect(levels[0].z % 500).toBe(0);
+        expect(levels[0].z).toBeGreaterThanOrEqual(cols[0].ground + 700);
+        expect(levels[1].z).toBe(levels[0].z + 1000);
+        expect(levels[0].pm!.dir).toBeCloseTo(180, 3);
     });
 
-    it('une seule heure d’un niveau au-dessus coupe un créneau, même à peine au-dessus du seuil', () => {
-        const b = slots(calmDay([13], { climb: 1.2 }));
-        expect(b.calm).toEqual([
-            { from: 8, to: 13, hours: 5 },
-            { from: 14, to: 19, hours: 5 },
-        ]);
-        expect(b.moderate).toEqual([{ from: 8, to: 19, hours: 11 }]);
-        expect(slots(calmDay([13], { climb: 3 })).moderate).toEqual(b.calm);
+    it('vitesse moyenne, pas celle du vecteur moyen : deux vents opposés ne s’annulent pas', () => {
+        const cols = calmDay().map(c => (c.hour < 13 ? blowing(c, c.hour % 2 ? 90 : 270, 5) : c));
+        expect(bulletin(cols).wind.surface.am!.speed).toBeCloseTo(5, 6);
     });
 
-    it('les créneaux suivent les cases du bandeau : toutes les suites d’au moins 2 h de jour du niveau, et elles seules', () => {
-        // Suites d'heures de jour consécutives dont le niveau ne dépasse pas `max`, lues sur le bandeau
-        const runs = (b: ReturnType<typeof slots>, max: number) => {
-            const out: { from: number; to: number; hours: number }[] = [];
-            let from: number | null = null;
-            const day = b.hours.filter(h => h.daylight);
-            day.forEach((h, i) => {
-                if (h.level <= max) from ??= h.col.hour;
-                const last = i === day.length - 1;
-                if (from != null && (h.level > max || last)) {
-                    const to = h.level > max ? h.col.hour : h.col.hour + 1;
-                    if (to - from >= 2) out.push({ from, to, hours: to - from });
-                    from = null;
-                }
-            });
-            return out;
-        };
-        const days = [
-            ...[0, 1, 2].map(n => bulletinOf(dayOf(doussard, n), DOUSSARD.lat, DOUSSARD.lon)!),
-            ...[0, 1, 2].map(n => bulletinOf(dayOf(saintAndre, n), SAINT_ANDRE.lat, SAINT_ANDRE.lon)!),
-            // Niveaux mêlés : heures isolées, suites courtes, pluie
-            slots(calmDay([9, 13, 14, 17], { climb: 1.2 }).map(c => (c.hour === 11 ? { ...c, precip: 1 } : c.hour === 16 ? { ...c, climb: 3 } : c))),
-        ];
-        for (const b of days) {
-            expect(b.calm).toEqual(runs(b, 0));
-            expect(b.moderate).toEqual(runs(b, 1));
-        }
-        // 8 h calme, 9 h modérée, 10 h calme, 11 h pluie, 12 h calme, 13–14 h modérées, 15 h calme, 16 h forte, 17 h modérée, 18 h calme
-        expect(days[6].calm).toEqual([]);
-        expect(days[6].moderate).toEqual([
-            { from: 8, to: 11, hours: 3 },
-            { from: 12, to: 16, hours: 4 },
-            { from: 17, to: 19, hours: 2 },
-        ]);
-    });
-
-    it('une heure de pluie coupe toujours un créneau', () => {
-        expect(slots(calmDay([13], { precip: 1 })).calm).toEqual([
-            { from: 8, to: 13, hours: 5 },
-            { from: 14, to: 19, hours: 5 },
-        ]);
-    });
-
-    it('un créneau dure au moins 2 h', () => {
-        const b = slots(calmDay([8, 9, 10, 11, 13, 14, 15, 16, 17, 18], { precip: 1 }));
-        expect(b.calm).toEqual([]);
-        expect(b.verdict).toBe('adverse');
+    it('rafale la plus forte : celle des heures de jour', () => {
+        const cols = calmDay().map(c => (c.hour === 3 ? { ...c, gust: 20 } : c.hour === 15 ? { ...c, gust: 10 } : c));
+        expect(bulletin(cols).wind.gust).toEqual({ speed: 10, hour: 15 });
     });
 });
 
@@ -336,78 +237,49 @@ describe('ciel et précipitations', () => {
 });
 
 describe('bulletin de la journée', () => {
-    it('Doussard, 29/09 : journée thermique, air calme le matin et en fin de journée', () => {
-        const b = bulletinOf(dayOf(doussard, 0), DOUSSARD.lat, DOUSSARD.lon)!;
-        expect(b.verdict).toBe('thermal');
-        expect(b.moderate).toEqual([{ from: 8, to: 19, hours: 11 }]);
-        expect(b.calm.map(s => [s.from, s.to])).toEqual([
-            [8, 13],
-            [16, 19],
-        ]);
-        expect(b.calmLimit).toBe('thermal');
-        expect(b.strongLimit).toBeNull();
+    it('Doussard, 29/09 : journée sèche, sans orage ni front', () => {
+        const cols = dayOf(doussard, 0);
+        const b = bulletinOf(cols, DOUSSARD.lat, DOUSSARD.lon)!;
         expect(b.rain).toBeNull();
         expect(b.storm).toBeNull();
+        expect(b.overdevFrom).toBeNull();
         expect(b.fronts).toEqual([]);
+        expect(b.ground).toBe(cols[0].ground);
+        expect(b.tMin).toBe(Math.min(...cols.map(c => c.t2m)));
+        expect(b.tMax).toBe(Math.max(...cols.map(c => c.t2m)));
 
+        // Thermiques de 11 h à 17 h ; meilleure montée et plafond le plus haut : ceux des colonnes de la journée
         const t = b.thermals!;
         expect([t.from, t.to]).toEqual([11, 17]);
-        expect(t.easy).toEqual({ from: 11, to: 17, hours: 6 });
-        // Meilleure montée et plafond le plus haut : ceux des colonnes de la journée
-        const cols = dayOf(doussard, 0);
         expect(t.climb).toBe(Math.max(...cols.map(c => c.climb)));
+        expect(t.bestHour).toBe(cols.find(c => c.climb === t.climb)!.hour);
         expect(t.ceiling).toBe(Math.max(...cols.map(c => c.ceiling ?? 0)));
-        expect(t.depth).toBe(t.ceiling - cols[0].ground);
     });
 
-    it('Doussard, 30/09 : conditions calmes jusqu’à l’arrivée de la pluie', () => {
+    it('Doussard, 30/09 : la pluie arrive à 14 h et dure jusqu’à minuit', () => {
         const b = bulletinOf(dayOf(doussard, 1), DOUSSARD.lat, DOUSSARD.lon)!;
-        expect(b.verdict).toBe('windows');
-        expect(b.moderate).toEqual([{ from: 8, to: 14, hours: 6 }]);
-        expect(b.strongLimit).toBe('rain');
         expect(b.rain!.from).toBe(14);
         expect(b.rain!.to).toBe(24);
         expect(b.rain!.showers).toBe(false);
     });
 
-    it('Doussard, 01/10 : pluie toute la journée, conditions défavorables', () => {
+    it('Doussard, 01/10 : ciel couvert et pluie, pas de thermique', () => {
         const b = bulletinOf(dayOf(doussard, 2), DOUSSARD.lat, DOUSSARD.lon)!;
-        expect(b.verdict).toBe('adverse');
-        expect(b.calm).toEqual([]);
-        expect(b.moderate).toEqual([]);
-        expect(b.strongLimit).toBe('rain');
         expect([b.sky.am!.sky, b.sky.pm!.sky]).toEqual(['overcast', 'overcast']);
+        expect(b.rain).not.toBeNull();
         expect(b.thermals).toBeNull();
+        expect(b.cumulus).toBeNull();
     });
 
-    it('Saint-André, 29/09 : conditions fortes toute la journée, à cause du vent des basses couches et des rafales', () => {
-        const b = bulletinOf(dayOf(saintAndre, 0), SAINT_ANDRE.lat, SAINT_ANDRE.lon)!;
-        // Moins de 15 km/h au sol, mais 19 à 23 km/h dans les basses couches et des rafales de 33 à 38 km/h
-        expect(b.verdict).toBe('strong');
-        expect(b.calm).toEqual([]);
-        expect(b.moderate).toEqual([]);
-        expect(b.calmLimit).toBe('wind');
-        expect(b.strongLimit).toBe('wind');
-        expect(b.hours.filter(h => h.daylight).every(h => h.level === 2)).toBe(true);
+    it('Saint-André, 29/09 : ciel dégagé, vent donné à 2 000 et 3 000 m, rafales de jour', () => {
+        const cols = dayOf(saintAndre, 0);
+        const b = bulletinOf(cols, SAINT_ANDRE.lat, SAINT_ANDRE.lon)!;
         // Sol du modèle à 1 052 m : vent donné à 2 000 et 3 000 m
         expect(b.wind.levels.map(l => l.z)).toEqual([2000, 3000]);
-        expect(b.wind.gust!.speed).toBe(Math.max(...b.hours.filter(h => h.daylight).map(h => h.col.gust ?? 0)));
+        const day = daylightOf(cols, SAINT_ANDRE.lat, SAINT_ANDRE.lon);
+        expect(b.wind.gust!.speed).toBe(Math.max(...day.map(c => c.gust ?? 0)));
         expect([b.sky.am!.sky, b.sky.pm!.sky]).toEqual(['clear', 'clear']);
         expect(b.sky.am!.decks).toEqual([]);
-    });
-
-    it('un créneau calme est toujours dans un créneau calme à modéré', () => {
-        for (const [cols, site] of [
-            [doussard, DOUSSARD],
-            [saintAndre, SAINT_ANDRE],
-        ] as const) {
-            for (const n of [0, 1, 2]) {
-                const b = bulletinOf(dayOf(cols, n), site.lat, site.lon)!;
-                for (const s of b.calm) {
-                    expect(b.moderate.some(f => f.from <= s.from && f.to >= s.to)).toBe(true);
-                }
-            }
-        }
     });
 
     it('fronts rangés par rapport à la journée : pendant, la veille (froid seulement), la nuit suivante', () => {
@@ -430,6 +302,14 @@ describe('bulletin de la journée', () => {
         expect(b.fronts).toEqual([all[3]]);
         expect(b.frontBefore).toBe(all[2]);
         expect(b.frontAfter).toBe(all[4]);
+    });
+
+    it('surdéveloppement : première heure de jour, sauf les jours d’orage probable', () => {
+        const bulletin = (cols: Column[]) => bulletinOf(cols, DOUSSARD.lat, DOUSSARD.lon)!;
+        expect(bulletin(calmDay([15, 16], { stormRisk: 1 })).overdevFrom).toBe(15);
+        const stormy = bulletin(calmDay([15, 16], { stormRisk: 1 }).map(c => (c.hour === 17 ? { ...c, stormRisk: 2 as const } : c)));
+        expect(stormy.overdevFrom).toBeNull();
+        expect([stormy.storm!.level, stormy.storm!.from.hour]).toEqual([2, 17]);
     });
 
     it('pas de bulletin sans heure de jour', () => {

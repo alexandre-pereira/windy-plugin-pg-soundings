@@ -306,16 +306,7 @@
                 {showAscent}
             />
             {:else if tab === 'bulletin' && loc && days[dayIndex] && !days[dayIndex].outOfRange}
-                <Bulletin
-                    {days}
-                    {dayIndex}
-                    {columns}
-                    lat={loc.lat}
-                    lon={loc.lon}
-                    model={modelLabel}
-                    {nowTs}
-                    on:day={e => (pinnedDay = e.detail)}
-                />
+                <Bulletin {days} {dayIndex} {columns} lat={loc.lat} lon={loc.lon} />
             {:else if payload}
                 <div class="wpp__status">
                     {tr('Pas de données en altitude pour ce jour avec ce modèle.', 'No upper-air data for this day with this model.')}
