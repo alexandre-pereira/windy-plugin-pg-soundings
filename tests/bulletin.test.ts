@@ -311,10 +311,18 @@ describe('ciel et précipitations', () => {
 
     it('cumulus des thermiques : heures, bases et sommet de la journée', () => {
         expect(bulletin(calmDay()).cumulus).toBeNull();
-        const cu = calmDay([12, 13, 14], { cuBase: 1800, cuTop: 2600, cuTopCapped: false }).map(c =>
+        const cu = calmDay([12, 13, 14], { ceiling: 1700, cuBase: 1800, cuTop: 2600, cuTopCapped: false }).map(c =>
             c.hour === 14 ? { ...c, cuBase: 2100, cuTop: 4300 } : c,
         );
         expect(bulletin(cu).cumulus).toEqual({ from: 12, to: 15, baseMin: 1800, baseMax: 2100, top: 4300, capped: false, depth: 2200 });
+    });
+
+    it('cumulus sans thermique exploitable (air saturé sous un ciel couvert) : pas cités', () => {
+        const cu = calmDay([12, 13, 14], { ceiling: 1700, cuBase: 1800, cuTop: 2600, cuTopCapped: false }).map(c =>
+            c.hour === 14 ? { ...c, ceiling: null, cuBase: 1600, cuTop: 5000 } : c,
+        );
+        expect(bulletin(cu).cumulus).toMatchObject({ from: 12, to: 14, baseMin: 1800, top: 2600 });
+        expect(bulletin(cu.map(c => ({ ...c, ceiling: null }))).cumulus).toBeNull();
     });
 
     it('brume ou brouillard possible : air saturé au sol, sans vent ni pluie, en début de matinée', () => {

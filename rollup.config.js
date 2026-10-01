@@ -24,6 +24,9 @@ export default {
             file: `dist/${out}.js`,
             format: 'module',
             sourcemap: true,
+            // Version finale : la carte ne recopie pas le texte des sources (publiées sur GitHub).
+            // Avec lui, l'archive envoyée à Windy dépasse les 3 Mo qu'il accepte.
+            sourcemapExcludeSources: process.env.SERVE === 'false',
         },
         {
             file: `dist/${out}.min.js`,

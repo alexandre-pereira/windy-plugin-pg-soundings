@@ -129,54 +129,58 @@
                     >
                 {/if}
 
-                <!-- Cumulus : empilement de « bourgeons » ronds, base plate et sombre, qui s'affine vers
-                     le sommet. Blancs par beau temps, gris avec des traits de pluie pour les averses -->
+                <!-- Tours de nuages : empilement de « bourgeons » ronds, base plate et sombre, qui
+                     s'affine vers le sommet. Blanches pour les cumulus de beau temps, grises quand il
+                     en pleut (nuage d'averses, ou couche de nuages du modèle). Rideau de pluie dessous -->
                 {#each cols as col, i}
-                    {#if col.cu}
-                        <clipPath id="wpp-cu-clip-{i}">
-                            <rect x={col.cu.x - col.cu.w} y={top} width={col.cu.w * 2} height={col.cu.yb - top} />
+                    {#if col.streaks}
+                        {#each col.streaks.rows as row}
+                            {#each [-0.28, -0.04, 0.2] as dx}
+                                <line
+                                    x1={col.streaks.x + (dx + row.shift) * col.streaks.w + 2.5}
+                                    x2={col.streaks.x + (dx + row.shift) * col.streaks.w - 1.5}
+                                    y1={col.streaks.y + 3 + row.dy}
+                                    y2={col.streaks.y + 13 + row.dy}
+                                    class="wpp-streak"
+                                    stroke-opacity={row.alpha}
+                                />
+                            {/each}
+                        {/each}
+                    {/if}
+                    {#each col.clouds as cu, k}
+                        <clipPath id="wpp-cu-clip-{i}-{k}">
+                            <rect x={cu.x - cu.w} y={top} width={cu.w * 2} height={cu.yb - top} />
                         </clipPath>
                         <linearGradient
-                            id="wpp-cu-grad-{i}"
+                            id="wpp-cu-grad-{i}-{k}"
                             gradientUnits="userSpaceOnUse"
                             x1="0"
                             x2="0"
-                            y1={col.cu.yb}
-                            y2={col.cu.yb - col.cu.w * 0.7}
+                            y1={cu.yb}
+                            y2={cu.yb - cu.w * 0.7}
                         >
-                            <stop offset="0" stop-color={col.cu.base} />
-                            <stop offset="1" stop-color={col.cu.body} />
+                            <stop offset="0" stop-color={cu.base} />
+                            <stop offset="1" stop-color={cu.body} />
                         </linearGradient>
-                        {#if col.cu.shower}
-                            {#each [-0.28, -0.04, 0.2] as dx}
-                                <line
-                                    x1={col.cu.x + dx * col.cu.w + 2.5}
-                                    x2={col.cu.x + dx * col.cu.w - 1.5}
-                                    y1={col.cu.yb + 3}
-                                    y2={col.cu.yb + 13}
-                                    class="wpp-streak"
-                                />
-                            {/each}
-                        {/if}
-                        <g clip-path="url(#wpp-cu-clip-{i})">
+                        <g clip-path="url(#wpp-cu-clip-{i}-{k})">
                             <!-- Les bourgeons fusionnent en une seule silhouette lisse (filtre « goo ») -->
                             <g filter="url(#wpp-cu-goo)">
-                                {#each col.cu.puffs as p}
-                                    <circle cx={p.x} cy={p.y} r={p.r} fill="url(#wpp-cu-grad-{i})" />
+                                {#each cu.puffs as p}
+                                    <circle cx={p.x} cy={p.y} r={p.r} fill="url(#wpp-cu-grad-{i}-{k})" />
                                 {/each}
                             </g>
                         </g>
                         <line
-                            x1={col.cu.x - col.cu.w * 0.46}
-                            x2={col.cu.x + col.cu.w * 0.46}
-                            y1={col.cu.yb}
-                            y2={col.cu.yb}
+                            x1={cu.x - cu.w * 0.46}
+                            x2={cu.x + cu.w * 0.46}
+                            y1={cu.yb}
+                            y2={cu.yb}
                             stroke="#243244"
                             stroke-opacity="0.85"
                             stroke-width="1.5"
                             stroke-linecap="round"
                         />
-                    {/if}
+                    {/each}
                 {/each}
 
                 <!-- Plafond thermique exploitable -->
@@ -570,7 +574,7 @@
                         >
                     </div>
                 {/if}
-                {#if tip.col.cuBase != null}
+                {#if tip.col.cuBase != null && hasCumulus(tip.col)}
                     <div class="wpp-tip__row">
                         <span>Cumulus</span><b
                             title={tip.col.cuTopCapped
@@ -587,6 +591,16 @@
                                 ? tr('Sommet au-delà du dernier niveau fourni par le modèle', 'Top beyond the highest level provided by the model')
                                 : undefined}
                             >{r50(tip.col.showerBase)}–{r50(tip.col.showerTop)}{showerCapped(tip.col) ? '+' : ''} m</b
+                        >
+                    </div>
+                {/if}
+                {#if tip.layer}
+                    <div class="wpp-tip__row">
+                        <span>{tr('Nuages de la pluie', 'Rain cloud layer')}</span><b
+                            title={tip.layer.top >= profileTop(tip.col) - 25
+                                ? tr('Sommet au-delà du dernier niveau fourni par le modèle', 'Top beyond the highest level provided by the model')
+                                : undefined}
+                            >{r50(tip.layer.base)}–{r50(tip.layer.top)}{tip.layer.top >= profileTop(tip.col) - 25 ? '+' : ''} m</b
                         >
                     </div>
                 {/if}
@@ -722,9 +736,11 @@
         STORM_COLORS,
         capeColor,
         cardinal,
+        hasCumulus,
         interpProfile,
         liftedIndexColor,
         nightFactor,
+        rainLayer,
         rgbCss,
         skyColors,
         thermalColor,
@@ -770,9 +786,12 @@
     const mainH = 430;
     /** Taille (px) d'une maille du champ de fond, lissée ensuite par le navigateur */
     const FIELD_RES = 1 / Math.min(2, (typeof window !== 'undefined' && window.devicePixelRatio) || 1);
-    /** Stries des nuages en couches : une ligne plus sombre de 2 px tous les STRIPE_PX px */
-    const STRIPE_PX = 7;
-    const STRIPE_SHADE = 0.86;
+    /** Rangées du rideau de pluie : décalage vers le bas (px), en travers (part de sa largeur), opacité */
+    const RAIN_ROWS = [
+        { dy: 0, shift: 0, alpha: 1 },
+        { dy: 13, shift: 0.12, alpha: 0.6 },
+        { dy: 26, shift: 0, alpha: 0.3 },
+    ];
 
     let canvasEl: HTMLCanvasElement | undefined;
     let svgEl: SVGSVGElement;
@@ -829,6 +848,16 @@
     $: showWindText = colW >= 20;
     $: arrow = arrowPath(Math.max(9, Math.min(17, colW * 0.6)), 6, 4.2, 1.2);
 
+    /** Base (m AMSL) de la tour de cumulus d'une heure : cumulus des thermiques, sinon nuage d'averses */
+    const towerBase = (c: Column) => (hasCumulus(c) ? c.cuBase : null) ?? c.showerBase;
+
+    /**
+     * La pluie de l'heure vient-elle des nuages en couches du modèle ? Oui s'il pleut sans nuage
+     * d'averses dessiné sous `zTop`, le haut du graphique.
+     */
+    const rainsFromLayers = (c: Column, zTop: number) =>
+        c.precip >= 0.1 && !(c.showerBase != null && (towerBase(c) as number) < zTop);
+
     $: cols = shown.map((src, i) => {
         const winds: { y: number; dir: number; kmh: number; color: string }[] = [];
         const firstRow = Math.ceil((src.ground + windStep * 0.5) / windStep) * windStep;
@@ -844,42 +873,58 @@
             winds.push({ y: y(z), dir: wind.dir, kmh, color: windColor(kmh) });
         }
 
-        // Tour de cumulus : cumulus des thermiques, sinon nuage d'averses du modèle. Quand il en tombe
-        // des averses, elle est grise et monte jusqu'au plus haut des deux sommets
-        let cu: {
-            x: number;
-            yb: number;
-            w: number;
-            shower: boolean;
-            body: string;
-            base: string;
-            puffs: { x: number; y: number; r: number }[];
-        } | null = null;
-        const cuBase = src.cuBase ?? src.showerBase;
-        if (cuBase != null && cuBase < yMax) {
-            const shower = src.showerBase != null;
-            const cuTop = Math.max(src.cuTop ?? cuBase, src.showerTop ?? cuBase);
-            const yb = y(cuBase);
-            // Nuage d'averses seul : d'autant plus étroit que la pluie est faible (même échelle que les
-            // barres de pluie), pour que des heures d'averses ne forment pas un mur devant le ciel
-            const share = src.cuBase != null ? 0.95 : 0.45 + 0.5 * Math.min(1, Math.sqrt(src.precip / 5));
-            const w = Math.min(colW * share, 64);
-            // Une tour qui dépasse le haut du graphique y est coupée net (pas de sommet arrondi)
-            const h = Math.min(yb - top + w, Math.max(w * 0.45, yb - y(cuTop)));
-            const colors = towerColors(shower, nightFactor(src.sunElev));
-            cu = {
+        // Tours de nuages, de la base au sommet : cumulus des thermiques (seulement s'ils sont
+        // exploitables) ou nuage d'averses du modèle ; quand il en tombe des averses, la tour est grise
+        // et monte jusqu'au plus haut des deux sommets. Une tour qui dépasse le haut du graphique y est
+        // coupée net (pas de sommet arrondi)
+        const night = nightFactor(src.sunElev);
+        const tower = (yb: number, yt: number, w: number, grey: boolean) => {
+            const colors = towerColors(grey, night);
+            return {
                 x: cx(i),
                 yb,
                 w,
-                shower,
                 body: rgbCss(colors.body),
                 base: rgbCss(colors.base),
-                puffs: cumulusPuffs(cx(i), yb, w, h),
+                puffs: cumulusPuffs(cx(i), yb, w, Math.min(yb - top + w, Math.max(w * 0.45, yb - yt))),
             };
+        };
+        const clouds: ReturnType<typeof tower>[] = [];
+        /** Pied du rideau de pluie : base du nuage dont elle tombe */
+        let rain: { x: number; y: number; w: number } | null = null;
+        const thermalCu = hasCumulus(src);
+        const cuBase = towerBase(src);
+        // Largeur d'un nuage de pluie : d'autant plus étroit qu'elle est faible (même échelle que les
+        // barres de pluie), pour que des heures de pluie ne forment pas un mur devant le ciel
+        const rainW = Math.min(colW * (0.45 + 0.5 * Math.min(1, Math.sqrt(src.precip / 5))), 64);
+        const yGround = y(Math.max(src.ground, yMin));
+
+        // Pluie sans nuage d'averses : elle vient des nuages en couches du modèle. Une tour grise
+        // montre la couche d'où elle tombe, de sa base à son sommet (base jamais au ras du sol). Si
+        // la couche est plus haute que le graphique, la pluie part de son bord supérieur
+        if (rainsFromLayers(src, yMax)) {
+            const layer = rainLayer(src.profile);
+            if (layer && layer.base < yMax) {
+                const yb = Math.min(y(layer.base), yGround - 18);
+                clouds.push(tower(yb, y(layer.top), rainW, true));
+                rain = { x: cx(i), y: yb, w: rainW };
+            } else rain = { x: cx(i), y: top, w: rainW };
+        }
+        if (cuBase != null && cuBase < yMax) {
+            const shower = src.showerBase != null;
+            const cuTop = Math.max((thermalCu ? src.cuTop : null) ?? cuBase, src.showerTop ?? cuBase);
+            const w = thermalCu ? Math.min(colW * 0.95, 64) : rainW;
+            clouds.push(tower(y(cuBase), y(cuTop), w, shower));
+            if (shower) rain = { x: cx(i), y: y(cuBase), w };
         }
 
+        // Rideau de pluie sous le nuage : quelques rangées de traits qui s'estompent vers le bas,
+        // autant qu'il en tient au-dessus du sol
+        const yRain = rain?.y ?? 0;
+        const streaks = rain && { ...rain, rows: RAIN_ROWS.filter((row, k) => k === 0 || yRain + row.dy + 15 <= yGround) };
+
         const ease = thermalEase(src);
-        return { src, winds, cu, ease: ease && EASE[ease] };
+        return { src, winds, clouds, streaks, ease: ease && EASE[ease] };
     });
 
     /** Altitude (m AMSL) du dernier niveau fourni par le modèle */
@@ -957,7 +1002,6 @@
 
         const img = ctx.createImageData(gw, gh);
         const px = [0, 0, 0];
-        const cloudPx = [0, 0, 0];
         const cw = w / cols.length;
         for (let gx = 0; gx < gw; gx++) {
             const pos = Math.min(cols.length - 1, Math.max(0, ((gx + 0.5) * FIELD_RES) / cw - 0.5));
@@ -994,15 +1038,8 @@
 
                 const cl = a.cloud[gy] + (b.cloud[gy] - a.cloud[gy]) * f;
                 // Courbe légèrement bombée : les couvertures moyennes se voient mieux, 100 % est presque opaque
-                if (cl > 0.02) {
-                    // Fines stries horizontales : un nuage en couches (stratiforme) ne se confond pas
-                    // avec une tour de cumulus, même quand il s'étale sur une grande épaisseur
-                    const k = Math.floor(gy * FIELD_RES) % STRIPE_PX < 2 ? STRIPE_SHADE : 1;
-                    cloudPx[0] = sky.cloud[0] * k;
-                    cloudPx[1] = sky.cloud[1] * k;
-                    cloudPx[2] = sky.cloud[2] * k;
-                    mix(px, cloudPx, Math.pow(Math.min(1, cl), 0.8) * cloudAlpha);
-                }
+                // Voile uni : les tours de cumulus s'en détachent par leur contour sombre
+                if (cl > 0.02) mix(px, sky.cloud, Math.pow(Math.min(1, cl), 0.8) * cloudAlpha);
 
                 const k = (gy * gw + gx) * 4;
                 img.data[k] = px[0];
@@ -1103,10 +1140,12 @@
             (alt != null && alt.cloud > 3) ||
             col.cloudCover > 0.03 ||
             cloudAbove(col, yMax) > 0.05 ||
-            col.cuBase != null ||
+            hasCumulus(col) ||
             (col.showerBase != null && col.showerTop != null) ||
             col.precip >= 0.1;
-        return { col, ease, alt, clouds };
+        // Couche de nuages d'où tombe la pluie, quand elle ne vient pas d'un nuage d'averses
+        const layer = rainsFromLayers(col, yMax) ? rainLayer(col.profile) : null;
+        return { col, ease, alt, clouds, layer };
     };
 
     // --- Position de l'infobulle, toujours dans le cadre. Au doigt, on la place dans la moitié
