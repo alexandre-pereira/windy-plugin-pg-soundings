@@ -8,6 +8,39 @@ Le dépôt git ne commence qu'après la 1.2.7 : les entrées plus anciennes ont 
 coup à partir des notes de publication. Chaque version reste installable depuis Windy à l'adresse
 `https://windy-plugins.com/2727410/<nom-du-plugin>/<version>/plugin.min.js`.
 
+## [1.5.0] - 2026-10-01
+
+Les plafonds et les ascendances affichés ne changent pas. Les nuages dessinés, eux, peuvent
+changer : une heure de pluie peut passer d'averse à pluie de front (ou l'inverse) selon les heures
+qui l'entourent, et les cumulus ne sont plus montrés aux heures sans thermique exploitable.
+
+### Ajouté
+
+- Graphique « Vent & thermiques » : la pluie des nuages en couches (pluie de front) est dessinée.
+  À chaque heure de pluie sans nuage d'averses, une tour grise montre la couche de nuages d'où elle
+  tombe, de sa base à son sommet, avec son rideau de pluie ; l'infobulle donne ses altitudes
+  (« Nuages de la pluie »). Avant, la barre de pluie n'avait aucun nuage au-dessus d'elle.
+
+### Modifié
+
+- Graphique « Vent & thermiques » : les nuages en couches sont un voile gris uni, sans stries. Avec
+  les variations de nébulosité d'une heure à l'autre, les stries dessinaient un quadrillage sur le
+  fond. Les tours de cumulus s'en détachent toujours par leur contour sombre.
+- Sous un nuage d'averses, la pluie est un rideau de trois rangées de traits qui s'estompent vers le
+  bas, plus lisible derrière les flèches de vent.
+- La nature de la pluie (averses ou pluie de front) se décide sur cinq heures, l'heure et les deux
+  de chaque côté, et plus heure par heure. Une énergie qui passe le seuil d'un rien pendant une
+  heure ne dessine plus un nuage d'averses isolé au milieu d'une pluie continue, et une heure à
+  peine sous le seuil parmi des averses garde son nuage. Le bulletin (nature des épisodes de pluie,
+  fronts) suit la même règle.
+
+### Corrigé
+
+- Les cumulus des thermiques ne sont plus affichés aux heures sans thermique exploitable
+  (graphique, infobulle, bulletin). Sous un ciel couvert et pluvieux, une grande tour blanche
+  pouvait monter jusqu'en haut du graphique alors que l'onglet du jour annonçait « Pas de
+  thermique ». L'émagramme montre toujours l'ascension de la particule.
+
 ## [1.4.1] - 2026-10-01
 
 Les créneaux du bulletin sont plus stricts qu'en 1.4.0 : ils peuvent être plus courts, ou

@@ -9,6 +9,7 @@
 
 import {
     type Column,
+    hasCumulus,
     interpProfile,
     type StormWatch,
     stormWatchOf,
@@ -505,7 +506,7 @@ const skyOf = (cols: Column[]): SkyPart | null => {
 };
 
 const cumulusOf = (cols: Column[]): CumulusSummary | null => {
-    const cu = cols.filter(c => c.cuBase != null);
+    const cu = cols.filter(hasCumulus);
     if (!cu.length) return null;
     const bases = cu.map(c => c.cuBase as number);
     const tops = cu.map(c => c.cuTop ?? (c.cuBase as number));

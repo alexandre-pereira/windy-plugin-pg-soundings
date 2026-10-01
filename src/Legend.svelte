@@ -82,7 +82,7 @@
                             >{#each cu as p}<circle cx={p.x} cy={p.y} r={p.r} fill="#fff" stroke="#243244" stroke-width="1.6" />{/each}{#each cu as p}<circle cx={p.x} cy={p.y} r={p.r} fill="#fff" />{/each}</g
                         ><line x1="4" x2="22" y1="12.5" y2="12.5" stroke="#243244" stroke-width="1.2" /></svg
                     >
-                    <span>{tr("Cumulus des thermiques (blanc), de la base au sommet estimé", "Thermal cumulus (white), from base to estimated top")}</span>
+                    <span>{tr("Cumulus des thermiques (blanc), de la base au sommet estimé, aux heures de thermiques exploitables", "Thermal cumulus (white), from base to estimated top, at hours with usable thermals")}</span>
                 </li>
                 <li>
                     <svg width="26" height="14"
@@ -96,7 +96,7 @@
                             stroke-linecap="round"
                         /></svg
                     >
-                    <span>{tr("Nuage d’averses (gris) : la pluie de l’heure vient d’un nuage convectif que le modèle développe lui-même, même sans thermiques (nuit, ciel couvert) ; d’autant plus large que la pluie est forte", "Shower cloud (grey): the hour’s rain comes from a convective cloud the model develops by itself, even without thermals (night, overcast); the wider, the heavier the rain")}</span>
+                    <span>{tr("Nuage de pluie (gris), de sa base à son sommet, d’autant plus large que la pluie est forte : nuage d’averses que le modèle développe lui-même, même sans thermiques (nuit, ciel couvert), ou couche de nuages du modèle quand la pluie vient d’elle (pluie de front). L’infobulle dit lequel ; la nature de la pluie se juge sur l’heure et les deux de chaque côté", "Rain cloud (grey), from base to top, the wider the heavier the rain: a shower cloud the model develops by itself, even without thermals (night, overcast), or the model’s cloud layer when the rain comes from it (frontal rain). The tooltip says which; the kind of rain is judged over the hour and the two on each side")}</span>
                 </li>
                 <li>
                     <svg width="26" height="14"
@@ -105,14 +105,8 @@
                     <span>{tr("Isotherme 0 °C", "Freezing level (0 °C)")}</span>
                 </li>
                 <li>
-                    <svg width="26" height="14"
-                        ><rect x="3" y="2" width="20" height="10" rx="2" fill="#ced6e1" /><path
-                            d="M3 5h20M3 9h20"
-                            stroke="#aab3c0"
-                            stroke-width="1.2"
-                        /></svg
-                    >
-                    <span>{tr("Nuages en couches prévus par le modèle (voile gris strié) : pluie de front quand il pleut sans nuage d’averses", "Layer clouds forecast by the model (striped grey veil): frontal rain when it rains with no shower cloud")}</span>
+                    <svg width="26" height="14"><rect x="3" y="2" width="20" height="10" rx="2" fill="#ced6e1" /></svg>
+                    <span>{tr("Nuages en couches prévus par le modèle (voile gris)", "Layer clouds forecast by the model (grey veil)")}</span>
                 </li>
                 <li>
                     <svg width="26" height="14"

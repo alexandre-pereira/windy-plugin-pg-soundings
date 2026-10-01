@@ -6,12 +6,14 @@ Plugin Windy.com qui affiche, pour un site de vol, un graphique **altitude × he
 - **Thermiques** : zone colorée selon la **montée lue au vario** (ascendance au cœur des thermiques moins le taux de chute en spirale, m/s)
 - **Facilité d'exploitation des thermiques** : bandeau « Therm. » sous le graphique, une case par heure,
   du vert (faciles) au rouge, hachurée quand le vent les hache
-- **Plafond exploitable** (ligne blanche) et **cumulus des thermiques** (tours blanches, de la base au sommet)
-- **Nuages d'averses** (tours grises avec des traits de pluie) aux heures de pluie convective, même
-  sans thermiques (nuit, ciel couvert)
+- **Plafond exploitable** (ligne blanche) et **cumulus des thermiques** (tours blanches, de la base au
+  sommet, aux heures de thermiques exploitables)
+- **Nuages de pluie** (tours grises, de la base au sommet, avec un rideau de pluie dessous) à chaque
+  heure de pluie : nuage d'averses quand la pluie est faite d'averses, même sans thermiques (nuit,
+  ciel couvert), sinon couche de nuages du modèle d'où elle tombe (pluie de front)
 - **Risque d'orage** heure par heure (surdéveloppement possible, orage probable, orage violent
   possible) et **bandeau d'alerte** les jours d'orage : heure d'arrivée, vitesse de déplacement, rafales
-- **Nuages en couches du modèle** par niveau (voile gris strié), **isotherme 0 °C** (tirets bleus), relief du modèle
+- **Nuages en couches du modèle** par niveau (voile gris), **isotherme 0 °C** (tirets bleus), relief du modèle
 - **CAPE et LI heure par heure** : bandeau « CAPE LI » sous la pluie, une case par heure, la CAPE à
   gauche et le LI à droite, chacun sur la couleur de son palier, du vert (stable) au rouge (très
   instable)
@@ -50,7 +52,7 @@ L'interface est en français ou en anglais, selon la langue de Windy.
 Sur <https://www.windy.com/plugins>, choisissez « Load plugin directly from URL » et collez :
 
 ```
-https://windy-plugins.com/2727410/windy-plugin-pg-soundings/1.4.1/plugin.min.js
+https://windy-plugins.com/2727410/windy-plugin-pg-soundings/1.5.0/plugin.min.js
 ```
 
 Le plugin signale ensuite lui-même les nouvelles versions. L'historique est dans
@@ -106,9 +108,21 @@ de pression (souvent 7 niveaux seulement pour ECMWF : rien entre 850 et 700 hPa,
   sur GFS et ICON-EU (30 sites d'Europe)
 - résume l'**orage du jour** dans un bandeau (8 h – 22 h, heures à venir) : première heure, cause,
   déplacement (vent moyen du sol à 6 km), rafales du modèle, absence de signe l'heure d'avant
-- dessine un **nuage d'averses** quand la pluie de l'heure est convective : précipitations convectives
-  du modèle, ou CAPE standard ≥ 50 J/kg sur un nuage d'au moins 2 000 m d'épaisseur (seuils calés sur
-  les précipitations convectives de GFS et d'ICON-EU) ; sinon la pluie vient des nuages en couches
+- dessine un **nuage d'averses** quand la pluie est faite d'averses. Une heure, prise seule, est
+  convective si le modèle annonce des précipitations convectives, ou si la CAPE standard atteint
+  50 J/kg sur un nuage d'au moins 2 000 m d'épaisseur (seuils calés sur les précipitations
+  convectives de GFS et d'ICON-EU). La nature de la pluie se décide ensuite sur cinq heures, l'heure
+  et les deux de chaque côté : averses si au moins la moitié de la pluie y tombe à des heures
+  convectives. Une heure convective minoritaire autour d'elle est d'abord écartée, puis celles qui
+  restent entraînent leurs voisines : une énergie qui passe le seuil d'un rien ne donne plus une
+  averse isolée au milieu d'une pluie de front
+- sinon la pluie vient des **nuages en couches**, dessinés eux aussi de la base au sommet : la plus
+  basse couche continue où la nébulosité du modèle atteint 50 % (ou la moitié de sa plus forte
+  valeur si elle reste en dessous)
+- ne montre les **cumulus des thermiques** (graphique, infobulle, bulletin) qu'aux heures de
+  thermiques exploitables : dans un air saturé, sous un ciel couvert, la particule condense encore
+  et son « nuage » peut faire plusieurs kilomètres d'épaisseur sans qu'aucun thermique le nourrisse.
+  L'émagramme, lui, montre toujours l'ascension de la particule
 - simule les **cross** avec la théorie de MacCready (35 km/h et 1,4 m/s en transition), la dérive du
   vent de la couche, et une dernière transition depuis la hauteur exploitable
 - classe les conditions de chaque heure de jour du **bulletin**, d'après son critère le plus

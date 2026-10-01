@@ -141,9 +141,9 @@ export interface Column {
      */
     stormRisk: StormRisk;
     /**
-     * Nuage d'averses (m AMSL), les heures de pluie convective (voir isShower) : nuage que le modèle
-     * développe lui-même, sans les thermiques du sol (nuit, ciel couvert, averses venues d'ailleurs).
-     * De la condensation au niveau d'équilibre de la particule standard ; null sinon.
+     * Nuage d'averses (m AMSL), les heures où la pluie est faite d'averses (voir showerHours) : nuage
+     * que le modèle développe lui-même, sans les thermiques du sol (nuit, ciel couvert, averses venues
+     * d'ailleurs). De la condensation au niveau d'équilibre de la particule standard ; null sinon.
      */
     showerBase: number | null;
     showerTop: number | null;
@@ -822,12 +822,13 @@ const SHOWER_CAPE = 50;
 const SHOWER_DEPTH = 2000;
 
 /**
- * La pluie de l'heure est-elle une averse (nuage convectif, « vertical ») plutôt qu'une pluie de
+ * La pluie de l'heure, prise seule, est-elle convective (nuage « vertical ») plutôt qu'une pluie de
  * nuages en couches (front) ? Oui si le modèle annonce lui-même des précipitations convectives,
  * sinon si la particule standard a de quoi monter : un peu d'énergie sur une couche épaisse.
  * Seuils calés sur les précipitations convectives de GFS et d'ICON-EU (24 sites d'Europe,
  * septembre 2026) : 7 à 9 heures ainsi repérées sur 10 sont bien des averses pour le modèle, et
  * 6 à 8 averses sur 10 sont repérées (les autres sont de faibles averses presque sans énergie).
+ * La nature affichée de la pluie tient aussi compte des heures voisines : voir showerHours.
  */
 export const isShower = (s: {
     /** Précipitations de l'heure (mm), dont convectives quand le modèle les fournit */
@@ -837,6 +838,73 @@ export const isShower = (s: {
     cape: number;
     depth: number;
 }): boolean => s.precip >= 0.1 && (s.convRain >= 0.1 || (s.cape >= SHOWER_CAPE && s.depth >= SHOWER_DEPTH));
+
+/** Heures de part et d'autre qui comptent pour la nature de la pluie d'une heure */
+const SHOWER_SPAN = 2;
+
+/**
+ * Heures dont la pluie est faite d'averses. La nature de la pluie se décide sur cinq heures (l'heure
+ * et les deux de chaque côté), pas sur l'heure seule : averses quand la moitié au moins de la pluie
+ * de ces heures tombe à des heures convectives (isShower). En deux temps : une heure convective
+ * minoritaire autour d'elle est d'abord écartée (énergie qui passe le seuil d'un rien au milieu d'une
+ * pluie de front), puis les heures convectives qui restent entraînent leurs voisines (heure à peine
+ * sous le seuil parmi des averses). Une pluie qui change de nature pour de bon (front, puis averses
+ * à l'arrière) change toujours.
+ */
+export const showerHours = (
+    hours: {
+        ts: number;
+        /** Précipitations de l'heure (mm) */
+        precip: number;
+        /** Pluie convective, l'heure prise seule (isShower) */
+        convective: boolean;
+    }[],
+): boolean[] => {
+    /** Les heures `showers` donnent-elles au moins la moitié de la pluie tombée autour de l'heure k ? */
+    const mostly = (k: number, showers: boolean[]) => {
+        let total = 0;
+        let fromShowers = 0;
+        hours.forEach((o, j) => {
+            if (Math.abs(o.ts - hours[k].ts) > SHOWER_SPAN * 3600e3) return;
+            total += o.precip;
+            if (showers[j]) fromShowers += o.precip;
+        });
+        return fromShowers >= total / 2;
+    };
+    const convective = hours.map(h => h.convective);
+    const kept = hours.map((h, k) => h.precip >= 0.1 && h.convective && mostly(k, convective));
+    return hours.map((h, k) => h.precip >= 0.1 && (kept[k] || mostly(k, kept)));
+};
+
+/** Nébulosité (%) d'une couche de nuages du modèle assez dense pour porter la pluie dessinée */
+const RAIN_CLOUD = 50;
+
+/**
+ * Couche de nuages (m AMSL) d'où tombe la pluie d'une heure sans nuage d'averses : la plus basse
+ * couche continue où la nébulosité du modèle atteint 50 % (ou la moitié de sa plus forte valeur si
+ * elle reste en dessous), de sa base à son sommet. Le sommet s'arrête au dernier niveau fourni.
+ * null sans nuage dans le profil : la pluie vient de plus haut que ce dernier niveau.
+ */
+export const rainLayer = (profile: ProfilePoint[]): { base: number; top: number } | null => {
+    const peak = Math.max(0, ...profile.map(p => p.cloud));
+    if (peak < 5) return null;
+    const limit = Math.min(RAIN_CLOUD, peak / 2);
+    const zTop = profile[profile.length - 1].z;
+    let layer: { base: number; top: number } | null = null;
+    for (let z = profile[0].z; z <= zTop; z += 25) {
+        const dense = (interpProfile(profile, z, 'cloud') ?? 0) >= limit;
+        if (dense) layer = { base: layer?.base ?? z, top: z };
+        else if (layer) break;
+    }
+    return layer;
+};
+
+/**
+ * Cumulus des thermiques à montrer : seulement avec un thermique exploitable. Sans lui, la particule
+ * surchauffée trouve encore un « nuage » dans un air saturé (ciel couvert, pluie), parfois de
+ * plusieurs kilomètres d'épaisseur, que rien ne nourrit depuis le sol.
+ */
+export const hasCumulus = (c: Pick<Column, 'cuBase' | 'ceiling'>): boolean => c.cuBase != null && c.ceiling != null;
 
 /** Heures locales surveillées par l'alerte d'orage d'une journée (première et dernière) */
 const WATCH_HOURS: readonly [number, number] = [8, 22];
@@ -1010,6 +1078,8 @@ export const buildColumns = (
 
     const tsList = (data.ts || []) as number[];
     const columns: Column[] = [];
+    /** Nuage convectif de la particule standard de chaque colonne, et pluie convective de l'heure prise seule */
+    const convective: { base: number | null; top: number | null; alone: boolean }[] = [];
 
     tsList.forEach((ts, i) => {
         const utcOffset = offsetAt(ts);
@@ -1339,16 +1409,21 @@ export const buildColumns = (
             });
         }
 
-        // --- Nuage d'averses : convection que le modèle développe lui-même
-        const shower =
-            std.base != null &&
-            std.top != null &&
-            isShower({
-                precip: num(data.precipAmount, i),
-                convRain: num(data.precipConvectiveAmount, i),
-                cape: std.cape,
-                depth: std.top - std.base,
-            });
+        // --- Nuage d'averses : convection que le modèle développe lui-même. La nature de la pluie se
+        // décide après la boucle, avec les heures voisines
+        convective.push({
+            base: std.base,
+            top: std.top,
+            alone:
+                std.base != null &&
+                std.top != null &&
+                isShower({
+                    precip: num(data.precipAmount, i),
+                    convRain: num(data.precipConvectiveAmount, i),
+                    cape: std.cape,
+                    depth: std.top - std.base,
+                }),
+        });
 
         // --- Isotherme 0 °C
         let freezing: number | null = null;
@@ -1410,11 +1485,22 @@ export const buildColumns = (
             steerV: deepWind.steerV,
             severeEnv,
             stormRisk,
-            showerBase: shower ? std.base : null,
-            showerTop: shower ? std.top : null,
+            showerBase: null,
+            showerTop: null,
             recentRain,
         });
     });
+
+    // --- Nuage d'averses aux heures dont la pluie est faite d'averses, s'il y a un nuage convectif
+    if (stability) {
+        const showers = showerHours(columns.map((c, k) => ({ ts: c.ts, precip: c.precip, convective: convective[k].alone })));
+        columns.forEach((c, k) => {
+            const { base, top } = convective[k];
+            if (!showers[k] || base == null || top == null) return;
+            c.showerBase = base;
+            c.showerTop = top;
+        });
+    }
 
     return columns;
 };

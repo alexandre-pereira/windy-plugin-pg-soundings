@@ -10,6 +10,7 @@ import {
     CORE_FACTOR,
     dewPointFromMixingRatio,
     type ForecastPayload,
+    hasCumulus,
     INSTABILITY_COLORS,
     isSevereEnv,
     isShower,
@@ -19,7 +20,9 @@ import {
     netClimb,
     parcelAscent,
     pressureAt,
+    rainLayer,
     satMixingRatio,
+    showerHours,
     type StormInputs,
     stormRiskOf,
     stormWatchOf,
@@ -392,6 +395,42 @@ describe('nuage d’averses', () => {
         expect(isShower({ ...shower, cape: 0, depth: 0, convRain: 0.3 })).toBe(true);
     });
 
+    /** Heures qui se suivent : pluie (mm) et pluie convective de l'heure prise seule */
+    const rainy = (hours: [number, boolean][]) =>
+        showerHours(hours.map(([precip, convective], k) => ({ ts: k * 3600e3, precip, convective })));
+
+    it('une heure convective isolée dans une pluie de front : pas d’averse', () => {
+        // Pluie continue de quatre heures, l'énergie ne passe le seuil qu'à la première
+        expect(rainy([[0.2, false], [0, false], [2.8, true], [4.1, false], [3.7, false], [0.4, false]])).toEqual(
+            Array(6).fill(false),
+        );
+    });
+
+    it('une heure sous le seuil au milieu des averses : averse aussi', () => {
+        expect(rainy([[1, true], [1, true], [1, false], [1, true], [1, true]])).toEqual(Array(5).fill(true));
+    });
+
+    it('la pluie change de nature quand le front laisse la place aux averses', () => {
+        const hours: [number, boolean][] = [[1, false], [1, false], [1, false], [1, true], [1, true], [1, true]];
+        expect(rainy(hours)).toEqual([false, false, false, true, true, true]);
+    });
+
+    it('la pluie compte, pas le nombre d’heures : une forte averse l’emporte sur la bruine qui la suit', () => {
+        expect(rainy([[0, false], [8, true], [0.3, false], [0.3, false]])).toEqual([false, true, true, true]);
+    });
+
+    it('averse seule, loin de toute autre pluie : inchangée, et jamais d’averse sans pluie', () => {
+        expect(rainy([[0, true], [0, false], [0, false], [1, true], [0, false], [0, false], [1, false]])).toEqual([
+            false,
+            false,
+            false,
+            true,
+            false,
+            false,
+            false,
+        ]);
+    });
+
     it.each(SITES)('prévision réelle, $name : seulement aux heures de pluie, base sous le sommet', ({ payload, lat, lon }) => {
         const cols = columnsOf(payload, lat, lon);
         for (const c of cols) {
@@ -399,7 +438,7 @@ describe('nuage d’averses', () => {
             if (c.showerBase == null || c.showerTop == null) continue;
             expect(c.precip).toBeGreaterThanOrEqual(0.1);
             expect(c.showerBase).toBeGreaterThanOrEqual(c.ground);
-            expect(c.showerTop - c.showerBase).toBeGreaterThanOrEqual(2000);
+            expect(c.showerTop).toBeGreaterThan(c.showerBase);
         }
     });
 
@@ -412,6 +451,74 @@ describe('nuage d’averses', () => {
         const showers = day(1).filter(c => c.hour >= 11 && c.hour <= 16);
         expect(showers.length).toBeGreaterThan(3);
         expect(showers.every(c => c.cuBase == null && c.showerBase != null)).toBe(true);
+    });
+
+    it('Doussard : la nature de la pluie ne change pas pour une heure au ras du seuil', () => {
+        const cols = columnsOf(doussard, 45.78, 6.22);
+        const at = (d: number, hour: number) => cols.find(c => new Date(c.ts + 2 * 3600e3).getUTCDate() === d && c.hour === hour)!;
+        // 30 septembre, 19 h : première heure au-dessus du seuil (58 J/kg), encore dans la pluie du front
+        expect(at(30, 19).cape).toBeGreaterThanOrEqual(50);
+        expect(at(30, 19).showerBase).toBeNull();
+        expect(at(30, 20).showerBase).not.toBeNull();
+        // 1er octobre, 22 h : dernière heure des averses, à peine sous le seuil (49 J/kg)
+        expect(at(1, 22).cape).toBeLessThan(50);
+        expect(at(1, 22).showerBase).not.toBeNull();
+        // 7 h – 9 h : trois heures sous le seuil entre deux séries d'averses restent une pluie de couches
+        expect([7, 8, 9].every(h => at(1, h).showerBase == null)).toBe(true);
+    });
+});
+
+describe('couche de nuages qui donne la pluie', () => {
+    const level = (z: number, cloud: number) => ({ z, t: 280, td: 278, u: 0, v: 0, cloud, p: 1000 - z / 10 });
+
+    it('base au plus bas niveau où la nébulosité atteint 50 %, sommet au dernier niveau si elle y reste', () => {
+        const { base, top } = rainLayer([level(500, 0), level(1500, 0), level(2500, 100), level(4000, 100)])!;
+        expect(base).toBeGreaterThan(1500);
+        expect(base).toBeLessThan(2500);
+        expect(top).toBe(4000);
+    });
+
+    it('couche épaisse sous un ciel dégagé : le sommet s’arrête où la nébulosité retombe', () => {
+        const { base, top } = rainLayer([level(500, 0), level(1000, 95), level(3000, 95), level(4000, 0), level(6000, 0)])!;
+        expect(base).toBeLessThan(1000);
+        expect(top).toBeGreaterThan(3000);
+        expect(top).toBeLessThan(4000);
+    });
+
+    it('deux couches séparées : la plus basse', () => {
+        const { base, top } = rainLayer([level(500, 0), level(1000, 90), level(2000, 0), level(3000, 0), level(4000, 90)])!;
+        expect(base).toBeLessThan(1000);
+        expect(top).toBeLessThan(2000);
+    });
+
+    it('voile peu dense : la moitié de sa plus forte nébulosité', () => {
+        const { base } = rainLayer([level(500, 0), level(1500, 0), level(2500, 30), level(4000, 10)])!;
+        expect(base).toBeGreaterThan(1500);
+        expect(base).toBeLessThanOrEqual(2500);
+    });
+
+    it('sans nuage dans le profil : pas de couche', () => {
+        expect(rainLayer([level(500, 0), level(1500, 2), level(4000, 0)])).toBeNull();
+    });
+
+    it.each(SITES)('prévision réelle, $name : une couche au-dessus du sol à chaque heure de pluie', ({ payload, lat, lon }) => {
+        const wet = columnsOf(payload, lat, lon).filter(c => c.precip >= 0.1);
+        expect(wet.length).toBeGreaterThan(5);
+        for (const c of wet) {
+            const layer = rainLayer(c.profile);
+            expect(layer).not.toBeNull();
+            expect(layer!.base).toBeGreaterThan(c.ground);
+            expect(layer!.top).toBeGreaterThanOrEqual(layer!.base);
+        }
+    });
+});
+
+describe('cumulus des thermiques affichés', () => {
+    it('seulement avec un thermique exploitable', () => {
+        expect(hasCumulus({ cuBase: 1800, ceiling: 1700 })).toBe(true);
+        // Air saturé sous un ciel couvert : la particule condense, mais aucun thermique ne porte
+        expect(hasCumulus({ cuBase: 1600, ceiling: null })).toBe(false);
+        expect(hasCumulus({ cuBase: null, ceiling: 1700 })).toBe(false);
     });
 });
 
