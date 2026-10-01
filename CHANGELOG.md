@@ -8,6 +8,13 @@ Le dépôt git ne commence qu'après la 1.2.7 : les entrées plus anciennes ont 
 coup à partir des notes de publication. Chaque version reste installable depuis Windy à l'adresse
 `https://windy-plugins.com/2727410/<nom-du-plugin>/<version>/plugin.min.js`.
 
+## [1.6.1] - 2026-10-01
+
+### Corrigé
+
+- Onglets sur téléphone : les noms (Vent, Émagramme, Cross, Bulletin) s'affichent en entier, sous
+  leur pictogramme. Sur un écran étroit ils étaient coupés (« Émagra… », « Bul… »).
+
 ## [1.6.0] - 2026-10-01
 
 Le bulletin ne classe plus les conditions : il décrit le temps prévu, dans un seul texte. Les

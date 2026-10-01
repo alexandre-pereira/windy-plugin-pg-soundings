@@ -1376,12 +1376,19 @@
                     color: var(--wpp-accent);
                 }
             }
-            // Sur téléphone : texte court, largeur selon le texte (les onglets longs ne sont pas coupés)
+            // Sur téléphone : pictogramme au-dessus du nom court, qui n'est jamais coupé. La largeur
+            // de chaque onglet suit son texte, le reste de la place est partagé.
             @media (max-width: 560px) {
                 flex: 1 1 auto;
-                gap: 4px;
-                padding: 5px 3px;
-                font-size: 12px;
+                flex-direction: column;
+                gap: 3px;
+                padding: 6px 2px 5px;
+                font-size: 11px;
+                line-height: 1.2;
+
+                span {
+                    overflow: visible;
+                }
             }
         }
         &__tab-short {
@@ -1395,8 +1402,14 @@
                 display: inline;
             }
             &__tab-icon {
-                width: 15px;
-                height: 15px;
+                width: 19px;
+                height: 19px;
+            }
+            &__tabbar {
+                gap: 6px;
+            }
+            &__tabs {
+                gap: 1px;
             }
         }
         &__tab-icon {
