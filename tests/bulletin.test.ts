@@ -127,11 +127,49 @@ describe('créneaux', () => {
         expect(b.verdict).toBe('calm');
     });
 
-    it('une heure isolée à peine au-dessus ne coupe pas un créneau, deux heures oui', () => {
-        expect(slots(calmDay([13], { climb: 1.2 })).calm).toEqual([{ from: 8, to: 19, hours: 11 }]);
-        expect(slots(calmDay([13, 14], { climb: 1.2 })).calm).toEqual([
+    it('une seule heure d’un niveau au-dessus coupe un créneau, même à peine au-dessus du seuil', () => {
+        const b = slots(calmDay([13], { climb: 1.2 }));
+        expect(b.calm).toEqual([
             { from: 8, to: 13, hours: 5 },
-            { from: 15, to: 19, hours: 4 },
+            { from: 14, to: 19, hours: 5 },
+        ]);
+        expect(b.moderate).toEqual([{ from: 8, to: 19, hours: 11 }]);
+        expect(slots(calmDay([13], { climb: 3 })).moderate).toEqual(b.calm);
+    });
+
+    it('les créneaux suivent les cases du bandeau : toutes les suites d’au moins 2 h de jour du niveau, et elles seules', () => {
+        // Suites d'heures de jour consécutives dont le niveau ne dépasse pas `max`, lues sur le bandeau
+        const runs = (b: ReturnType<typeof slots>, max: number) => {
+            const out: { from: number; to: number; hours: number }[] = [];
+            let from: number | null = null;
+            const day = b.hours.filter(h => h.daylight);
+            day.forEach((h, i) => {
+                if (h.level <= max) from ??= h.col.hour;
+                const last = i === day.length - 1;
+                if (from != null && (h.level > max || last)) {
+                    const to = h.level > max ? h.col.hour : h.col.hour + 1;
+                    if (to - from >= 2) out.push({ from, to, hours: to - from });
+                    from = null;
+                }
+            });
+            return out;
+        };
+        const days = [
+            ...[0, 1, 2].map(n => bulletinOf(dayOf(doussard, n), DOUSSARD.lat, DOUSSARD.lon)!),
+            ...[0, 1, 2].map(n => bulletinOf(dayOf(saintAndre, n), SAINT_ANDRE.lat, SAINT_ANDRE.lon)!),
+            // Niveaux mêlés : heures isolées, suites courtes, pluie
+            slots(calmDay([9, 13, 14, 17], { climb: 1.2 }).map(c => (c.hour === 11 ? { ...c, precip: 1 } : c.hour === 16 ? { ...c, climb: 3 } : c))),
+        ];
+        for (const b of days) {
+            expect(b.calm).toEqual(runs(b, 0));
+            expect(b.moderate).toEqual(runs(b, 1));
+        }
+        // 8 h calme, 9 h modérée, 10 h calme, 11 h pluie, 12 h calme, 13–14 h modérées, 15 h calme, 16 h forte, 17 h modérée, 18 h calme
+        expect(days[6].calm).toEqual([]);
+        expect(days[6].moderate).toEqual([
+            { from: 8, to: 11, hours: 3 },
+            { from: 12, to: 16, hours: 4 },
+            { from: 17, to: 19, hours: 2 },
         ]);
     });
 
