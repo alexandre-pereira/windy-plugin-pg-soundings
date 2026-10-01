@@ -71,12 +71,15 @@
                         {:else}
                             <small>{tr('Pas de thermique', 'No thermals')}</small>
                         {/if}
-                        {#if d.bestW >= 0.3}
+                        {#if d.bestClimb >= 0.2}
                             <small
                                 class="wpp__w"
-                                style="background:{thermalColor(d.bestW)};color:{thermalTextColor(d.bestW)}"
-                                title={tr('Ascendance la plus forte estimée dans la journée', 'Strongest estimated climb of the day')}
-                                >{tr('Ascendance', 'Climb')} {d.bestW.toFixed(1)} m/s</small
+                                style="background:{thermalColor(d.bestClimb)};color:{thermalTextColor(d.bestClimb)}"
+                                title={tr(
+                                    'Meilleure montée au vario estimée dans la journée (taux de chute en spirale déduit)',
+                                    'Best estimated vario climb of the day (circling sink deducted)',
+                                )}
+                                >{tr('Vario', 'Vario')} +{d.bestClimb.toFixed(1)} m/s</small
                             >
                         {/if}
                     </button>
@@ -131,7 +134,7 @@
                     selectedTs={chartSelectedTs}
                     sunrise={days[dayIndex]?.sunrise ?? null}
                     sunset={days[dayIndex]?.sunset ?? null}
-                    utcOffset={payload?.header.utcOffset ?? 0}
+                    utcOffset={dayColumns[Math.floor(dayColumns.length / 2)].utcOffset}
                     on:select={e => (selectedTs = e.detail)}
                     on:open={e => {
                         selectedTs = e.detail;
@@ -226,12 +229,30 @@
                 >
                 <span
                     >Cumulus <b
-                        >{selected.cuBase != null ? `${r50(selected.cuBase)}–${r50(selected.cuTop ?? selected.cuBase)} m` : '—'}</b
+                        >{selected.cuBase != null
+                            ? `${r50(selected.cuBase)}–${r50(selected.cuTop ?? selected.cuBase)}${selected.cuTopCapped ? '+' : ''} m`
+                            : '—'}</b
                     ></span
                 >
                 <span
-                    >{tr('Ascendance', 'Climb')}
-                    <b>{selected.wStar >= 0.2 ? `${selected.wStar.toFixed(1)} m/s` : '—'}</b></span
+                    title={tr(
+                        'Montée nette lue au vario au cœur des thermiques (taux de chute en spirale déduit) ; entre parenthèses, vitesse de l’air qui monte (w*)',
+                        'Net climb read on the vario in thermal cores (circling sink deducted); in brackets, speed of the rising air (w*)',
+                    )}
+                    >{tr('Vario', 'Vario')}
+                    <b>{selected.climb >= 0.1 ? `+${selected.climb.toFixed(1)} m/s` : '—'}</b
+                    >{#if selected.wStar >= 0.2}<small>({tr('air', 'air')} {selected.wStar.toFixed(1)})</small>{/if}</span
+                >
+                <span
+                    class:wpp__choppy={selected.choppy > 0}
+                    title={tr(
+                        'Vent moyen dans la couche des thermiques ; au-delà de ~25 km/h, ou avec un vent au sol fort pour des thermiques faibles, ils sont hachés',
+                        'Mean wind in the thermal layer; above ~25 km/h, or with strong surface wind for weak thermals, thermals get choppy',
+                    )}
+                    >{tr('Vent couche', 'Layer wind')} <b>{Math.round(toKmh(selected.blSpeed))} km/h</b
+                    >{#if selected.choppy > 0}<small
+                            >{selected.choppy === 2 ? tr('très haché', 'very choppy') : tr('haché', 'choppy')}</small
+                        >{/if}</span
                 >
                 <span>0 °C <b>{selected.freezing != null ? `${r50(selected.freezing)} m` : '—'}</b></span>
                 <span
@@ -244,8 +265,8 @@
                 >
                 <span
                     title={tr(
-                        'Énergie disponible pour la convection et indice de soulèvement (négatif = instable)',
-                        'Convective available energy and lifted index (negative = unstable)',
+                        'Énergie disponible pour la convection et indice de soulèvement (négatif = instable), valeurs standard (air mélangé des 1 000 premiers mètres). La CAPE publiée par certains modèles, calculée avec l’air le plus instable, est souvent nettement plus forte.',
+                        'Convective available energy and lifted index (negative = unstable), standard values (mixed air of the lowest 1,000 m). The CAPE published by some models, computed with the most unstable air, is often much higher.',
                     )}
                     >CAPE <b>{selected.cape} J/kg</b>{#if selected.liftedIndex != null}
                         · LI <b>{selected.liftedIndex > 0 ? '+' : ''}{selected.liftedIndex}</b>{/if}</span
@@ -256,7 +277,7 @@
                         ? tr('Orage probable', 'Thunderstorm likely')
                         : selected.stormRisk === 1
                           ? tr('Surdéveloppement possible', 'Overdevelopment possible')
-                          : tr('Pas de risque d’orage', 'No thunderstorm risk')}</span
+                          : tr('Pas de signal d’orage', 'No thunderstorm signal')}</span
                 >
             </div>
             <Emagram column={selected} width={chartWidth} {yMin} {yMax} light={lightTheme} xRange={emaRange} />
@@ -351,9 +372,11 @@
         sunElevation,
         thermalColor,
         thermalTextColor,
+        toKmh,
         type Column,
         type ForecastPayload,
     } from './physics';
+    import { dayKey, makeOffsetAt } from './time';
 
     import type { LatLon } from '@windy/interfaces';
 
@@ -443,8 +466,9 @@
         lang === 'fr' ? ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'] : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
     // AROME HD n'est publié qu'au sol (ni vent en altitude, ni émagramme) : on part sur AROME FR
-    const currentProduct = ((p: string) => (p === 'arome' ? 'aromeFrance' : p))(store.get('product') as string);
-    // Modèle : le dernier choisi dans le plugin, sinon celui affiché dans Windy, sinon ECMWF
+    const asModel = (p: unknown) => (p === 'arome' ? 'aromeFrance' : p);
+    const currentProduct = asModel(store.get('product'));
+    // Modèle : celui affiché dans Windy, sinon le dernier choisi dans le plugin, sinon ECMWF
     const MODEL_KEY = 'wpp-model';
     const isModel = (id: unknown): id is ModelId => MODELS.some(m => m.id === id);
     const savedModel = (() => {
@@ -454,7 +478,7 @@
             return null;
         }
     })();
-    let model: ModelId = isModel(savedModel) ? savedModel : isModel(currentProduct) ? currentProduct : 'ecmwf';
+    let model: ModelId = isModel(currentProduct) ? currentProduct : isModel(savedModel) ? savedModel : 'ecmwf';
     const saveModel = (m: ModelId) => {
         try {
             localStorage.setItem(MODEL_KEY, m);
@@ -463,6 +487,22 @@
         }
     };
     $: saveModel(model);
+
+    // Modèle synchronisé avec la carte, dans les deux sens (AROME HD sur la carte vaut AROME FR ici)
+    const syncMapProduct = (m: ModelId) => {
+        if (asModel(store.get('product')) === m) return;
+        try {
+            store.set('product', m);
+        } catch (e) {
+            console.error(e);
+        }
+    };
+    $: syncMapProduct(model);
+    const onMapProduct = (p: unknown) => {
+        const m = asModel(p);
+        if (isModel(m) && m !== model) model = m;
+    };
+    let productListener: number | null = null;
 
     let loc: LatLon | null = null;
     let placeName = '';
@@ -568,11 +608,9 @@
 
     const buildDays = (p: ForecastPayload | null, cols: Column[], where: LatLon | null) => {
         if (!p || !where) return [];
-        const offset = (p.header.utcOffset || 0) * 3600e3;
-        const keyOf = (ts: number) => {
-            const d = new Date(ts + offset);
-            return `${d.getUTCFullYear()}-${d.getUTCMonth()}-${d.getUTCDate()}`;
-        };
+        // Décalage horaire de chaque instant : un changement d'heure peut tomber dans la prévision
+        const offsetAt = makeOffsetAt(p, where.lat, where.lon);
+        const keyOf = (ts: number) => dayKey(ts, offsetAt(ts));
         // Jours de la prévision au sol, pour afficher aussi (grisés) les jours où le modèle n'a plus
         // de données en altitude : modèles à courte échéance comme AROME ou ICON-D2
         const byDay = new Map<string, { firstTs: number; steps: number; columns: Column[] }>();
@@ -587,6 +625,7 @@
         return [...byDay.entries()]
             .filter(([, day]) => day.columns.length >= 3 || day.steps >= 3)
             .map(([key, { firstTs, columns: list }]) => {
+                const offset = offsetAt(firstTs) * 3600e3;
                 const d = new Date(firstTs + offset);
                 const midnight = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) - offset;
                 const { rise, set } = sunTimes(midnight, where);
@@ -601,7 +640,8 @@
                     sunset: set,
                     /** Plus (assez) de données en altitude ce jour-là : au-delà de l'échéance du modèle */
                     outOfRange: list.length < 3,
-                    bestW: Math.max(0, ...list.map(c => c.wStar)),
+                    /** Meilleure montée au vario de la journée (m/s) */
+                    bestClimb: Math.max(0, ...list.map(c => c.climb)),
                     /** Risque d'orage le plus fort de la journée (heures de vol) */
                     storm: Math.max(0, ...list.filter(c => c.hour >= 9 && c.hour <= 20).map(c => c.stormRisk)),
                     bestCeiling: ceilings.length
@@ -685,8 +725,8 @@
         if (!cols.length) return null;
         const first = cols[0].ts;
         const last = cols[cols.length - 1].ts;
-        const off = (p?.header.utcOffset || 0) * HOUR_MS;
-        const localTime = (t: number) => (((t + off) % DAY_MS) + DAY_MS) % DAY_MS;
+        const offsetAt = p && where ? makeOffsetAt(p, where.lat, where.lon) : () => 0;
+        const localTime = (t: number) => (((t + offsetAt(t) * HOUR_MS) % DAY_MS) + DAY_MS) % DAY_MS;
         let t = ts;
         if (t != null && (t < first || t > last)) {
             // Autre jour : même heure locale dans le jour affiché
@@ -703,16 +743,19 @@
         if (exact) return exact;
         // Entre deux heures : prévision interpolée à cet instant, puis calcul complet (soleil compris)
         if (p && where) {
-            const at = payloadAt(p, t);
+            const at = payloadAt(p, t, where.lat, where.lon);
             const col = at ? buildColumns(at, where.lat, where.lon)[0] : undefined;
             if (col) return col;
         }
         return nearestColumn(cols, t);
     };
 
+    /** Décalage horaire du lieu à chaque instant (changement d'heure compris) */
+    $: offsetAt = payload && loc ? makeOffsetAt(payload, loc.lat, loc.lon) : () => payload?.header.utcOffset || 0;
+
     /** Heure locale du lieu (« 14h35 » / « 14:35 ») */
-    const localClock = (t: number) => {
-        const d = new Date(t + (payload?.header.utcOffset || 0) * HOUR_MS);
+    $: localClock = (t: number) => {
+        const d = new Date(t + offsetAt(t) * HOUR_MS);
         return clockText(d.getUTCHours(), d.getUTCMinutes());
     };
 
@@ -730,7 +773,7 @@
         if (n < 2) return 'var(--wpp-surface-hover)';
         const stops = dayColumns.map((c, k) => {
             const color =
-                c.sunElev <= 0 ? 'var(--wpp-track-night)' : c.wStar >= 0.3 ? thermalColor(c.wStar) : 'var(--wpp-track-day)';
+                c.sunElev <= 0 ? 'var(--wpp-track-night)' : c.climb >= 0.2 ? thermalColor(c.climb) : 'var(--wpp-track-day)';
             return `${color} calc(10px + (100% - 20px) * ${k / (n - 1)})`;
         });
         return `linear-gradient(to right, ${stops.join(', ')})`;
@@ -891,11 +934,13 @@
 
     onMount(() => {
         singleclick.on(name, setLocation);
+        productListener = store.on('product', onMapProduct);
     });
 
     onDestroy(() => {
         stopPlay();
         singleclick.off(name, setLocation);
+        if (productListener !== null) store.off(productListener);
         removeMarker();
     });
 </script>
@@ -914,6 +959,9 @@
         --wpp-fg-faint: #8b939e;
         --wpp-line: #ffffff;
         --wpp-halo: #0f1822;
+        // Contour des chiffres sur les graphiques (couleur et facteur d'épaisseur)
+        --wpp-text-halo: #0f1822;
+        --wpp-text-halo-k: 1;
         --wpp-surface: rgba(255, 255, 255, 0.05);
         --wpp-surface-hover: rgba(255, 255, 255, 0.12);
         --wpp-border: rgba(255, 255, 255, 0.2);
@@ -949,6 +997,9 @@
             --wpp-fg-faint: #6b7280;
             --wpp-line: #1f2933;
             --wpp-halo: #ffffff;
+            // Sur fond clair, un contour blanc franc « vibre » autour des chiffres : voile léger et fin
+            --wpp-text-halo: rgba(246, 250, 253, 0.55);
+            --wpp-text-halo-k: 0.7;
             --wpp-surface: rgba(15, 23, 42, 0.04);
             --wpp-surface-hover: rgba(15, 23, 42, 0.09);
             --wpp-border: rgba(15, 23, 42, 0.18);
@@ -1456,6 +1507,16 @@
             b {
                 color: var(--wpp-fg);
             }
+
+            small {
+                margin-left: 4px;
+                color: var(--wpp-fg-faint);
+            }
+        }
+        // Thermiques hachés par le vent : valeur en orange
+        &__choppy small,
+        &__choppy b {
+            color: #f59e0b;
         }
     }
 

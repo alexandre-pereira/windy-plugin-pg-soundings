@@ -2,7 +2,7 @@ import type { ExternalPluginConfig } from '@windy/interfaces';
 
 const config: ExternalPluginConfig = {
     name: 'windy-plugin-pg-soundings',
-    version: '1.2.7',
+    version: '1.3.0',
     icon: '🪂',
     title: 'PG Soundings',
     description:

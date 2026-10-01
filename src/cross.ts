@@ -5,14 +5,14 @@
  * il avance à sa vitesse de cross (spirales dans les thermiques puis transitions, théorie de
  * MacCready) dans une direction fixe, et le vent de la couche thermique le pousse ou le freine.
  * Le vol s'arrête quand les thermiques s'éteignent (plus d'ascendance exploitable, pluie, mer,
- * fin de journée), après une dernière transition. On essaie 16 caps et on garde le plus long.
+ * fin de journée), après une dernière transition depuis la hauteur exploitable, vent compris. On essaie 16 caps et on garde le plus long.
  * En aller-retour, on essaie aussi l'heure du demi-tour, le retour visant le décollage.
  * C'est une estimation à partir du modèle : ni relief fin, ni brises, ni espaces aériens.
  */
 
-import { CIRCLING_SINK, CORE_FACTOR, type Column, toKmh, windAt } from './physics';
+import { type Column, gradient, toKmh } from './physics';
 import { CARDINALS, clockText } from './i18n';
-import { type GridSpec, mercY, usableTop } from './xc';
+import { type GridSpec, mercY, type RGBA } from './xc';
 
 /** Heures locales simulées (premier décollage possible → fin des thermiques) */
 export const XC_HOURS: readonly [number, number] = [8, 20];
@@ -31,8 +31,15 @@ const WIND_BREAK: readonly [number, number] = [20, 45];
 const MIN_LAUNCH_SPEED = 6;
 /** En dessous de cette vitesse (km/h), plus de thermique exploitable : dernière transition */
 const MIN_FLY_SPEED = 2;
-/** Dernière transition quand les thermiques s'arrêtent (km, depuis ~1000 m sol à finesse 7) */
-const FINAL_GLIDE_KM = 6;
+/**
+ * Dernière transition quand les thermiques s'arrêtent : depuis une hauteur moyenne de 60 % de la
+ * hauteur exploitable de la dernière heure volée (m), à la vitesse et au taux de chute de transition,
+ * dérive du vent comprise (1000 m sol ≈ 7 km en air calme)
+ */
+const FINAL_GLIDE_SHARE = 0.6;
+const FINAL_GLIDE_HEIGHT: readonly [number, number] = [200, 1500];
+/** Rapport w* ÷ u* sous lequel la turbulence mécanique (vent) casse les thermiques, puis n'en laisse que la moitié */
+const CHOPPY_RATIO: readonly [number, number] = [1.2, 2.3];
 /** Pas de temps de la simulation (h) et nombre de caps essayés */
 const STEP_H = 1 / 6;
 const HEADINGS = 16;
@@ -50,55 +57,40 @@ export interface HourlyXc {
     /** Vent moyen de la couche thermique, composantes est (u) et nord (v), km/h */
     u: number[];
     v: number[];
+    /** Hauteur exploitable au-dessus du sol (m) : sert à la dernière transition */
+    h: number[];
 }
 
-/** Vent moyen (vecteur, km/h) entre le sol et le plafond exploitable */
-const layerWind = (c: Column, top: number) => {
-    let u = 0;
-    let v = 0;
-    let n = 0;
-    for (let z = c.ground + 50; z <= Math.max(top, c.ground + 60); z += 100) {
-        const w = windAt(c.profile, z);
-        if (!w) continue;
-        const kmh = toKmh(w.speed);
-        // Direction météo (d'où vient le vent) → vecteur vers où il va
-        u += -kmh * Math.sin((w.dir * Math.PI) / 180);
-        v += -kmh * Math.cos((w.dir * Math.PI) / 180);
-        n++;
-    }
-    return n ? { u: u / n, v: v / n } : { u: 0, v: 0 };
-};
-
 /** Vitesse de cross en air calme (km/h) pour un pas de temps, 0 si pas de thermique exploitable */
-export const xcAirSpeed = (c: Column): { s: number; u: number; v: number } => {
-    const top = usableTop(c);
-    const wind = layerWind(c, top ?? c.ground + 500);
-    if (top == null) return { s: 0, ...wind };
-    const depth = top - c.ground;
-    if (depth < MIN_DEPTH || c.precip >= 0.5) return { s: 0, ...wind };
-    const climb = CORE_FACTOR * c.wStar - CIRCLING_SINK;
-    if (climb <= 0.05) return { s: 0, ...wind };
+export const xcAirSpeed = (c: Column): { s: number; u: number; v: number; h: number } => {
+    // Vent moyen de la couche thermique, vers où il va (km/h)
+    const wind = { u: toKmh(c.blU), v: toKmh(c.blV) };
+    const depth = c.ceiling == null ? 0 : c.ceiling - c.ground;
+    if (depth < MIN_DEPTH || c.precip >= 0.5 || c.climb <= 0.05) return { s: 0, ...wind, h: 0 };
+    const climb = c.climb;
 
     let s = (GLIDE_SPEED_KMH * climb) / (climb + GLIDE_SINK);
     // Plafond bas : transitions plus courtes, plus de temps à remonter
     s *= 0.25 + 0.75 * smooth(depth, MIN_DEPTH, FULL_DEPTH);
     // Vent fort : thermiques hachés, puis inexploitables
     s *= 1 - smooth(Math.hypot(wind.u, wind.v), WIND_BREAK[0], WIND_BREAK[1]);
+    // Turbulence mécanique : fort vent au sol pour des thermiques faibles (rapport w* ÷ u*)
+    if (c.convRatio != null) s *= 0.5 + 0.5 * smooth(c.convRatio, CHOPPY_RATIO[0], CHOPPY_RATIO[1]);
     // Cumulus très développés (congestus, risque d'orage) et averses
     const cuDepth = c.cuBase != null && c.cuTop != null ? c.cuTop - c.cuBase : 0;
     s *= 1 - 0.7 * smooth(cuDepth, 2500, 5000);
     if (c.precip >= 0.1) s *= 0.4;
-    return { s, ...wind };
+    return { s, ...wind, h: depth };
 };
 
 /** Données horaires d'une journée (colonnes horaires ou tri-horaires, heures manquantes interpolées) */
 export const hourlyXc = (dayCols: Column[]): HourlyXc => {
-    const known = new Map<number, { s: number; u: number; v: number }>();
+    const known = new Map<number, ReturnType<typeof xcAirSpeed>>();
     for (const c of dayCols) {
         if (c.hour >= XC_HOURS[0] && c.hour <= XC_HOURS[1]) known.set(c.hour, xcAirSpeed(c));
     }
     const hours = [...known.keys()].sort((a, b) => a - b);
-    const out: HourlyXc = { s: [], u: [], v: [] };
+    const out: HourlyXc = { s: [], u: [], v: [], h: [] };
     for (let k = 0; k < N_HOURS; k++) {
         const h = XC_HOURS[0] + k;
         let val = known.get(h);
@@ -109,13 +101,15 @@ export const hourlyXc = (dayCols: Column[]): HourlyXc => {
                 const a = known.get(before)!;
                 const b = known.get(after)!;
                 const f = (h - before) / (after - before);
-                val = { s: a.s + (b.s - a.s) * f, u: a.u + (b.u - a.u) * f, v: a.v + (b.v - a.v) * f };
+                const mix = (x: number, y: number) => x + (y - x) * f;
+                val = { s: mix(a.s, b.s), u: mix(a.u, b.u), v: mix(a.v, b.v), h: mix(a.h, b.h) };
             }
         }
         const r = (x: number) => Math.round(x * 10) / 10;
         out.s.push(r(val?.s ?? 0));
         out.u.push(r(val?.u ?? 0));
         out.v.push(r(val?.v ?? 0));
+        out.h.push(Math.round(val?.h ?? 0));
     }
     return out;
 };
@@ -150,6 +144,7 @@ const sample = (field: XcField, lat: number, lon: number, t: number) => {
     let s = 0;
     let u = 0;
     let v = 0;
+    let h = 0;
     let wsum = 0;
     const corners: [number, number, number][] = [
         [i0, j0, (1 - tx) * (1 - ty)],
@@ -163,10 +158,12 @@ const sample = (field: XcField, lat: number, lon: number, t: number) => {
         s += w * (d.s[k0] + (d.s[k1] - d.s[k0]) * tk);
         u += w * (d.u[k0] + (d.u[k1] - d.u[k0]) * tk);
         v += w * (d.v[k0] + (d.v[k1] - d.v[k0]) * tk);
+        // Anciennes données en cache (sans hauteur) : ~1000 m, l'ancienne valeur fixe
+        h += w * (d.h ? d.h[k0] + (d.h[k1] - d.h[k0]) * tk : 1000);
         wsum += w;
     }
     if (wsum < 0.25) return null;
-    return { s: s / wsum, u: u / wsum, v: v / wsum };
+    return { s: s / wsum, u: u / wsum, v: v / wsum, h: h / wsum };
 };
 
 /** Distance (km) entre deux points (haversine) */
@@ -233,33 +230,48 @@ const flyLeg = (
     let edge = false;
     let stopped = false;
     const steps: LegPoint[] = [{ la, lo, t }];
+    /** Hauteur exploitable (m) de la dernière position encore en thermique */
+    let lastDepth = 1000;
+    const move = (vx: number, vy: number, hours: number) => {
+        la += (vy * hours) / 111.2;
+        lo += (vx * hours) / (111.2 * Math.cos((la * Math.PI) / 180));
+    };
+    /** Dernière transition dans la direction du cap, poussée par le vent */
+    const finalGlide = (hx: number, hy: number, wind: { u: number; v: number }) => {
+        const height = Math.min(FINAL_GLIDE_HEIGHT[1], Math.max(FINAL_GLIDE_HEIGHT[0], FINAL_GLIDE_SHARE * lastDepth));
+        const hours = height / GLIDE_SINK / 3600;
+        move(GLIDE_SPEED_KMH * hx + wind.u, GLIDE_SPEED_KMH * hy + wind.v, hours);
+        t += hours;
+        steps.push({ la, lo, t });
+    };
+    let smp: ReturnType<typeof sample> = null;
+    let hx = 0;
+    let hy = 0;
     while (t < XC_HOURS[1]) {
         if (stop?.(la, lo)) {
             stopped = true;
             break;
         }
-        const smp = sample(field, la, lo, t);
+        smp = sample(field, la, lo, t);
         if (!smp) {
             edge = true;
             break;
         }
         const heading = (headingAt(la, lo) * Math.PI) / 180;
-        const hx = Math.sin(heading);
-        const hy = Math.cos(heading);
+        hx = Math.sin(heading);
+        hy = Math.cos(heading);
         if (smp.s < MIN_FLY_SPEED) {
-            // Plus de thermique : dernière transition dans la même direction
-            la += (hy * FINAL_GLIDE_KM) / 111.2;
-            lo += (hx * FINAL_GLIDE_KM) / (111.2 * Math.cos((la * Math.PI) / 180));
-            steps.push({ la, lo, t });
-            break;
+            // Plus de thermique : dernière transition
+            finalGlide(hx, hy, smp);
+            return { steps, edge, stopped };
         }
-        const vx = smp.s * hx + smp.u;
-        const vy = smp.s * hy + smp.v;
-        la += (vy * STEP_H) / 111.2;
-        lo += (vx * STEP_H) / (111.2 * Math.cos((la * Math.PI) / 180));
+        lastDepth = smp.h;
+        move(smp.s * hx + smp.u, smp.s * hy + smp.v, STEP_H);
         t += STEP_H;
         steps.push({ la, lo, t });
     }
+    // Fin de la journée de vol, encore en l'air : dernière transition aussi
+    if (!edge && !stopped && smp) finalGlide(hx, hy, smp);
     return { steps, edge, stopped };
 };
 
@@ -361,35 +373,31 @@ export const hourLabel = (h: number) => {
 // Couleurs de la carte (distance en km)
 // ---------------------------------------------------------------------------
 
-type RGBA = [number, number, number, number];
-
+/**
+ * Couleurs franches et assez opaques dès les petites distances : hors saison, presque toute la
+ * carte vaut moins de 60 km, et un jaune pâle translucide ne se voit pas sur le fond clair de la
+ * carte. Là où aucun cross n'est possible, un voile gris montre que la zone est bien calculée.
+ */
 const KM_STOPS: [number, RGBA][] = [
-    [5, [254, 249, 195, 0]],
-    [15, [254, 240, 138, 100]],
-    [30, [253, 224, 71, 135]],
-    [60, [251, 146, 60, 155]],
-    [100, [239, 68, 68, 165]],
-    [150, [219, 39, 119, 172]],
-    [200, [162, 28, 175, 178]],
-    [300, [124, 58, 237, 185]],
-    [400, [76, 29, 149, 190]],
+    [0, [100, 116, 139, 85]],
+    [5, [253, 230, 138, 150]],
+    [15, [250, 204, 21, 185]],
+    [30, [245, 158, 11, 190]],
+    [60, [234, 88, 12, 195]],
+    [100, [220, 38, 38, 198]],
+    [150, [219, 39, 119, 200]],
+    [200, [162, 28, 175, 203]],
+    [300, [124, 58, 237, 206]],
+    [400, [76, 29, 149, 210]],
 ];
+
+/** Voile des zones calculées sans cross possible (légende) */
+export const KM_NONE_COLOR = 'rgb(100,116,139)';
 
 /** Valeurs montrées dans la légende */
 export const KM_LEGEND = [15, 30, 60, 100, 150, 200, 300];
 
-export const kmRGBA = (km: number): RGBA => {
-    if (!(km > KM_STOPS[0][0])) return KM_STOPS[0][1];
-    for (let i = 0; i < KM_STOPS.length - 1; i++) {
-        const [v0, c0] = KM_STOPS[i];
-        const [v1, c1] = KM_STOPS[i + 1];
-        if (km <= v1) {
-            const f = (km - v0) / (v1 - v0);
-            return c0.map((c, k) => Math.round(c + (c1[k] - c) * f)) as RGBA;
-        }
-    }
-    return KM_STOPS[KM_STOPS.length - 1][1];
-};
+export const kmRGBA = gradient<RGBA>(KM_STOPS);
 
 export const kmColor = (km: number) => {
     const [r, g, b] = kmRGBA(Math.max(km, 15));

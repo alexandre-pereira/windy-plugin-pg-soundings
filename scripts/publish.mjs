@@ -31,11 +31,23 @@ const dist = path.join(root, 'dist');
 const manifestPath = path.join(dist, 'plugin.json');
 const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
 
-// Mêmes métadonnées que le script officiel (le projet n'est pas un dépôt git)
+// Mêmes métadonnées que le script officiel : le dépôt GitHub et le commit publiés, ou à défaut
+// (pas de dépôt distant GitHub) le nom du plugin et sa version
+const git = args => {
+    try {
+        return execFileSync('git', args, { cwd: root, stdio: ['ignore', 'pipe', 'ignore'] })
+            .toString()
+            .trim();
+    } catch {
+        return '';
+    }
+};
+const [, owner, repo] =
+    git(['remote', 'get-url', 'origin']).match(/github\.com[:/]([^/]+)\/(.+?)(?:\.git)?$/) ?? [];
 Object.assign(manifest, {
-    repositoryName: manifest.name,
-    commitSha: `v${manifest.version}`,
-    repositoryOwner: manifest.author,
+    repositoryName: owner ? `${owner}/${repo}` : manifest.name,
+    commitSha: (owner && git(['rev-parse', 'HEAD'])) || `v${manifest.version}`,
+    repositoryOwner: owner || manifest.author,
 });
 fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
 fs.copyFileSync(path.join(root, 'package.json'), path.join(dist, 'package.json'));
