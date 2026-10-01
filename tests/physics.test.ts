@@ -4,15 +4,25 @@ import { describe, expect, it } from 'vitest';
 import { toHourly } from '../src/interpolate';
 import {
     buildColumns,
+    capeColor,
     CIRCLING_SINK,
+    type Column,
     CORE_FACTOR,
+    dewPointFromMixingRatio,
     type ForecastPayload,
+    INSTABILITY_COLORS,
+    isSevereEnv,
     isShower,
     lclHeight,
+    liftedIndexColor,
     moistLapse,
     netClimb,
+    parcelAscent,
+    pressureAt,
+    satMixingRatio,
     type StormInputs,
     stormRiskOf,
+    stormWatchOf,
     sunElevation,
     thermalEase,
     thermalShape,
@@ -175,7 +185,9 @@ describe('risque d’orage', () => {
     const stormy: StormInputs = {
         cumulus: { cape: 1500, depth: 5000, topTemp: C - 30, modelCloud: 0.6, dryMid: false },
         cape: 800,
-        capeTopTemp: C - 40,
+        muCape: 800,
+        muTopTemp: C - 40,
+        severe: false,
         precip: 0,
         convRain: 0,
         rainNear: 0.5,
@@ -218,7 +230,143 @@ describe('risque d’orage', () => {
         expect(stormRiskOf({ ...night, convRain: 1 })).toBe(2);
         expect(stormRiskOf({ ...night, precip: 2, deepCloud: 0.8 })).toBe(2);
         // Pluie de front en air stable : pas d'orage
-        expect(stormRiskOf({ ...night, cape: 20, precip: 5, deepCloud: 1 })).toBe(0);
+        expect(stormRiskOf({ ...night, cape: 20, muCape: 20, precip: 5, deepCloud: 1 })).toBe(0);
+    });
+
+    it('orage venu d’ailleurs sur un air stable près du sol : c’est l’air le plus instable qui compte', () => {
+        const evening = { ...stormy, cumulus: null, rainNear: 0, cape: 30, convRain: 1 };
+        expect(stormRiskOf({ ...evening, muCape: 600 })).toBe(2);
+        expect(stormRiskOf({ ...evening, muCape: 30 })).toBe(0);
+    });
+
+    it('orage violent possible : un orage probable dans un air propice, pas un simple surdéveloppement', () => {
+        expect(risk({ severe: true })).toBe(3);
+        expect(risk({ severe: true, rainNear: 0 })).toBe(1);
+        expect(stormRiskOf({ ...stormy, cumulus: null, rainNear: 0, severe: true })).toBe(0);
+    });
+});
+
+describe('air propice aux orages violents', () => {
+    it('instabilité très forte, même sans vent en altitude', () => {
+        expect(isSevereEnv({ cape: 1500, liftedIndex: -7, shear: 3 })).toBe(true);
+        expect(isSevereEnv({ cape: 1500, liftedIndex: -5, shear: 3 })).toBe(false);
+    });
+
+    it('air instable et vent fort en altitude : orages organisés', () => {
+        // √(2 × 800) × 18 = 720 m²/s²
+        expect(isSevereEnv({ cape: 800, liftedIndex: -4, shear: 18 })).toBe(true);
+        // Même vent, peu d'énergie : √(2 × 150) × 18 = 312 m²/s²
+        expect(isSevereEnv({ cape: 150, liftedIndex: -2.5, shear: 18 })).toBe(false);
+    });
+
+    it('un vent fort en altitude ne suffit pas sans air nettement instable', () => {
+        // √(2 × 300) × 30 = 735 m²/s², mais indice de soulèvement à peine négatif
+        expect(isSevereEnv({ cape: 300, liftedIndex: -1, shear: 30 })).toBe(false);
+        expect(isSevereEnv({ cape: 300, liftedIndex: -2.5, shear: 30 })).toBe(true);
+    });
+
+    it.each(SITES)('prévision réelle, $name : la particule la plus instable a au moins l’énergie standard', ({ payload, lat, lon }) => {
+        for (const c of columnsOf(payload, lat, lon)) {
+            expect(c.muCape).toBeGreaterThanOrEqual(c.cape);
+            if (c.liftedIndex != null) expect(c.muLiftedIndex).toBeLessThanOrEqual(c.liftedIndex);
+            expect(c.shear).toBeGreaterThanOrEqual(0);
+            expect(Math.hypot(c.steerU, c.steerV)).toBeLessThan(80);
+            // Fin septembre sans orage : rien de violent
+            expect(c.stormRisk).toBeLessThan(3);
+        }
+    });
+});
+
+describe('alerte d’orage de la journée', () => {
+    // Une journée de la prévision réelle (heures locales 0–23), rendue calme puis orageuse à la demande
+    const day = columnsOf(saintAndre, 43.97, 6.5)
+        .filter(c => new Date(c.ts + 2 * 3600e3).getUTCDate() === 30)
+        .map((c): Column => ({ ...c, stormRisk: 0, severeEnv: false, precip: 0, gust: 5, profile: c.profile.map(p => ({ ...p, cloud: 0 })) }));
+    /** Profil d'une heure, couvert à 90 % au niveau de pression donné */
+    const overcastAt = (hour: number, hPa: number) =>
+        day.find(c => c.hour === hour)!.profile.map(p => (p.p === hPa ? { ...p, cloud: 90 } : p));
+    const withStorm = (patch: Record<number, Partial<Column>>) => day.map(c => ({ ...c, ...patch[c.hour] }));
+
+    it('journée complète', () => {
+        expect(day.map(c => c.hour)).toEqual([...Array(24).keys()]);
+    });
+
+    it('rien à signaler sans orage, ni pour un simple surdéveloppement', () => {
+        expect(stormWatchOf(day)).toBeNull();
+        expect(stormWatchOf(withStorm({ 15: { stormRisk: 1 } }))).toBeNull();
+    });
+
+    it('orage probable : première heure, déplacement, heure calme qui précède', () => {
+        const w = stormWatchOf(
+            withStorm({
+                17: { stormRisk: 2, steerU: 10, steerV: 10, gust: 14 },
+                18: { stormRisk: 2, gust: 18 },
+            }),
+        )!;
+        expect(w.level).toBe(2);
+        expect(w.from.hour).toBe(17);
+        // Vent de 14 m/s (51 km/h) qui souffle vers le nord-est : l'orage vient du sud-ouest
+        expect(w.speed).toBeCloseTo(Math.hypot(10, 10), 6);
+        expect(w.dir).toBeCloseTo(225, 6);
+        expect(w.gust).toBe(18);
+        expect(w.calmBefore?.hour).toBe(16);
+        expect(w.hidden).toBe(false);
+    });
+
+    it('violent dès qu’une heure d’orage l’est ; l’épisode commence à la première heure d’orage', () => {
+        const w = stormWatchOf(
+            withStorm({
+                16: { stormRisk: 2 },
+                18: { stormRisk: 3, severeEnv: true, muLiftedIndex: -6.5, shear: 20 },
+            }),
+        )!;
+        expect(w.level).toBe(3);
+        expect(w.from.hour).toBe(16);
+        expect(w.severeEnv).toBe(true);
+        expect(w.liftedIndex).toBe(-6.5);
+        expect(w.shear).toBe(20);
+    });
+
+    it('un surdéveloppement ou de la pluie l’heure d’avant : l’orage n’arrive pas sans prévenir', () => {
+        expect(stormWatchOf(withStorm({ 16: { stormRisk: 1 }, 17: { stormRisk: 2 } }))!.calmBefore).toBeNull();
+        expect(stormWatchOf(withStorm({ 16: { precip: 1 }, 17: { stormRisk: 2 } }))!.calmBefore).toBeNull();
+    });
+
+    it('ciel déjà couvert l’heure d’avant : l’orage peut rester caché (pas derrière un voile de cirrus)', () => {
+        expect(stormWatchOf(withStorm({ 16: { profile: overcastAt(16, 700) }, 17: { stormRisk: 2 } }))!.hidden).toBe(true);
+        expect(stormWatchOf(withStorm({ 16: { profile: overcastAt(16, 400) }, 17: { stormRisk: 2 } }))!.hidden).toBe(false);
+    });
+
+    it('surdéveloppement dans un air propice aux orages violents : alerte de niveau 1', () => {
+        const w = stormWatchOf(withStorm({ 14: { stormRisk: 1 }, 15: { stormRisk: 1, severeEnv: true } }))!;
+        expect(w.level).toBe(1);
+        expect(w.from.hour).toBe(15);
+        expect(w.calmBefore).toBeNull();
+        // Un air propice seul, sans convection au modèle, ne déclenche rien
+        expect(stormWatchOf(withStorm({ 15: { severeEnv: true } }))).toBeNull();
+    });
+
+    it('seulement entre 8 h et 22 h, et pas pour les heures déjà passées', () => {
+        expect(stormWatchOf(withStorm({ 3: { stormRisk: 3 }, 23: { stormRisk: 2 } }))).toBeNull();
+        const stormy = withStorm({ 12: { stormRisk: 2 }, 18: { stormRisk: 2 } });
+        const at = (hour: number) => stormy.find(c => c.hour === hour)!.ts;
+        expect(stormWatchOf(stormy, at(11))!.from.hour).toBe(12);
+        // À 12 h 30, l'orage de midi est en cours : il reste signalé, sans « heure calme » avant
+        expect(stormWatchOf(stormy, at(12) + 1800e3)!.from.hour).toBe(12);
+        expect(stormWatchOf(stormy, at(12) + 1800e3)!.calmBefore).toBeNull();
+        expect(stormWatchOf(stormy, at(14))!.from.hour).toBe(18);
+        expect(stormWatchOf(stormy, at(20))).toBeNull();
+    });
+});
+
+describe('pastilles de la CAPE et du LI', () => {
+    it('quatre paliers, aux seuils de la légende', () => {
+        expect([0, 299, 300, 999, 1000, 2499, 2500].map(capeColor)).toEqual(
+            [0, 0, 1, 1, 2, 2, 3].map(k => INSTABILITY_COLORS[k]),
+        );
+        expect([2, 0.1, 0, -2.9, -3, -5.9, -6, -9].map(liftedIndexColor)).toEqual(
+            [0, 0, 1, 1, 2, 2, 3, 3].map(k => INSTABILITY_COLORS[k]),
+        );
     });
 });
 
@@ -304,6 +452,66 @@ describe('sommet des cumulus', () => {
             const zTop = c.profile[c.profile.length - 1].z;
             if (c.cuTopCapped) expect(c.cuTop!).toBeGreaterThan(zTop - 25);
             else expect(c.cuTop!).toBeLessThan(zTop);
+        }
+    });
+});
+
+describe('ascension de la particule', () => {
+    // Écart (K) entre le point de rosée de la particule et sa température au niveau z
+    const spread = (c: Column, z: number) => {
+        const q = satMixingRatio(Math.min(c.parcelDew!, c.parcelStart), c.profile[0].p);
+        return c.parcelStart - 0.0098 * (z - c.ground) - dewPointFromMixingRatio(q, pressureAt(c.profile, z));
+    };
+
+    it.each(SITES)('prévision réelle, $name : du sol au sommet des thermiques, sans thermique rien', ({ payload, lat, lon }) => {
+        const cols = columnsOf(payload, lat, lon);
+        expect(cols.some(c => c.thermalTop != null && c.cuBase == null)).toBe(true);
+        for (const c of cols) {
+            const a = parcelAscent(c);
+            if (c.thermalTop == null) {
+                expect(a).toBeNull();
+                continue;
+            }
+            expect(a!.path[0]).toEqual({ z: c.ground, t: c.parcelStart });
+            expect(a!.path[a!.path.length - 1].z).toBeCloseTo(a!.top, 6);
+            expect(a!.top).toBe(c.cuBase == null ? c.thermalTop : c.cuTop);
+            // Le chemin s'arrête au sommet : il ne dépasse pas celui tracé jusqu'en haut du profil
+            const zs = a!.path.map(p => p.z);
+            expect(zs).toEqual([...zs].sort((x, y) => x - y));
+            // Point de rosée de la particule : part de celui de l'air brassé et baisse en montant
+            expect(a!.dew[0].t).toBeCloseTo(Math.min(c.parcelDew!, c.parcelStart), 6);
+            // Il va jusqu'au niveau de condensation, atteint ou non, sans sortir du profil
+            const zMax = c.profile[c.profile.length - 1].z;
+            expect(a!.condensation).toBeCloseTo(lclHeight(c.ground, c.parcelStart, c.parcelDew), 6);
+            expect(a!.dew[a!.dew.length - 1].z).toBeCloseTo(Math.min(a!.condensation!, zMax), 6);
+            // Thermique bleu : la condensation est au-dessus du sommet, où la particule est encore
+            // plus chaude que son point de rosée
+            if (a!.base == null) {
+                expect(a!.condensation!).toBeGreaterThanOrEqual(a!.top);
+                expect(spread(c, a!.top)).toBeGreaterThan(0);
+                if (a!.condensation! <= zMax) expect(Math.abs(spread(c, a!.condensation!))).toBeLessThan(0.5);
+            }
+        }
+    });
+
+    it('sous un cumulus, le point de rosée rejoint la température de la particule à la base', () => {
+        const humid = structuredClone(saintAndre) as ForecastPayload;
+        humid.sounding!.dewPoint = humid.sounding!.ts!.map((_, k) => (humid.data.temperature![k] ?? 290) - 3);
+        const cols = columnsOf(humid, 43.97, 6.5).filter(c => c.cuBase != null);
+        expect(cols.length).toBeGreaterThan(0);
+        for (const c of cols) {
+            const a = parcelAscent(c)!;
+            expect(a.base).toBe(c.cuBase);
+            expect(a.condensation).toBe(c.cuBase);
+            expect(a.top).toBe(c.cuTop);
+            const end = a.dew[a.dew.length - 1];
+            expect(end.z).toBe(c.cuBase);
+            expect(end.t).toBeCloseTo(c.parcelStart - 0.0098 * (c.cuBase! - c.ground), 6);
+            // Le rapport de mélange constant et le niveau de condensation de Bolton se rejoignent
+            expect(Math.abs(spread(c, c.cuBase!))).toBeLessThan(0.5);
+            // Au-dessus de la base, la particule suit la pseudo-adiabatique : elle se refroidit moins vite
+            const top = a.path[a.path.length - 1];
+            if (top.z > c.cuBase! + 100) expect(top.t).toBeGreaterThan(c.parcelStart - 0.0098 * (top.z - c.ground));
         }
     });
 });

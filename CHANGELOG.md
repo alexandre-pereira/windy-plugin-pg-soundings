@@ -8,6 +8,79 @@ Le dépôt git ne commence qu'après la 1.2.7 : les entrées plus anciennes ont 
 coup à partir des notes de publication. Chaque version reste installable depuis Windy à l'adresse
 `https://windy-plugins.com/2727410/<nom-du-plugin>/<version>/plugin.min.js`.
 
+## [1.4.0] - 2026-10-01
+
+Les plafonds et les ascendances affichés ne changent pas. Le risque d'orage, lui, peut être plus
+élevé qu'en 1.3.0 le soir et la nuit : les orages du modèle sont maintenant jugés sur l'air le plus
+instable, et un orage probable passe en « orage violent possible » quand l'air s'y prête.
+
+### Ajouté
+
+- Onglet « Bulletin » : le bulletin de vol de la journée, rédigé à partir de la prévision du modèle
+  choisi. Il donne une appréciation de la journée, la force des conditions de chaque heure de jour
+  (calmes, modérées, fortes, défavorables), les créneaux qui en découlent et celui des thermiques
+  exploitables, le vent au sol et en altitude, les thermiques, puis un aperçu des jours suivants,
+  cliquables. Il décrit des conditions, pas l'aptitude d'un pilote à voler ; la légende de l'onglet
+  détaille les critères.
+- Bulletin : ciel et précipitations. État du ciel le matin et l'après-midi avec les étages de nuages
+  et l'altitude des plus bas, brume ou brouillard possible en début de matinée, cumulus des
+  thermiques (heures, base, sommets, épaisseur), précipitations épisode par épisode (nature,
+  intensité, cumul, heure la plus arrosée), limite pluie-neige, sol mouillé au lever du jour,
+  températures au sol et isotherme 0 °C.
+- Bulletin : passages de front. Un front froid ou chaud est signalé avec son heure, le
+  refroidissement ou le réchauffement en altitude, la rotation du vent, la pluie et les rafales qui
+  l'accompagnent ; un front passé la veille ou attendu la nuit suivante est mentionné aussi.
+
+- Niveau « orage violent possible » (pictogramme violet à deux éclairs) : un orage probable dans
+  un air très instable (LI ≤ −6), ou instable avec un vent fort en altitude qui organise l'orage
+  (√(2 · CAPE) × cisaillement sol–6 km), ou avec des rafales d'au moins 70 km/h au modèle.
+- Bandeau d'alerte au-dessus des onglets les jours d'orage : heure d'arrivée, cause, vitesse et
+  direction de déplacement, rafales prévues, et s'il arrive sans signe avant-coureur ou sous un
+  ciel déjà couvert. Il signale aussi un simple surdéveloppement quand l'air est propice aux orages
+  violents.
+- Graphique « Vent & thermiques » : bandeau « CAPE LI » sous la pluie. Chaque heure a sa case, la
+  CAPE à gauche et le LI à droite, chacun sur la couleur de son palier (vert, jaune, orange,
+  rouge) : la montée de l'instabilité dans la journée se lit d'un coup d'œil, sans survoler les
+  colonnes.
+- Émagramme : pastille de couleur du palier de la CAPE et du LI (aussi dans l'infobulle du
+  graphique), CAPE de l'air le plus instable (« max ») quand elle dépasse nettement la CAPE
+  standard, et orage attendu dans les 3 heures qui suivent l'heure affichée.
+- Émagramme : l'infobulle donne la montée au vario estimée à l'altitude pointée, avec sa couleur,
+  comme sur le graphique « Vent & thermiques ».
+- Émagramme : option « Ascension de la particule », en bas de page. Elle trace le trajet du
+  thermique du sol jusqu'où il s'arrête (sommet des thermiques, ou du cumulus) et son point de
+  rosée en tirets bleus, qui le rejoint au niveau de condensation, marqué d'un point même quand le
+  thermique s'arrête avant. Au-dessus de ce niveau, le trajet passe du jaune (adiabatique sèche)
+  au jaune et bleu (adiabatique saturée). Les zones où le thermique est plus chaud que l'air sont
+  teintées. Le choix est mémorisé.
+
+### Modifié
+
+- Émagramme : la zone de formation du nuage est dessinée. Entre la base et le sommet du cumulus
+  des thermiques, une couche claire à base plate et à sommet bourgeonnant remplace le voile à peine
+  visible ; elle est expliquée dans la légende.
+
+- Les orages que le modèle développe lui-même sont jugés sur l'air le plus instable des 300 hPa les
+  plus bas, et plus seulement sur l'air près du sol : un orage qui arrive le soir ou la nuit sur un
+  air stabilisé au sol n'est plus manqué.
+- Infobulle du graphique « Vent & thermiques » rangée par thème (vent, thermiques, température,
+  nuages et précipitations, orage) : dans chaque groupe, la valeur à l'altitude pointée précède
+  celles de la colonne, par exemple le vario à cette altitude puis le vario max.
+- Altitude max : choix de 7 000 et 8 000 m en plus. Au-dessus du dernier niveau fourni par le
+  modèle (vers 7 500 m), le graphique et l'émagramme sont hachurés : le modèle n'y donne ni vent,
+  ni température, ni nuages.
+- Thème clair : le graphique « Vent & thermiques » garde les couleurs du thème sombre (ciel, flèches
+  et chiffres du vent à contour sombre, plafond en blanc), plus lisibles que leur version claire.
+  Seuls les axes et les bandeaux « Therm. » et « Pluie » prennent les couleurs du thème clair.
+
+### Supprimé
+
+- Vent moyen de la couche thermique, dans l'infobulle du graphique et au-dessus de l'émagramme.
+  Les thermiques hachés par le vent restent signalés dans le bandeau « Therm. », dans l'infobulle
+  et, au-dessus de l'émagramme, à côté du vario.
+- Graphique « Vent & thermiques » : l'heure affichée dans l'émagramme n'y est plus encadrée en
+  jaune. Toucher ou cliquer une heure la choisit toujours pour l'émagramme.
+
 ## [1.3.0] - 2026-10-01
 
 Les calculs des thermiques ont été revus : à conditions égales, les plafonds affichés sont

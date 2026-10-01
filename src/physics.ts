@@ -121,8 +121,25 @@ export interface Column {
     cape: number;
     /** Indice de soulèvement standard à 500 hPa (K) : négatif = instable */
     liftedIndex: number | null;
-    /** Risque d'orage (voir stormRiskOf) : 0 aucun signal, 1 surdéveloppement possible, 2 orage probable */
-    stormRisk: 0 | 1 | 2;
+    /**
+     * CAPE (J/kg) et indice de soulèvement (K) de la particule la plus instable : la particule
+     * standard, ou l'air d'un niveau plus haut (300 hPa les plus bas) s'il a plus d'énergie. C'est
+     * elle qui nourrit un orage venu d'ailleurs, même quand l'air près du sol est stable (soir, nuit).
+     */
+    muCape: number;
+    muLiftedIndex: number | null;
+    /** Cisaillement (m/s) : écart entre le vent au sol et le vent 6 km plus haut */
+    shear: number;
+    /** Vent moyen du sol à 6 km, celui qui déplace les orages : composantes vers l'est et le nord (m/s) */
+    steerU: number;
+    steerV: number;
+    /** Air propice aux orages violents (voir isSevereEnv), qu'un orage soit prévu ou non */
+    severeEnv: boolean;
+    /**
+     * Risque d'orage (voir stormRiskOf) : 0 aucun signal, 1 surdéveloppement possible, 2 orage
+     * probable, 3 orage violent possible
+     */
+    stormRisk: StormRisk;
     /**
      * Nuage d'averses (m AMSL), les heures de pluie convective (voir isShower) : nuage que le modèle
      * développe lui-même, sans les thermiques du sol (nuit, ciel couvert, averses venues d'ailleurs).
@@ -451,6 +468,56 @@ export const parcelPath = (col: Column, zTop: number): { z: number; t: number }[
     return path;
 };
 
+/** Ascension de la particule des thermiques (températures en K, altitudes en m AMSL) */
+export interface ParcelAscent {
+    /** Température de la particule, du sol au sommet de son ascension */
+    path: { z: number; t: number }[];
+    /**
+     * Point de rosée de la particule (rapport de mélange constant), du sol au niveau de condensation,
+     * qu'elle l'atteigne ou non (borné au sommet du profil) ; vide quand l'humidité au sol est inconnue
+     */
+    dew: { z: number; t: number }[];
+    /**
+     * Niveau de condensation de la particule, où elle passe de l'adiabatique sèche à la
+     * pseudo-adiabatique, qu'elle l'atteigne ou non ; null quand l'humidité au sol est inconnue
+     */
+    condensation: number | null;
+    /** Base des cumulus : le niveau de condensation, si la particule l'atteint */
+    base: number | null;
+    /** Sommet de l'ascension : sommet des cumulus, sinon sommet des thermiques */
+    top: number;
+}
+
+/**
+ * Ascension réelle de la particule des thermiques, là où `parcelPath` prolonge son chemin jusqu'en
+ * haut du profil : adiabatique sèche depuis le sol, puis pseudo-adiabatique dans le cumulus, arrêtée
+ * au sommet des thermiques ou du cumulus. null sans thermique.
+ */
+export const parcelAscent = (col: Column): ParcelAscent | null => {
+    if (col.thermalTop == null) return null;
+    const base = col.cuBase;
+    const top = base == null ? col.thermalTop : Math.max(base, col.cuTop ?? base);
+    const path = parcelPath(col, top);
+
+    const dew: { z: number; t: number }[] = [];
+    let condensation: number | null = null;
+    if (col.parcelDew != null) {
+        condensation = base ?? lclHeight(col.ground, col.parcelStart, col.parcelDew);
+        const q = satMixingRatio(Math.min(col.parcelDew, col.parcelStart), col.profile[0].p);
+        const dewAt = (z: number) => ({ z, t: dewPointFromMixingRatio(q, pressureAt(col.profile, z)) });
+        const zMax = col.profile[col.profile.length - 1].z;
+        const end = Math.min(condensation, zMax);
+        for (let z = col.ground; z < end; z += 50) dew.push(dewAt(z));
+        // Au niveau de condensation, le point de rosée rejoint la température de la particule
+        dew.push(
+            condensation <= zMax
+                ? { z: condensation, t: col.parcelStart - DRY_LAPSE * (condensation - col.ground) }
+                : dewAt(zMax),
+        );
+    }
+    return { path, dew, condensation, base, top };
+};
+
 /**
  * Profil vertical de la vitesse ascensionnelle relative à w*, en fonction de la hauteur
  * réduite zr = (z - sol) / épaisseur de la couche convective : pleine force dès le sol, presque
@@ -500,17 +567,67 @@ const envVirtualTemp = (profile: ProfilePoint[], z: number) => {
     return virtualTemp(t, td == null ? 0 : satMixingRatio(Math.min(td, t), pressureAt(profile, z)));
 };
 
+/** Énergie et sommet d'une particule soulevée (températures en K, altitudes en m AMSL) */
+interface ParcelStability {
+    cape: number;
+    liftedIndex: number | null;
+    /** Température de l'air au niveau d'équilibre */
+    topTemp: number | null;
+    /** Nuage convectif de la particule : de la condensation au niveau d'équilibre */
+    base: number | null;
+    top: number | null;
+}
+
+const NO_STABILITY: ParcelStability = { cape: 0, liftedIndex: null, topTemp: null, base: null, top: null };
+
+/**
+ * CAPE et indice de soulèvement d'une particule partie de l'altitude z0 à la température t0 (K) avec
+ * le rapport de mélange q : montée sèche jusqu'à la condensation, puis pseudo-adiabatique.
+ */
+const liftParcel = (profile: ProfilePoint[], z0: number, t0: number, q: number): ParcelStability => {
+    const zMax = profile[profile.length - 1].z;
+    const p0 = z0 <= profile[0].z ? profile[0].p : pressureAt(profile, z0);
+    const lcl = Math.min(q > 1e-5 ? lclHeight(z0, t0, dewPointFromMixingRatio(q, p0)) : Infinity, zMax);
+
+    const STEP = 20;
+    let cape = 0;
+    // Plus haut niveau où la particule est encore plus légère que l'air (niveau d'équilibre)
+    let topZ: number | null = null;
+    const add = (z: number, tvParcel: number) => {
+        const tv = envVirtualTemp(profile, z);
+        if (tv != null && tvParcel > tv) {
+            cape += (G * (tvParcel - tv) * STEP) / tv;
+            topZ = z;
+        }
+    };
+    for (let z = z0 + STEP; z < lcl; z += STEP) add(z, virtualTemp(t0 - DRY_LAPSE * (z - z0), q));
+    const path = lcl < zMax ? moistAdiabat(profile, t0 - DRY_LAPSE * (lcl - z0), lcl, zMax, STEP) : [];
+    for (const pt of path.slice(1)) add(pt.z, virtualTemp(pt.t, satMixingRatio(pt.t, pressureAt(profile, pt.z))));
+
+    // Indice de soulèvement : environnement − particule à 500 hPa
+    let liftedIndex: number | null = null;
+    const z500 = heightOfPressure(profile, 500);
+    const tEnv = z500 == null ? null : interpProfile(profile, z500, 't');
+    if (z500 != null && tEnv != null && z500 > z0) {
+        if (z500 <= lcl) liftedIndex = tEnv - (t0 - DRY_LAPSE * (z500 - z0));
+        else if (path.length) {
+            const pt = path.reduce((best, p) => (Math.abs(p.z - z500) < Math.abs(best.z - z500) ? p : best));
+            if (Math.abs(pt.z - z500) <= STEP) liftedIndex = tEnv - pt.t;
+        }
+    }
+    const topTemp = topZ == null ? null : interpProfile(profile, topZ, 't');
+    // Nuage convectif de cette particule : de la condensation au niveau d'équilibre, s'il est au-dessus
+    const cloudy = topZ != null && lcl < topZ;
+    return { cape, liftedIndex, topTemp, base: cloudy ? lcl : null, top: cloudy ? topZ : null };
+};
+
 /**
  * CAPE et indice de soulèvement « standard » (particule mélangée, pas la plus instable) : air
  * mélangé des 100 hPa les plus bas (température potentielle et humidité moyennes), sans
- * surchauffe, montée sèche jusqu'à la condensation puis pseudo-adiabatique. Calculés aussi la nuit.
+ * surchauffe. Calculés aussi la nuit.
  */
-const standardStability = (
-    profile: ProfilePoint[],
-    ground: number,
-): { cape: number; liftedIndex: number | null; topTemp: number | null; base: number | null; top: number | null } => {
+const standardStability = (profile: ProfilePoint[], ground: number): ParcelStability => {
     const p0 = profile[0].p;
-    const zMax = profile[profile.length - 1].z;
     const zTopMl = heightOfPressure(profile, p0 - 100) ?? ground + 1000;
     let thSum = 0;
     let qSum = 0;
@@ -524,41 +641,102 @@ const standardStability = (
         qSum += td == null ? 0 : satMixingRatio(Math.min(td, t), p);
         n++;
     }
-    if (!n) return { cape: 0, liftedIndex: null, topTemp: null, base: null, top: null };
-    const t0 = (thSum / n) * Math.pow(p0 / 1000, KAPPA);
-    const q = qSum / n;
-    const lcl = Math.min(q > 1e-5 ? lclHeight(ground, t0, dewPointFromMixingRatio(q, p0)) : Infinity, zMax);
+    if (!n) return NO_STABILITY;
+    return liftParcel(profile, ground, (thSum / n) * Math.pow(p0 / 1000, KAPPA), qSum / n);
+};
 
-    const STEP = 20;
-    let cape = 0;
-    // Plus haut niveau où la particule est encore plus légère que l'air (niveau d'équilibre)
-    let topZ: number | null = null;
-    const add = (z: number, tvParcel: number) => {
-        const tv = envVirtualTemp(profile, z);
-        if (tv != null && tvParcel > tv) {
-            cape += (G * (tvParcel - tv) * STEP) / tv;
-            topZ = z;
-        }
-    };
-    for (let z = ground + STEP; z < lcl; z += STEP) add(z, virtualTemp(t0 - DRY_LAPSE * (z - ground), q));
-    const path = lcl < zMax ? moistAdiabat(profile, t0 - DRY_LAPSE * (lcl - ground), lcl, zMax, STEP) : [];
-    for (const pt of path.slice(1)) add(pt.z, virtualTemp(pt.t, satMixingRatio(pt.t, pressureAt(profile, pt.z))));
+/** Température potentielle équivalente (K) — Bolton (1980), forme simplifiée */
+const thetaE = (t: number, td: number | null, p: number) => {
+    const theta = t * Math.pow(1000 / p, KAPPA);
+    if (td == null) return theta;
+    const dew = Math.min(td, t);
+    const tLcl = 1 / (1 / (dew - 56) + Math.log(t / dew) / 800) + 56;
+    return theta * Math.exp((LV * satMixingRatio(dew, p)) / (CP * tLcl));
+};
 
-    // Indice de soulèvement : environnement − particule à 500 hPa
-    let liftedIndex: number | null = null;
-    const z500 = heightOfPressure(profile, 500);
-    const tEnv = z500 == null ? null : interpProfile(profile, z500, 't');
-    if (z500 != null && tEnv != null) {
-        if (z500 <= lcl) liftedIndex = tEnv - (t0 - DRY_LAPSE * (z500 - ground));
-        else if (path.length) {
-            const pt = path.reduce((best, p) => (Math.abs(p.z - z500) < Math.abs(best.z - z500) ? p : best));
-            if (Math.abs(pt.z - z500) <= STEP) liftedIndex = tEnv - pt.t;
+/**
+ * Particule la plus instable : la particule standard, ou l'air du niveau le plus « chaud et humide »
+ * (température potentielle équivalente la plus forte) des 300 hPa les plus bas, s'il a plus d'énergie.
+ * L'air à 2 m n'est pas candidat : surchauffé l'après-midi, il fausserait les seuils. Un orage déjà
+ * formé se nourrit de cet air-là, où qu'il soit : c'est la particule qui compte pour un orage venu
+ * d'ailleurs, quand l'air près du sol s'est stabilisé (soir, nuit, fond de vallée).
+ */
+const mostUnstable = (profile: ProfilePoint[], std: ParcelStability): ParcelStability => {
+    const pMin = profile[0].p - 300;
+    let best: ProfilePoint | null = null;
+    let bestTheta = -Infinity;
+    for (const pt of profile.slice(1)) {
+        if (pt.p < pMin || pt.t == null) continue;
+        const th = thetaE(pt.t, pt.td, pt.p);
+        if (th > bestTheta) {
+            bestTheta = th;
+            best = pt;
         }
     }
-    const topTemp = topZ == null ? null : interpProfile(profile, topZ, 't');
-    // Nuage convectif de cette particule : de la condensation au niveau d'équilibre, s'il est au-dessus
-    const cloudy = topZ != null && lcl < topZ;
-    return { cape, liftedIndex, topTemp, base: cloudy ? lcl : null, top: cloudy ? topZ : null };
+    if (!best || best.t == null) return std;
+    const lifted = liftParcel(
+        profile,
+        best.z,
+        best.t,
+        best.td == null ? 0 : satMixingRatio(Math.min(best.td, best.t), best.p),
+    );
+    const li = [std.liftedIndex, lifted.liftedIndex].filter((v): v is number => v != null);
+    return { ...(lifted.cape > std.cape ? lifted : std), liftedIndex: li.length ? Math.min(...li) : null };
+};
+
+/** Épaisseur (m) de la couche du cisaillement et du vent qui déplace les orages */
+const DEEP_LAYER = 6000;
+
+/**
+ * Vent de la couche profonde (sol → 6 km, ou le sommet du profil s'il est plus bas) : cisaillement
+ * (écart entre le vent du sommet et celui du sol, m/s) et vent moyen, qui déplace les orages.
+ */
+const deepLayerWind = (profile: ProfilePoint[], ground: number) => {
+    const top = Math.min(ground + DEEP_LAYER, profile[profile.length - 1].z);
+    const { u: u0, v: v0 } = profile[0];
+    let su = 0;
+    let sv = 0;
+    let n = 0;
+    for (let z = ground; z <= top; z += 250) {
+        const u = interpProfile(profile, z, 'u');
+        const v = interpProfile(profile, z, 'v');
+        if (u == null || v == null) continue;
+        su += u;
+        sv += v;
+        n++;
+    }
+    const uTop = interpProfile(profile, top, 'u') ?? u0;
+    const vTop = interpProfile(profile, top, 'v') ?? v0;
+    return { shear: Math.hypot(uTop - u0, vTop - v0), steerU: n ? su / n : u0, steerV: n ? sv / n : v0 };
+};
+
+/**
+ * Seuils d'un air propice aux orages violents. WMAXSHEAR = √(2 · CAPE) × cisaillement sol–6 km
+ * (m²/s²) : le produit de la force des ascendances et de l'organisation de l'orage par le vent,
+ * meilleur indicateur des orages violents en Europe (Taszarek et al., 2020 : violents à partir de
+ * ~500 m²/s²). La CAPE calculée ici s'arrête au dernier niveau fourni (400 hPa) : elle vaut environ
+ * 65 % de la CAPE complète, donc 500 ici ≈ 620 sur un profil complet. Un vent fort en altitude ne
+ * suffit pas : il faut aussi un air nettement instable (LI ≤ −2). Sans vent en altitude, il faut
+ * une instabilité très forte (LI ≤ −6). Seuils calés sur GFS et ICON-EU (30 sites d'Europe,
+ * septembre 2026) : un jour d'orage sur trois à quatre y est classé violent.
+ */
+const SEVERE_WMAXSHEAR = 500;
+const SEVERE_WMAXSHEAR_LI = -2;
+const SEVERE_LI = -6;
+/** Rafales du modèle (m/s) qui font d'un orage un orage violent : 70 km/h */
+const SEVERE_GUST = 70 / 3.6;
+
+/** √(2 · CAPE) × cisaillement (m²/s²) */
+export const wmaxShear = (cape: number, shear: number) => Math.sqrt(2 * Math.max(0, cape)) * shear;
+
+/**
+ * L'air est-il propice aux orages violents (grêle, fortes rafales) ? Énergie de la particule la plus
+ * instable (J/kg), son indice de soulèvement (K) et cisaillement sol–6 km (m/s).
+ */
+export const isSevereEnv = (e: { cape: number; liftedIndex: number | null; shear: number }): boolean => {
+    const li = e.liftedIndex;
+    if (li != null && li <= SEVERE_LI) return true;
+    return wmaxShear(e.cape, e.shear) >= SEVERE_WMAXSHEAR && (li == null || li <= SEVERE_WMAXSHEAR_LI);
 };
 
 /** Éléments du risque d'orage d'une heure (températures en K, énergies en J/kg) */
@@ -576,10 +754,14 @@ export interface StormInputs {
         /** Air très sec vers 600 hPa (écart T − Td > 12 K) : les petits cumulus s'y étouffent */
         dryMid: boolean;
     } | null;
-    /** CAPE standard (particule mélangée, sans surchauffe) */
+    /** CAPE standard (particule mélangée, sans surchauffe) : énergie des cumulus des thermiques */
     cape: number;
-    /** Température au sommet de la particule standard (niveau d'équilibre) */
-    capeTopTemp: number | null;
+    /** CAPE de la particule la plus instable : énergie des orages du modèle, venus d'ailleurs ou non */
+    muCape: number;
+    /** Température au sommet de la particule la plus instable (niveau d'équilibre) */
+    muTopTemp: number | null;
+    /** Air propice aux orages violents (isSevereEnv), ou fortes rafales du modèle à cette heure */
+    severe: boolean;
     /** Précipitations de l'heure (mm), dont convectives (averses du modèle) */
     precip: number;
     convRain: number;
@@ -592,19 +774,23 @@ export interface StormInputs {
     deepCloud: number;
 }
 
+/** 0 aucun signal, 1 surdéveloppement possible, 2 orage probable, 3 orage violent possible */
+export type StormRisk = 0 | 1 | 2 | 3;
+
 /**
- * Risque d'orage : 0 aucun signal, 1 surdéveloppement possible, 2 orage probable. Un orage
- * demande un nuage qui monte bien au-dessus de −20 °C : sans glace au sommet, pas d'éclairs.
- * Deux voies, la plus forte l'emporte :
+ * Risque d'orage : 0 aucun signal, 1 surdéveloppement possible, 2 orage probable, 3 orage violent
+ * possible. Un orage demande un nuage qui monte bien au-dessus de −20 °C : sans glace au sommet,
+ * pas d'éclairs. Deux voies, la plus forte l'emporte :
  * - les cumulus des thermiques (journée) : épaisseur, énergie et sommet froid, confirmés par
  *   les nuages ou les averses du modèle ; l'orage probable demande en plus de la pluie du modèle
  *   à ±1 h (sans elle, le modèle ne développe pas lui-même la convection : surdéveloppement) ;
  * - les orages du modèle lui-même, à toute heure (soir, ciel couvert, orages venus d'ailleurs) :
- *   énergie standard, sommet froid, nuages épais et pluie.
- * Les seuils d'énergie de l'orage portent sur la CAPE standard : ceux de la littérature
- * (≥ 300 J/kg) supposent une particule sans surchauffe.
+ *   énergie de la particule la plus instable, sommet froid, nuages épais et pluie. Ces orages-là
+ *   ne dépendent pas de l'air près du sol, qui peut s'être stabilisé.
+ * Les seuils d'énergie (≥ 300 J/kg, ceux de la littérature) supposent une particule sans surchauffe.
+ * Un orage probable devient un orage violent possible dans un air propice (`severe`).
  */
-export const stormRiskOf = (s: StormInputs): 0 | 1 | 2 => {
+export const stormRiskOf = (s: StormInputs): StormRisk => {
     const below = (t: number | null, c: number) => t != null && t <= KELVIN + c;
     const showers = s.convRain >= 0.1;
 
@@ -624,10 +810,11 @@ export const stormRiskOf = (s: StormInputs): 0 | 1 | 2 => {
 
     let fromModel: 0 | 1 | 2 = 0;
     const deep = s.deepCloud >= 0.5;
-    if (s.cape >= 300 && below(s.capeTopTemp, -20) && (s.convRain >= 0.5 || (deep && s.precip >= 0.5))) fromModel = 2;
-    else if (s.cape >= 200 && below(s.capeTopTemp, -10) && (showers || (deep && s.precip >= 0.2))) fromModel = 1;
+    if (s.muCape >= 300 && below(s.muTopTemp, -20) && (s.convRain >= 0.5 || (deep && s.precip >= 0.5))) fromModel = 2;
+    else if (s.muCape >= 200 && below(s.muTopTemp, -10) && (showers || (deep && s.precip >= 0.2))) fromModel = 1;
 
-    return Math.max(fromCumulus, fromModel) as 0 | 1 | 2;
+    const risk = Math.max(fromCumulus, fromModel) as 0 | 1 | 2;
+    return risk === 2 && s.severe ? 3 : risk;
 };
 
 /** Énergie (J/kg) et épaisseur (m) minimales du nuage convectif pour parler d'averse */
@@ -650,6 +837,77 @@ export const isShower = (s: {
     cape: number;
     depth: number;
 }): boolean => s.precip >= 0.1 && (s.convRain >= 0.1 || (s.cape >= SHOWER_CAPE && s.depth >= SHOWER_DEPTH));
+
+/** Heures locales surveillées par l'alerte d'orage d'une journée (première et dernière) */
+const WATCH_HOURS: readonly [number, number] = [8, 22];
+/** Vitesse de déplacement (m/s) à partir de laquelle un orage arrive vite : 40 km/h */
+export const FAST_STORM = 40 / 3.6;
+
+/** Alerte d'orage d'une journée : ce qui peut surprendre un pilote, résumé en une fois */
+export interface StormWatch {
+    /**
+     * 3 : orage violent possible ; 2 : orage probable ; 1 : surdéveloppement dans un air propice aux
+     * orages violents (s'il tourne à l'orage, il sera violent)
+     */
+    level: 1 | 2 | 3;
+    /** Première heure de l'épisode */
+    from: Column;
+    /** L'air de l'épisode est propice aux orages violents (sinon, niveau 3 : fortes rafales du modèle) */
+    severeEnv: boolean;
+    /** Indice de soulèvement le plus bas de l'épisode (particule la plus instable, K) */
+    liftedIndex: number | null;
+    /** Cisaillement sol–6 km le plus fort de l'épisode (m/s) */
+    shear: number;
+    /** Vent qui déplace l'orage à la première heure : vitesse (m/s) et direction d'où il vient (°) */
+    speed: number;
+    dir: number;
+    /** Plus fortes rafales du modèle pendant l'épisode (m/s) ; null s'il n'en fournit pas */
+    gust: number | null;
+    /** Heure qui précède l'épisode, quand le modèle n'y montre aucun signe (ni surdéveloppement, ni pluie) */
+    calmBefore: Column | null;
+    /**
+     * Ciel déjà couvert de nuages bas ou moyens l'heure qui précède (un voile de cirrus ne cache
+     * rien) : l'orage peut arriver sans qu'on le voie
+     */
+    hidden: boolean;
+}
+
+/**
+ * Alerte d'orage d'une journée (`cols` : ses heures, dans l'ordre), entre 8 h et 22 h et hors des
+ * heures déjà passées à `nowTs` ; null sans rien à signaler. L'épisode retenu est le plus grave :
+ * les heures d'orage (niveau 2 ou 3), sinon les heures de surdéveloppement dans un air propice aux
+ * orages violents.
+ */
+export const stormWatchOf = (cols: Column[], nowTs = 0): StormWatch | null => {
+    const watched = cols.filter(c => c.hour >= WATCH_HOURS[0] && c.hour <= WATCH_HOURS[1] && c.ts + 3600e3 > nowTs);
+    let hours = watched.filter(c => c.stormRisk >= 2);
+    let level: StormWatch['level'] = hours.some(c => c.stormRisk === 3) ? 3 : 2;
+    if (!hours.length) {
+        hours = watched.filter(c => c.stormRisk === 1 && c.severeEnv);
+        level = 1;
+    }
+    if (!hours.length) return null;
+
+    const from = hours[0];
+    const prev = cols[cols.indexOf(from) - 1];
+    // Sans signe avant-coureur : seulement pour un orage, et s'il n'a pas déjà commencé
+    const before = level >= 2 && prev && from.ts > nowTs ? prev : null;
+    const gusts = hours.map(c => c.gust).filter((g): g is number => g != null);
+    const lis = hours.map(c => c.muLiftedIndex).filter((v): v is number => v != null);
+    const steer = uvToWind(from.steerU, from.steerV);
+    return {
+        level,
+        from,
+        severeEnv: hours.some(c => c.severeEnv),
+        liftedIndex: lis.length ? Math.min(...lis) : null,
+        shear: Math.max(...hours.map(c => c.shear)),
+        speed: steer.speed,
+        dir: steer.dir,
+        gust: gusts.length ? Math.max(...gusts) : null,
+        calmBefore: before && before.stormRisk === 0 && before.precip < 0.1 ? before : null,
+        hidden: !!before && Math.max(0, ...before.profile.filter(p => p.p > 450).map(p => p.cloud)) >= 80,
+    };
+};
 
 /**
  * Accès aux séries de plusieurs "hash" (sounding, airgram, meteogram) qui peuvent chacun
@@ -1049,13 +1307,19 @@ export const buildColumns = (
         }
 
         // --- CAPE et indice de soulèvement standard (affichés)
-        const std = stability
-            ? standardStability(profile, ground)
-            : { cape: 0, liftedIndex: null, topTemp: null, base: null, top: null };
+        const std = stability ? standardStability(profile, ground) : NO_STABILITY;
 
         // --- Risque d'orage (inutile sans la CAPE standard : carte des cross)
-        let stormRisk: 0 | 1 | 2 = 0;
+        let stormRisk: StormRisk = 0;
+        let mu = std;
+        let deepWind = { shear: 0, steerU: 0, steerV: 0 };
+        let severeEnv = false;
         if (stability) {
+            mu = mostUnstable(profile, std);
+            deepWind = deepLayerWind(profile, ground);
+            severeEnv = isSevereEnv({ cape: mu.cape, liftedIndex: mu.liftedIndex, shear: deepWind.shear });
+            // Rafales du modèle à ±1 h : le front de rafales précède l'orage
+            const gustNear = Math.max(0, ...[i - 1, i, i + 1].map(k => num(data.windGust, k)));
             const cloudWhere = (keep: (p: ProfilePoint) => boolean) =>
                 Math.max(0, ...profile.filter(keep).map(p => p.cloud / 100));
             const midCloud = cloudWhere(p => p.p <= 700 && p.p >= 500);
@@ -1063,7 +1327,9 @@ export const buildColumns = (
             stormRisk = stormRiskOf({
                 cumulus,
                 cape: std.cape,
-                capeTopTemp: std.topTemp,
+                muCape: mu.cape,
+                muTopTemp: mu.topTemp,
+                severe: severeEnv || gustNear >= SEVERE_GUST,
                 precip: num(data.precipAmount, i),
                 convRain: num(data.precipConvectiveAmount, i),
                 rainNear: data.rainNear
@@ -1137,6 +1403,12 @@ export const buildColumns = (
             freezing,
             cape: Math.round(std.cape),
             liftedIndex: std.liftedIndex == null ? null : Math.round(std.liftedIndex * 10) / 10,
+            muCape: Math.round(mu.cape),
+            muLiftedIndex: mu.liftedIndex == null ? null : Math.round(mu.liftedIndex * 10) / 10,
+            shear: deepWind.shear,
+            steerU: deepWind.steerU,
+            steerV: deepWind.steerV,
+            severeEnv,
             stormRisk,
             showerBase: shower ? std.base : null,
             showerTop: shower ? std.top : null,
@@ -1154,19 +1426,13 @@ export const buildColumns = (
 type RGB3 = [number, number, number];
 
 /**
- * Ciel du fond des graphiques (haut → bas) : bleu ciel le jour, bleu nuit la nuit, et nuages en
- * couches du modèle (gris clair le jour, pour laisser le blanc aux cumulus ; gris-bleu la nuit
- * pour ne pas « briller »). `night` : 0 jour … 1 nuit.
+ * Ciel du fond du graphique (haut → bas), le même dans les deux thèmes : bleu ciel le jour, bleu
+ * nuit la nuit, et nuages en couches du modèle (gris clair le jour, pour laisser le blanc aux
+ * cumulus ; gris-bleu la nuit pour ne pas « briller »). `night` : 0 jour … 1 nuit.
  */
 const SKY = {
-    dark: {
-        day: { top: [58, 120, 186] as RGB3, bottom: [120, 176, 226] as RGB3, cloud: [206, 214, 225] as RGB3 },
-        night: { top: [9, 16, 38] as RGB3, bottom: [20, 34, 68] as RGB3, cloud: [92, 104, 130] as RGB3 },
-    },
-    light: {
-        day: { top: [138, 192, 238] as RGB3, bottom: [204, 228, 248] as RGB3, cloud: [222, 227, 235] as RGB3 },
-        night: { top: [70, 90, 136] as RGB3, bottom: [108, 128, 170] as RGB3, cloud: [150, 160, 182] as RGB3 },
-    },
+    day: { top: [58, 120, 186] as RGB3, bottom: [120, 176, 226] as RGB3, cloud: [206, 214, 225] as RGB3 },
+    night: { top: [9, 16, 38] as RGB3, bottom: [20, 34, 68] as RGB3, cloud: [92, 104, 130] as RGB3 },
 };
 
 /**
@@ -1190,10 +1456,13 @@ const lerp3 = (a: RGB3, b: RGB3, t: number): RGB3 => [
     a[2] + (b[2] - a[2]) * t,
 ];
 
-export const skyColors = (light: boolean, night: number) => {
-    const s = light ? SKY.light : SKY.dark;
+export const skyColors = (night: number) => {
     const t = Math.min(1, Math.max(0, night));
-    return { top: lerp3(s.day.top, s.night.top, t), bottom: lerp3(s.day.bottom, s.night.bottom, t), cloud: lerp3(s.day.cloud, s.night.cloud, t) };
+    return {
+        top: lerp3(SKY.day.top, SKY.night.top, t),
+        bottom: lerp3(SKY.day.bottom, SKY.night.bottom, t),
+        cloud: lerp3(SKY.day.cloud, SKY.night.cloud, t),
+    };
 };
 
 export const towerColors = (shower: boolean, night: number) => {
@@ -1276,6 +1545,18 @@ const windRGBLight = gradientRGB([
 
 export const windColor = (kmh: number, light = false) => css((light ? windRGBLight : windRGB)(kmh));
 export const thermalColor = (w: number) => css(thermalRGB(w));
+
+/** Couleurs des quatre paliers de la CAPE et de l'indice de soulèvement, du plus calme au plus orageux */
+export const INSTABILITY_COLORS = ['#4caf50', '#f5c542', '#f59e0b', '#ef4444'] as const;
+
+/** Couleur du palier d'une CAPE (J/kg) : < 300 faible, < 1 000 modérée, < 2 500 forte, au-delà très forte */
+export const capeColor = (cape: number) => INSTABILITY_COLORS[cape < 300 ? 0 : cape < 1000 ? 1 : cape < 2500 ? 2 : 3];
+
+/** Couleur du palier d'un indice de soulèvement (K) : > 0 stable, > −3 faiblement instable, > −6 instable, au-delà très instable */
+export const liftedIndexColor = (li: number) => INSTABILITY_COLORS[li > 0 ? 0 : li > -3 ? 1 : li > -6 ? 2 : 3];
+
+/** Couleur d'un niveau de risque d'orage (1 surdéveloppement, 2 orage probable, 3 orage violent possible) */
+export const STORM_COLORS = ['', '#f59e0b', '#ef4444', '#d946ef'] as const;
 
 /** Direction cardinale (d'où vient le vent) */
 export const cardinal = (dir: number) => CARDINALS[Math.round((((dir % 360) + 360) % 360) / 22.5) % 16];

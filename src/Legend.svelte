@@ -44,17 +44,32 @@
             <ul class="wpp-lg__list">
                 <li>
                     <svg width="26" height="14"
-                        ><path d={arrow} transform="translate(13,7) rotate(90)" fill={windColor(25, light)} /></svg
+                        ><path
+                            d={arrow}
+                            transform="translate(13,7) rotate(90)"
+                            fill={windColor(25)}
+                            stroke="#0f1822"
+                            stroke-width="0.7"
+                            stroke-opacity="0.8"
+                        /></svg
                     >
                     <span>{tr("Vent : la flèche va dans le sens du vent, chiffre en km/h", "Wind: the arrow points downwind, value in km/h")}</span>
                 </li>
                 <li>
                     <svg width="26" height="14"
-                        ><line x1="2" y1="7" x2="24" y2="7" style="stroke: var(--wpp-ceiling)" stroke-width="2.4" /><circle
+                        ><line x1="3" y1="7" x2="23" y2="7" stroke="#0f1822" stroke-opacity="0.45" stroke-width="5.5" stroke-linecap="round" /><line
+                            x1="3"
+                            y1="7"
+                            x2="23"
+                            y2="7"
+                            stroke="#ffffff"
+                            stroke-width="2.4"
+                            stroke-linecap="round"
+                        /><circle
                             cx="13"
                             cy="7"
                             r="2.8"
-                            style="fill: var(--wpp-ceiling)"
+                            fill="#ffffff"
                             stroke="#0b1118"
                         /></svg
                     >
@@ -124,6 +139,10 @@
                     <span>{tr("Orage probable : cumulonimbus (sommet au-dessus de −20 °C, CAPE ≥ 300 J/kg). L’absence d’icône ne garantit pas l’absence d’orage.", "Thunderstorm likely: cumulonimbus (top above −20 °C, CAPE ≥ 300 J/kg). No icon does not guarantee no storm.")}</span>
                 </li>
                 <li>
+                    <span class="wpp-lg__icons"><StormIcon level={3} size={14} /></span>
+                    <span>{tr("Orage violent possible : orage probable dans un air très instable (LI ≤ −6), ou instable avec un vent fort en altitude qui organise l’orage, ou avec des rafales d’au moins 70 km/h au modèle. Un bandeau au-dessus des onglets résume l’orage du jour : heure, déplacement, rafales.", "Severe thunderstorm possible: thunderstorm likely in very unstable air (LI ≤ −6), or unstable air with strong winds aloft that organise the storm, or with model gusts of 70 km/h or more. A banner above the tabs sums up the day’s storm: time, motion, gusts.")}</span>
+                </li>
+                <li>
                     <svg width="26" height="14"
                         ><rect x="4" y="5" width="8" height="9" rx="1.5" fill="#5aa8ff" /><rect x="14" y="2" width="8" height="12" rx="1.5" fill="#e4dcff" /></svg
                     >
@@ -155,7 +174,7 @@
                     </li>
                 {/each}
             </ul>
-            <div class="wpp-lg__subtitle">{tr("CAPE et LI (dans l'infobulle dès 100 J/kg)", 'CAPE and LI (in the tooltip from 100 J/kg)')}</div>
+            <div class="wpp-lg__subtitle">{tr('Bandeau « CAPE LI » : instabilité de chaque heure, CAPE à gauche de la case, LI à droite', '“CAPE LI” strip: instability of each hour, CAPE on the left of the cell, LI on the right')}</div>
             {#each instability as ix}
                 <p class="wpp-lg__ix"><b>{ix.name}</b> <small>{ix.unit}</small> — {ix.text}</p>
                 <ul class="wpp-lg__levels">
@@ -223,6 +242,42 @@
                     "Only the visible map is loaded: a flight that leaves it is stopped at the edge (its real distance could be longer); zoom out to see longer flights. These are <b>estimates</b> from the model: fine terrain, local breezes, airspace and route choice are not taken into account.",
                 )}
             </p>
+        {:else if kind === 'bulletin'}
+            <div class="wpp-lg__title">{tr('Bulletin de vol', 'Flying bulletin')}</div>
+            <p class="wpp-lg__note">
+                {tr(
+                    'Rédigé à partir de la prévision du modèle choisi, heure par heure, pour les heures de jour du site.',
+                    'Written from the chosen model’s forecast, hour by hour, for the daylight hours of the site.',
+                )}
+            </p>
+            <div class="wpp-lg__subtitle">{tr('Conditions de chaque heure', 'Conditions of each hour')}</div>
+            <ul class="wpp-lg__list">
+                {#each flyLevels as lv, k}
+                    <li>
+                        <svg width="26" height="14"><rect x="3" y="3" width="20" height="9" rx="2" fill={LEVEL_COLORS[k]} /></svg>
+                        <span><b>{LEVEL_LABELS[k]}</b> — {lv}</span>
+                    </li>
+                {/each}
+            </ul>
+            <p class="wpp-lg__note">
+                {tr(
+                    'Une heure prend le niveau de son critère le plus marqué ; passez sur une case du bandeau pour le lire. Un créneau dure au moins 2 heures.',
+                    'An hour takes the level of its most marked criterion; hover a cell of the strip to read it. A window lasts at least 2 hours.',
+                )}
+            </p>
+            <div class="wpp-lg__subtitle">{tr('Passages de front', 'Front passages')}</div>
+            <p class="wpp-lg__note">
+                {tr(
+                    'Un front se repère au changement de masse d’air : la température entre 1 500 et 3 000 m au-dessus du sol varie d’au moins 3 °C en 6 h, avec la pluie, le ciel couvert ou la rotation du vent qui l’accompagnent. Le bulletin ne voit que la prévision du point choisi, pas la carte : un front peu actif, ou qui passe à côté, peut lui échapper.',
+                    'A front shows as a change of air mass: the temperature between 1,500 and 3,000 m above the ground changes by at least 3 °C in 6 h, with the rain, overcast sky or wind shift that come with it. The bulletin only sees the forecast of the chosen point, not the map: a weak front, or one passing nearby, can be missed.',
+                )}
+            </p>
+            <p class="wpp-lg__note">
+                {@html tr(
+                    'Ces seuils <b>décrivent des conditions</b>, pas l’aptitude d’un pilote à voler : cette décision lui appartient. Le modèle lisse le relief : le vent au décollage, les brises et le foehn peuvent être très différents de ce qu’il prévoit.',
+                    'These thresholds <b>describe conditions</b>, not a pilot’s ability to fly: that decision is the pilot’s. The model smooths out the terrain: wind at take-off, breezes and foehn can differ widely from what it forecasts.',
+                )}
+            </p>
         {:else}
             <div class="wpp-lg__title">{tr('Émagramme redressé', 'Skewed emagram')}</div>
             <p class="wpp-lg__note">
@@ -255,6 +310,47 @@
                     <span>{tr("Particule : trajet d'un thermique parti du sol", "Parcel: path of a thermal rising from the ground")}</span>
                 </li>
                 <li>
+                    <svg width="26" height="14"
+                        ><line x1="2" y1="7" x2="24" y2="7" style="stroke: var(--wpp-parcel)" stroke-width="2.6" /></svg
+                    >
+                    <span
+                        >{tr(
+                            "Ascension de la particule (option en bas de page) : trait plein du sol jusqu'où le thermique s'arrête, sommet des thermiques ou du cumulus ; zone teintée : elle est plus chaude que l'air",
+                            "Parcel ascent (option at the bottom of the page): solid line from the ground to where the thermal stops, thermal top or cumulus top; tinted area: it is warmer than the air",
+                        )}</span
+                    >
+                </li>
+                <li>
+                    <svg width="26" height="14"
+                        ><line x1="2" y1="7" x2="24" y2="7" style="stroke: var(--wpp-dew)" stroke-width="2" stroke-dasharray="7 5" /></svg
+                    >
+                    <span
+                        >{tr(
+                            "Point de rosée de la particule : il la rejoint au niveau de condensation (point jaune, creux si le thermique s'arrête avant)",
+                            "Dew point of the parcel: it meets the parcel at the condensation level (yellow dot, hollow if the thermal stops below it)",
+                        )}</span
+                    >
+                </li>
+                <li>
+                    <svg width="26" height="14"
+                        ><line x1="2" y1="7" x2="24" y2="7" style="stroke: var(--wpp-parcel)" stroke-width="2.6" /><line
+                            x1="2"
+                            y1="7"
+                            x2="24"
+                            y2="7"
+                            style="stroke: var(--wpp-dew)"
+                            stroke-width="2.6"
+                            stroke-dasharray="6 6"
+                        /></svg
+                    >
+                    <span
+                        >{tr(
+                            "Passage de l'adiabatique sèche à la saturée : la particule est en jaune jusqu'au niveau de condensation, en jaune et bleu au-dessus",
+                            "Switch from the dry adiabat to the moist one: the parcel is yellow up to the condensation level, yellow and blue above it",
+                        )}</span
+                    >
+                </li>
+                <li>
                     <svg width="26" height="14"><line x1="13" y1="0" x2="13" y2="14" stroke="#4caf50" stroke-opacity="0.8" /></svg>
                     <span>{tr("Adiabatique sèche : refroidissement de l'air sec qui monte (~10 °C/km)", "Dry adiabat: cooling of rising dry air (~10 °C/km)")}</span>
                 </li>
@@ -280,6 +376,17 @@
                     >
                     <span>{tr("Base et sommet des cumulus, ou plafond thermique", "Cumulus base and top, or thermal ceiling")}</span>
                 </li>
+                <li>
+                    <svg width="26" height="14" class="wpp-lg__cloud"
+                        ><rect x="1" y="0" width="24" height="14" rx="2" /><path d={emaCloud.fill} /><path d={emaCloud.edge} /></svg
+                    >
+                    <span
+                        >{tr(
+                            "Zone de formation du nuage : le cumulus des thermiques, de sa base (niveau de condensation) à son sommet, où le thermique cesse d'être plus léger que l'air",
+                            "Cloud formation zone: the cumulus fed by the thermals, from its base (condensation level) to its top, where the thermal stops being lighter than the air",
+                        )}</span
+                    >
+                </li>
             </ul>
             <div class="wpp-lg__subtitle">{tr('Colonne de droite', 'Right column')}</div>
             <ul class="wpp-lg__list">
@@ -302,21 +409,35 @@
                 </ul>
             {/each}
             <p class="wpp-lg__note">{instabilityNote}</p>
+            <p class="wpp-lg__note">
+                {tr(
+                    "« max » : CAPE de l'air le plus instable, quand il se trouve plus haut que les 1 000 premiers mètres. C'est lui qui nourrit un orage venu d'ailleurs, même si l'air près du sol est stable (soir, nuit).",
+                    '“max”: CAPE of the most unstable air, when it lies above the lowest 1,000 m. It is what feeds a storm arriving from elsewhere, even when the air near the ground is stable (evening, night).',
+                )}
+            </p>
+            <p class="wpp-lg__note">
+                {tr(
+                    "Sous ces valeurs : le risque d'orage de l'heure affichée, et l'orage attendu dans les 3 heures qui suivent.",
+                    'Below these values: the storm risk of the hour shown, and any storm expected within the next 3 hours.',
+                )}
+            </p>
         {/if}
     </div>
 {/if}
 
 <script lang="ts">
+    import { LEVEL_COLORS, LEVEL_LABELS } from './Bulletin.svelte';
+    import { CLIMB_LIMITS, GUST_LIMITS, LOW_WIND_LIMITS, WIND_LIMITS } from './bulletin';
     import { EASE } from './Chart.svelte';
     import { STABILITY } from './Emagram.svelte';
-    import { thermalColor, windColor } from './physics';
-    import { arrowPath, cumulusPuffs } from './svg';
+    import { INSTABILITY_COLORS, thermalColor, windColor } from './physics';
+    import { arrowPath, cloudBand, cumulusPuffs } from './svg';
     import { KM_LEGEND, KM_NONE_COLOR, kmColor } from './cross';
     import { tr } from './i18n';
     import StormIcon from './StormIcon.svelte';
 
-    export let kind: 'chart' | 'emagram' | 'xc';
-    /** Thème clair (couleurs du vent plus soutenues) */
+    export let kind: 'chart' | 'emagram' | 'xc' | 'bulletin';
+    /** Thème clair : couleurs du vent plus soutenues à côté de l'émagramme (le graphique ne change pas) */
     export let light = false;
 
     let open = false;
@@ -338,7 +459,7 @@
             unit: 'km/h',
             max: 55,
             ticks: [0, 10, 20, 30, 40, 55],
-            gradient: gradientCss(v => windColor(v, light), 55),
+            gradient: gradientCss(v => windColor(v), 55),
         },
         {
             label: tr('Montée au vario', 'Vario climb'),
@@ -352,6 +473,7 @@
     const arrow = arrowPath(16, 5.5, 4, 1.2);
     const cu = cumulusPuffs(13, 12.5, 20, 12);
     const showerCu = cumulusPuffs(13, 9, 15, 8.5);
+    const emaCloud = cloudBand(1, 25, 12, 3);
 
     // Bandeau des thermiques, du plus facile au plus difficile à exploiter
     const easeItems = [
@@ -403,9 +525,30 @@
         },
     ];
 
+    // Conditions du bulletin : critères des conditions calmes, modérées et fortes (limites de
+    // bulletin.ts), puis des conditions défavorables
+    const climb = (v: number) => tr(String(v).replace('.', ','), String(v));
+    const flyLevels = [
+        tr(
+            `vent de moins de ${WIND_LIMITS[0]} km/h au sol et ${LOW_WIND_LIMITS[0]} km/h dans les 1 000 premiers mètres, rafales de moins de ${GUST_LIMITS[0]} km/h, thermiques de moins de +${climb(CLIMB_LIMITS[0])} m/s au vario et non hachés, ni pluie ni surdéveloppement, pas d’orage probable à moins de 4 h`,
+            `wind under ${WIND_LIMITS[0]} km/h at the surface and ${LOW_WIND_LIMITS[0]} km/h in the lowest 1,000 m, gusts under ${GUST_LIMITS[0]} km/h, thermals under +${climb(CLIMB_LIMITS[0])} m/s on the vario and not choppy, no rain or overdevelopment, no thunderstorm likely within 4 h`,
+        ),
+        tr(
+            `vent de moins de ${WIND_LIMITS[1]} km/h au sol et ${LOW_WIND_LIMITS[1]} km/h dans les 1 000 premiers mètres, rafales de moins de ${GUST_LIMITS[1]} km/h, thermiques de moins de +${climb(CLIMB_LIMITS[1])} m/s, hachés ou non`,
+            `wind under ${WIND_LIMITS[1]} km/h at the surface and ${LOW_WIND_LIMITS[1]} km/h in the lowest 1,000 m, gusts under ${GUST_LIMITS[1]} km/h, thermals under +${climb(CLIMB_LIMITS[1])} m/s, choppy or not`,
+        ),
+        tr(
+            `vent de moins de ${WIND_LIMITS[2]} km/h au sol et ${LOW_WIND_LIMITS[2]} km/h dans les 1 000 premiers mètres, rafales de moins de ${GUST_LIMITS[2]} km/h, thermiques plus forts ou très hachés, surdéveloppement possible`,
+            `wind under ${WIND_LIMITS[2]} km/h at the surface and ${LOW_WIND_LIMITS[2]} km/h in the lowest 1,000 m, gusts under ${GUST_LIMITS[2]} km/h, stronger or very choppy thermals, overdevelopment possible`,
+        ),
+        tr(
+            'vent ou rafales plus forts, pluie ou neige, orage probable à moins de 2 h',
+            'stronger wind or gusts, rain or snow, thunderstorm likely within 2 h',
+        ),
+    ];
+
     // Seuils usuels de la CAPE et de l'indice de soulèvement, du plus calme au plus orageux
-    const LEVEL_COLORS = ['#4caf50', '#f5c542', '#f59e0b', '#ef4444'];
-    const levels = (items: [string, string][]) => items.map(([range, text], k) => ({ range, text, color: LEVEL_COLORS[k] }));
+    const levels = (items: [string, string][]) => items.map(([range, text], k) => ({ range, text, color: INSTABILITY_COLORS[k] }));
 
     const instability = [
         {
@@ -439,8 +582,8 @@
     ];
 
     const instabilityNote = tr(
-        "Valeurs standard (air des 1 000 premiers mètres, sans chauffage du sol). Un potentiel seulement : il faut un déclencheur, et une couche stable peut tout bloquer.",
-        'Standard values (air of the lowest 1,000 m, no ground heating). A potential only: it takes a trigger, and a stable layer can block everything.',
+        "Valeurs standard (air des 1 000 premiers mètres, sans chauffage du sol), à la couleur de leur palier. Un potentiel seulement : il faut un déclencheur, et une couche stable peut tout bloquer.",
+        'Standard values (air of the lowest 1,000 m, no ground heating), in the colour of their level. A potential only: it takes a trigger, and a stable layer can block everything.',
     );
 </script>
 
@@ -569,6 +712,20 @@
             svg {
                 flex: none;
                 margin-top: 1px;
+            }
+        }
+        // Nuage de l'émagramme, sur un morceau de son fond
+        &__cloud {
+            rect {
+                fill: var(--wpp-sky-top);
+            }
+            path {
+                fill: var(--wpp-cloud);
+            }
+            path + path {
+                fill: none;
+                stroke: var(--wpp-line);
+                stroke-opacity: 0.4;
             }
         }
         &__ix {
