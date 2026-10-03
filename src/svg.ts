@@ -43,22 +43,6 @@ export const arrowPath = (len: number, head = 6, headW = 4, shaftW = 1.1): strin
 };
 
 /**
- * Secteur d'un disque de centre `cx`, `cy` et de rayon `r` : la part `share` (0 à 1) du disque,
- * depuis le haut et dans le sens des aiguilles d'une montre. Vide sous 2 %, disque entier au-delà
- * de 98 %.
- */
-export const sectorPath = (cx: number, cy: number, r: number, share: number): string => {
-    const f = (v: number) => v.toFixed(1);
-    if (!(share > 0.02)) return '';
-    if (share >= 0.98) {
-        return `M${f(cx - r)},${f(cy)}a${r},${r} 0 1 0 ${2 * r},0a${r},${r} 0 1 0 ${-2 * r},0Z`;
-    }
-    const a = share * 2 * Math.PI;
-    const end = `${f(cx + r * Math.sin(a))},${f(cy - r * Math.cos(a))}`;
-    return `M${f(cx)},${f(cy)}V${f(cy - r)}A${r},${r} 0 ${share > 0.5 ? 1 : 0} 1 ${end}Z`;
-};
-
-/**
  * Symboles d'un front posés sur son trait, un en chaque point de `at` : triangles (front froid),
  * demi-cercles (front chaud) ou les deux en alternance (occlusion), de demi-hauteur `r`. Le trait
  * va du point `from` (au sol) au point `to` (en altitude), droit ou penché ; les symboles sont du

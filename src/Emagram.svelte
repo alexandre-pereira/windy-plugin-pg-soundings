@@ -253,11 +253,47 @@
                     stroke-opacity="0.8"
                     stroke-dasharray="3 3"
                 />
-                {#if readout.t != null}
-                    <circle cx={px(xOf(readout.t + K, hover.z))} cy={y(hover.z)} r="4" class="wpp-ring wpp-ring--temp" />
+                <!-- Valeurs écrites sur les courbes, à l'altitude pointée : température à gauche de son
+                     point, point de rosée à gauche du sien (dessous quand les deux se touchent),
+                     particule à droite du sien, et sous la ligne le gradient de température, à la
+                     couleur de sa stabilité -->
+                {#if readout.dawn}
+                    <circle cx={readout.dawn.x} cy={readout.y} r="3.5" class="wpp-ring wpp-ring--dawn" />
+                    <text x={readout.dawn.x - 7} y={readout.low} class="wpp-read wpp-read--dawn" text-anchor="end"
+                        >{readout.dawn.v.toFixed(1)}°</text
+                    >
                 {/if}
-                {#if readout.td != null}
-                    <circle cx={px(xOf(readout.td + K, hover.z))} cy={y(hover.z)} r="4" class="wpp-ring wpp-ring--dew" />
+                {#if readout.td}
+                    <circle cx={readout.td.x} cy={readout.y} r="4" class="wpp-ring wpp-ring--dew" />
+                    <text
+                        x={readout.td.x - 7}
+                        y={readout.t && readout.t.x - readout.td.x < 46 ? readout.low : readout.high}
+                        class="wpp-read wpp-read--dew"
+                        text-anchor="end">{readout.td.v.toFixed(1)}°</text
+                    >
+                {/if}
+                {#if readout.parcel}
+                    <circle cx={readout.parcel.x} cy={readout.y} r="4" class="wpp-ring wpp-ring--parcel" />
+                    <text x={readout.parcel.x + 7} y={readout.high} class="wpp-read wpp-read--parcel"
+                        >{readout.parcel.v.toFixed(1)}°</text
+                    >
+                {/if}
+                {#if readout.t}
+                    <circle cx={readout.t.x} cy={readout.y} r="4" class="wpp-ring wpp-ring--temp" />
+                    <text x={readout.t.x - 7} y={readout.high} class="wpp-read wpp-read--temp" text-anchor="end"
+                        >{readout.t.v.toFixed(1)}°</text
+                    >
+                    {#if readout.lapse != null && readout.stability}
+                        <!-- Gradient : ce que l'air perd par 100 m de montée (1 °C : adiabatique sèche) -->
+                        {@const flip = readout.t.x + 100 > left + plotW}
+                        <text
+                            x={readout.t.x + (flip ? -8 : 8)}
+                            y={readout.low + (flip && readout.td && readout.t.x - readout.td.x < 46 ? 13 : 0)}
+                            class="wpp-read"
+                            style="fill:{stabilityColor(readout.stability)}"
+                            text-anchor={flip ? 'end' : 'start'}>{readout.lapse.toFixed(2)} °C/100 m</text
+                        >
+                    {/if}
                 {/if}
             {/if}
         </g>
@@ -395,74 +431,6 @@
         />
     </svg>
 
-    {#if hover && readout}
-        <div class="wpp-tip" style="left:{tipX}px;top:{tipY}px" bind:offsetHeight={tipH}>
-            <div class="wpp-tip__title">{r50(hover.z)} m <span>· {readout.p.toFixed(0)} hPa</span></div>
-            {#if hover.z > zProfileTop}
-                <div class="wpp-tip__nodata">{noDataText}</div>
-            {/if}
-            {#if readout.stability}
-                <div class="wpp-tip__stab" style="color:{stabilityColor(readout.stability)}">
-                    {STABILITY[readout.stability].label}
-                </div>
-            {/if}
-            {#if readout.t != null}
-                <div class="wpp-tip__row">
-                    <span>{tr('Température', 'Temperature')}</span><b>{readout.t.toFixed(1)} °C</b>
-                </div>
-            {/if}
-            {#if readout.dawn != null && dawn}
-                <div class="wpp-tip__row">
-                    <span>{tr(`Température à ${hourText(dawn.hour)}`, `Temperature at ${hourText(dawn.hour)}`)}</span><b
-                        class="wpp-c-dawn">{readout.dawn.toFixed(1)} °C</b
-                    >
-                </div>
-            {/if}
-            {#if readout.td != null}
-                <div class="wpp-tip__row">
-                    <span>{tr('Point de rosée', 'Dew point')}</span><b class="wpp-c-dew">{readout.td.toFixed(1)} °C</b>
-                </div>
-            {/if}
-            {#if readout.t != null && readout.td != null}
-                <div class="wpp-tip__row">
-                    <span>{tr('Écart T − Td', 'Spread T − Td')}</span><b>{(readout.t - readout.td).toFixed(1)} °C</b>
-                </div>
-            {/if}
-            {#if readout.lapse != null}
-                <div class="wpp-tip__row">
-                    <span>{tr('Gradient', 'Lapse rate')}</span><b>{readout.lapse.toFixed(1)} °C/km</b>
-                </div>
-            {/if}
-            {#if readout.parcel != null && readout.t != null}
-                <div class="wpp-tip__row">
-                    <span>{tr('Particule', 'Parcel')}</span><b class="wpp-c-parcel"
-                        >{readout.parcel.toFixed(1)} °C ({readout.parcel - readout.t >= 0 ? '+' : ''}{(
-                            readout.parcel - readout.t
-                        ).toFixed(1)})</b
-                    >
-                </div>
-            {/if}
-            {#if readout.vario > 0.05}
-                <div class="wpp-tip__row">
-                    <span>{tr('Vario', 'Vario')}</span><b
-                        ><i class="wpp-sw" style="background:{thermalColor(readout.vario)}"></i>+{readout.vario.toFixed(1)} m/s</b
-                    >
-                </div>
-            {/if}
-            {#if readout.wind}
-                <div class="wpp-tip__row">
-                    <span>{tr('Vent', 'Wind')}</span><b style="color:{windColor(readout.wind.kmh, light)}"
-                        >{readout.wind.kmh} km/h {cardinal(readout.wind.dir)}</b
-                    >
-                </div>
-            {/if}
-            {#if readout.cloud > 3}
-                <div class="wpp-tip__row">
-                    <span>{tr('Nuages du modèle', 'Model cloud')}</span><b>{Math.round(readout.cloud)} %</b>
-                </div>
-            {/if}
-        </div>
-    {/if}
 </div>
 
 <script context="module" lang="ts">
@@ -516,7 +484,6 @@
 <script lang="ts">
     import {
         type Column,
-        cardinal,
         cloudAt,
         type CloudDeck,
         dewPointFromMixingRatio,
@@ -527,9 +494,7 @@
         parcelPath,
         pressureAt,
         type ProfilePoint,
-        thermalColor,
         toKmh,
-        varioAt,
         windAt,
         windColor,
         withSurfaceLayer,
@@ -936,54 +901,38 @@
         hover = hover ?? before;
     };
 
+    /**
+     * Valeurs lues à l'altitude pointée, écrites sur les courbes : température (°C) et position (px)
+     * du point de chaque courbe, gradient de température (°C perdus par 100 m de montée) et
+     * stabilité de l'air. `high` et `low` : lignes de texte au-dessus et au-dessous de l'altitude
+     * pointée (toutes deux dessous en haut du cadre, où le texte sortirait)
+     */
     $: readout = hover
         ? (() => {
               const z = hover.z;
-              const t = interpProfile(tProfile, z, 't');
-              const td = interpProfile(column.profile, z, 'td');
-              const p = parcelAt(z);
-              const w = windAt(column.profile, z);
+              const at = (tK: number | null) =>
+                  tK == null ? null : { v: tK - K, x: px(xOf(tK, z)) };
               const s = stabilityAt(z);
-              const atDawn = dawnProfile ? interpProfile(dawnProfile, z, 't') : null;
+              const yh = y(z);
+              const up = yh > top + 18;
               return {
-                  p: pressureAt(column.profile, z),
-                  t: t == null ? null : t - K,
-                  dawn: atDawn == null ? null : atDawn - K,
-                  cloud: z > zProfileTop ? 0 : cloudAt(column.profile, z),
-                  td: td == null ? null : td - K,
-                  parcel: p == null ? null : p - K,
-                  lapse: s ? s.lapse * 1000 : null,
+                  y: yh,
+                  high: up ? yh - 6 : yh + 14,
+                  low: up ? yh + 14 : yh + 27,
+                  t: at(interpProfile(tProfile, z, 't')),
+                  dawn: at(dawnProfile ? interpProfile(dawnProfile, z, 't') : null),
+                  td: at(interpProfile(column.profile, z, 'td')),
+                  parcel: at(parcelAt(z)),
+                  lapse: s ? s.lapse * 100 : null,
                   stability: s?.kind ?? null,
-                  // Montée nette au vario à cette altitude, comme sur le graphique « Vent & thermiques »
-                  vario: varioAt(column, z),
-                  wind: w ? { kmh: Math.round(toKmh(w.speed)), dir: w.dir } : null,
               };
           })()
         : null;
 
-    // --- Position de l'infobulle, toujours dans le cadre ; au doigt, dans la moitié opposée
-    const TIP_W = 196;
-    /** Hauteur mesurée de l'infobulle : elle varie avec le nombre de lignes affichées */
-    let tipH = 200;
     let pointerType = 'mouse';
     let wrapEl: HTMLDivElement;
 
-    const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(v, Math.max(lo, hi)));
-
-    $: tipX = !hover
-        ? 0
-        : pointerType === 'mouse'
-          ? clamp(hover.x + 16 + TIP_W > width ? hover.x - 16 - TIP_W : hover.x + 16, 4, width - TIP_W - 4)
-          : clamp(hover.x - TIP_W / 2, 4, width - TIP_W - 4);
-    $: tipY = !hover
-        ? 0
-        : pointerType === 'mouse'
-          ? clamp(y(hover.z) - 40, 4, height - tipH)
-          : y(hover.z) > top + plotH / 2
-            ? top + 4
-            : clamp(top + plotH - tipH, 4, height - tipH);
-
-    /** Un toucher en dehors de l'émagramme ferme l'infobulle */
+    /** Un toucher en dehors de l'émagramme efface la lecture */
     const onWindowPointer = (e: PointerEvent) => {
         if (hover && wrapEl && !wrapEl.contains(e.target as Node)) hover = null;
     };
@@ -1185,6 +1134,34 @@
             &--dew {
                 stroke: #4ea3ff;
             }
+            &--parcel {
+                stroke: var(--wpp-parcel);
+            }
+            &--dawn {
+                stroke: var(--wpp-fg-dim);
+            }
+        }
+        // Valeurs lues au survol, écrites sur les courbes
+        .wpp-read {
+            font-size: 11.5px;
+            font-weight: bold;
+            font-variant-numeric: tabular-nums;
+            paint-order: stroke;
+            stroke: var(--wpp-text-halo);
+            stroke-width: calc(3.5px * var(--wpp-text-halo-k));
+            stroke-linejoin: round;
+            &--temp {
+                fill: var(--wpp-stable);
+            }
+            &--dew {
+                fill: var(--wpp-dew);
+            }
+            &--parcel {
+                fill: var(--wpp-parcel);
+            }
+            &--dawn {
+                fill: var(--wpp-fg-dim);
+            }
         }
         .wpp-surf {
             font-size: 10.5px;
@@ -1227,63 +1204,4 @@
         }
     }
 
-    .wpp-tip {
-        position: absolute;
-        z-index: 5;
-        width: 196px;
-        padding: 8px 10px;
-        border-radius: 8px;
-        background: var(--wpp-popup-bg);
-        border: 1px solid var(--wpp-popup-border);
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
-        font-size: 11.5px;
-        line-height: 1.55;
-        color: var(--wpp-fg-dim);
-        pointer-events: none;
-
-        &__title {
-            font-size: 13px;
-            font-weight: bold;
-            color: var(--wpp-fg);
-            span {
-                font-weight: normal;
-                opacity: 0.7;
-            }
-        }
-        &__stab {
-            font-weight: bold;
-            margin-bottom: 3px;
-        }
-        &__nodata {
-            font-size: 10.5px;
-            line-height: 1.35;
-            color: var(--wpp-fg-faint);
-        }
-        &__row {
-            display: flex;
-            justify-content: space-between;
-            gap: 8px;
-            b {
-                color: var(--wpp-fg);
-                white-space: nowrap;
-            }
-        }
-        .wpp-sw {
-            display: inline-block;
-            width: 9px;
-            height: 9px;
-            margin-right: 5px;
-            border-radius: 2px;
-            vertical-align: 0;
-        }
-        .wpp-c-dew {
-            color: var(--wpp-dew);
-        }
-        .wpp-c-parcel {
-            color: var(--wpp-parcel);
-        }
-        b.wpp-c-dawn {
-            color: var(--wpp-fg-dim);
-        }
-    }
 </style>

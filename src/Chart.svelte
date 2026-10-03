@@ -57,19 +57,18 @@
                 </pattern>
             </defs>
 
-            <!-- Barre de l'heure, en haut du graphique : piste colorée selon la force des thermiques
-                 (nuit assombrie), comme le curseur de l'émagramme. L'heure choisie est écrite sur
-                 son bouton, au sommet du trait orange qui traverse le graphique : elle n'est écrite
-                 qu'ici. Le bouton se déplace au doigt ou à la souris, d'heure en heure -->
-            <clipPath id="wpp-rail-clip">
-                <rect x={left} y={railY - 4} width={plotW} height="8" rx="4" />
-            </clipPath>
-            <g clip-path="url(#wpp-rail-clip)">
-                {#each rail as fill, i}
-                    <rect x={left + i * colW} y={railY - 4} width={colW + 0.5} height="8" style="fill:{fill}" />
-                {/each}
-            </g>
-            <rect x={left} y={railY - 4} width={plotW} height="8" rx="4" class="wpp-rail-edge" />
+            <!-- Barre de l'heure, en haut du graphique : c'est l'axe des heures, qui ne sont écrites
+                 qu'ici. L'heure choisie est écrite sur son bouton, à la place des heures qu'il
+                 recouvre, au sommet du trait orange qui descend jusqu'au bas du graphique. Le bouton
+                 se déplace au doigt ou à la souris, d'heure en heure -->
+            <rect x={left} y={railY - 7} width={plotW} height="14" rx="4" fill="currentColor" opacity="0.05" />
+            {#each cols as col, i}
+                {#if (colW >= 22 || i % 2 === 0) && !(selPill && Math.abs(cx(i) - selPill.x) < selPill.w / 2 + 9)}
+                    <text x={cx(i)} y={railY + 3.5} class="wpp-hour" text-anchor="middle"
+                        >{hourShort(col.src.hour)}</text
+                    >
+                {/if}
+            {/each}
             {#if selPill}
                 <rect
                     x={selPill.x - selPill.w / 2}
@@ -96,7 +95,7 @@
                 on:pointercancel={railUp}
             />
 
-            <!-- Ciel de chaque heure, au-dessus du graphique : une case, de transparente (ciel
+            <!-- Bandeau « Nuages » : ciel de chaque heure, au-dessus du graphique. Une case, de transparente (ciel
                  dégagé) à grise (ciel couvert), de jour comme de nuit, où est écrite la part du ciel
                  prise par les nuages, tous étages confondus et plus haut que le graphique compris -->
             <rect x={left} y={skyTop} width={plotW} height={SKY_H} rx="3" fill="currentColor" opacity="0.05" />
@@ -277,18 +276,6 @@
                      et rejoint, d'altitude en altitude, l'heure où il passe plus haut. Les symboles sont tournés vers
                      les heures qui précèdent, celles de l'air que le front remplace -->
                 {#each frontMarks as f}
-                    <!-- Modèle fourni toutes les 3 h : barre des heures entre lesquelles le front passe au sol -->
-                    {#if f.span}
-                        <rect
-                            x={f.span.x0}
-                            y={f.span.y}
-                            width={f.span.x1 - f.span.x0}
-                            height="5"
-                            rx="2.5"
-                            fill={f.color}
-                            class="wpp-front-span"
-                        />
-                    {/if}
                     <path d={f.path} class="wpp-front wpp-front--halo" />
                     <path d={f.pips} class="wpp-front-pips" fill={f.color} />
                     <path d={f.path} class="wpp-front" stroke={f.color} />
@@ -405,27 +392,6 @@
                     {/if}
                 {/each}
 
-                <!-- Étiquettes des fronts, au pied de leur trait -->
-                {#each frontMarks as f}
-                    {#if f.pill}
-                        <rect
-                            x={f.pill.x - f.pill.w / 2}
-                            y={f.pill.y}
-                            width={f.pill.w}
-                            height={FRONT_PILL_H}
-                            rx={FRONT_PILL_H / 2}
-                            class="wpp-front-pill"
-                            fill={f.color}
-                        />
-                        <text x={f.pill.x} y={f.pill.y + 11} class="wpp-front-label" text-anchor="middle">{f.label}</text>
-                    {/if}
-                {/each}
-
-                <!-- Heure choisie, celle de la carte -->
-                {#if selX != null}
-                    <line x1={selX} x2={selX} y1={railY + 8} y2={top + mainH} stroke="#0f1822" stroke-opacity="0.5" stroke-width="3.5" />
-                    <line x1={selX} x2={selX} y1={railY + 8} y2={top + mainH} stroke="#f5a623" stroke-width="1.5" />
-                {/if}
 
                 <!-- Maintenant -->
                 {#if nowX != null}
@@ -473,16 +439,7 @@
                 {/if}
             {/each}
 
-            <!-- Heures -->
-            {#each cols as col, i}
-                {#if colW >= 22 || i % 2 === 0}
-                    <text x={cx(i)} y={hoursY} class="wpp-hour" text-anchor="middle"
-                        >{hourShort(col.src.hour)}</text
-                    >
-                {/if}
-            {/each}
-
-            <!-- Pluviométrie de chaque heure (mm), sous les heures -->
+            <!-- Pluviométrie de chaque heure (mm) -->
             <rect x={left} y={rainTop} width={plotW} height={RAIN_H} rx="3" fill="currentColor" opacity="0.05" />
             {#each cols as col, i}
                 {@const mm = col.src.precip}
@@ -551,6 +508,30 @@
                     >
                 {/if}
             {/each}
+
+            <!-- Heure choisie, celle de la carte : trait orange de la barre de l'heure jusqu'au bas du
+                 graphique, à travers les bandeaux (nuages, thermiques, pluie, CAPE et LI) -->
+            {#if selX != null}
+                <line
+                    x1={selX}
+                    x2={selX}
+                    y1={railY + 8}
+                    y2={ixTop + IX_H}
+                    stroke="#0f1822"
+                    stroke-opacity="0.5"
+                    stroke-width="3.5"
+                    pointer-events="none"
+                />
+                <line
+                    x1={selX}
+                    x2={selX}
+                    y1={railY + 8}
+                    y2={ixTop + IX_H}
+                    stroke="#f5a623"
+                    stroke-width="1.5"
+                    pointer-events="none"
+                />
+            {/if}
 
             <!-- Altitude de la carte : tirets orange, comme le repère de l'heure choisie -->
             {#if mapY != null}
@@ -653,7 +634,7 @@
                     <span
                         >{tipFront.kind === 'occluded'
                             ? tr('Air chaud en altitude', 'Warm air aloft')
-                            : tr(`Température de l’air, en ${tipFront.window} h`, `Air temperature, over ${tipFront.window} h`)}</span
+                            : tr(`Air, en ${tipFront.window} h`, `Air, over ${tipFront.window} h`)}</span
                     >
                     <b>{tipFront.tempChange > 0 ? '+' : '−'}{Math.abs(tipFront.tempChange).toFixed(1)} °C</b>
                 </div>
@@ -690,7 +671,7 @@
                                 'Windy only provides this model every 3 hours: the hour of the passage is only known to within that step',
                             )}>{tr('Passage au sol', 'Passage at the ground')}</span
                         >
-                        <b>{frontWhen(tipFront, true)}</b>
+                        <b>{frontWhen(tipFront)}</b>
                     </div>
                 {:else if tipFront.at.ts !== tip.col.ts}
                     <div class="wpp-tip__row">
@@ -730,7 +711,7 @@
                     </div>
                 {/if}
                 <div class="wpp-tip__row">
-                    <span>{tr('Pluie autour du passage', 'Rain around the passage')}</span>
+                    <span>{tr('Pluie du passage', 'Rain at the passage')}</span>
                     <b>{tipFront.rain < 1 ? '< 1' : Math.round(tipFront.rain)} mm</b>
                 </div>
             {/if}
@@ -746,25 +727,17 @@
                 </div>
             {/if}
 
-            <div class="wpp-tip__group"><span>{tr('Vent', 'Wind')}</span></div>
+            <!-- Vent à l'altitude pointée. Le vent au sol et les rafales sont écrits dans le relief du
+                 graphique : ils ne sont pas répétés ici -->
+            {#if tip.alt?.wind || tip.wave || tip.dust}
+                <div class="wpp-tip__group"><span>{tr('Vent', 'Wind')}</span></div>
+            {/if}
             {#if tip.alt?.wind}
                 <div class="wpp-tip__row wpp-tip__row--alt">
                     <span>{tr(`à ${r50(tip.alt.z)} m`, `at ${r50(tip.alt.z)} m`)}</span>
                     <b style="color:{windColor(tip.alt.wind.kmh, light)}"
                         >{tip.alt.wind.kmh} km/h {cardinal(tip.alt.wind.dir)}</b
                     >
-                </div>
-            {/if}
-            <div class="wpp-tip__row">
-                <span>{tr('Sol', 'Surface')}</span>
-                <b style="color:{windColor(toKmh(tip.col.windSurf), light)}"
-                    >{Math.round(toKmh(tip.col.windSurf))} km/h {cardinal(tip.col.windDirSurf)}</b
-                >
-            </div>
-            {#if tip.col.gust != null}
-                <div class="wpp-tip__row">
-                    <span>{tr('Rafales au sol', 'Surface gusts')}</span>
-                    <b style="color:{windColor(toKmh(tip.col.gust), light)}">{Math.round(toKmh(tip.col.gust))} km/h</b>
                 </div>
             {/if}
             {#if tip.wave}
@@ -814,13 +787,13 @@
             {/if}
             {#if tip.col.ceiling != null}
                 <div class="wpp-tip__row">
-                    <span>{tr('Plafond exploitable', 'Usable ceiling')}</span><b>{r50(tip.col.ceiling)} m</b>
+                    <span
+                        title={tr(
+                            'Plafond exploitable : altitude où l’ascendance compense encore le taux de chute d’une aile en spirale',
+                            'Usable ceiling: height where the climb still beats a glider’s circling sink rate',
+                        )}>{tr('Plafond', 'Ceiling')}</span
+                    ><b>{r50(tip.col.ceiling)} m</b>
                 </div>
-                {#if tip.col.thermalTop != null && tip.col.cuBase == null && tip.col.thermalTop - tip.col.ceiling >= 100}
-                    <div class="wpp-tip__row">
-                        <span>{tr('Sommet thermique', 'Thermal top')}</span><b>{r50(tip.col.thermalTop)} m</b>
-                    </div>
-                {/if}
             {/if}
 
             <div class="wpp-tip__group"><span>{tr('Température', 'Temperature')}</span></div>
@@ -829,13 +802,15 @@
                     <span>{tr(`à ${r50(tip.alt.z)} m`, `at ${r50(tip.alt.z)} m`)}</span><b>{tip.alt.t.toFixed(1)} °C</b>
                 </div>
             {/if}
+            <!-- Température au sol, à l'altitude que le modèle donne au sol du lieu -->
             <div class="wpp-tip__row">
-                <span>{tip.col.td2m != null ? tr('Sol / point de rosée', 'Surface / dew point') : tr('Sol', 'Surface')}</span>
-                <b
-                    >{toCelsius(tip.col.t2m).toFixed(0)}°{tip.col.td2m != null
-                        ? ` / ${toCelsius(tip.col.td2m).toFixed(0)}°`
-                        : ''}</b
+                <span
+                    title={tr(
+                        'Altitude du sol dans le modèle : la moyenne de sa maille, qui peut différer de celle du site',
+                        'Ground elevation in the model: the average of its grid cell, which may differ from the site’s',
+                    )}>{tr(`Sol (${tip.col.ground} m)`, `Ground (${tip.col.ground} m)`)}</span
                 >
+                <b>{toCelsius(tip.col.t2m).toFixed(0)} °C</b>
             </div>
             {#if tip.col.freezing != null}
                 <div class="wpp-tip__row"><span>{tr('Isotherme 0 °C', 'Freezing level')}</span><b>{r50(tip.col.freezing)} m</b></div>
@@ -848,25 +823,22 @@
                         <span>{tr(`à ${r50(tip.alt.z)} m`, `at ${r50(tip.alt.z)} m`)}</span><b>{Math.round(tip.alt.cloud)} %</b>
                     </div>
                 {/if}
-                {#if tip.col.cloudCover > 0.03}
+                <!-- Couverture totale, et entre parenthèses celle des nuages plus hauts que le graphique -->
+                {#if tip.col.cloudCover > 0.03 || cloudAbove(tip.col, yMax) > 0.05}
+                    {@const above = cloudAbove(tip.col, yMax)}
                     <div class="wpp-tip__row">
                         <span
                             title={tip.col.cloudTop != null
                                 ? tr(
-                                      'Le modèle ne fournit pas les nuages plus hauts : les voiles de cirrus ne sont pas comptés',
-                                      'The model does not provide higher clouds: cirrus veils are not counted',
+                                      `Total sous ${Math.floor(tip.col.cloudTop / 500) * 500} m : le modèle ne fournit pas les nuages plus hauts, les voiles de cirrus ne sont pas comptés`,
+                                      `Total below ${Math.floor(tip.col.cloudTop / 500) * 500} m: the model does not provide higher clouds, cirrus veils are not counted`,
                                   )
-                                : undefined}
-                            >{tip.col.cloudTop != null
-                                ? tr(`Total sous ${Math.floor(tip.col.cloudTop / 500) * 500} m`, `Total below ${Math.floor(tip.col.cloudTop / 500) * 500} m`)
-                                : tr('Total', 'Total')}</span
-                        ><b>{Math.round(tip.col.cloudCover * 100)} %</b>
-                    </div>
-                {/if}
-                {#if cloudAbove(tip.col, yMax) > 0.05}
-                    <div class="wpp-tip__row">
-                        <span>{tr(`Au-dessus de ${yMax} m`, `Above ${yMax} m`)}</span><b
-                            >{Math.round(cloudAbove(tip.col, yMax) * 100)} %</b
+                                : undefined}>{tr('Total', 'Total')}</span
+                        ><b
+                            >{Math.round(tip.col.cloudCover * 100)} %{#if above > 0.05}<small
+                                    title={tr('Nuages plus hauts que le graphique', 'Clouds higher than the chart')}
+                                    >({Math.round(above * 100)} % {tr('à plus de', 'above')} {yMax} m)</small
+                                >{/if}</b
                         >
                     </div>
                 {/if}
@@ -882,7 +854,7 @@
                             >{tip.low.sea
                                 ? tr('Mer de nuages', 'Sea of clouds')
                                 : tip.low.fog
-                                  ? tr('Brouillard, nuages bas', 'Fog, low cloud')
+                                  ? tr('Brouillard', 'Fog')
                                   : tip.genus === 'cumulus'
                                     ? tr('Couche de cumulus', 'Cumulus layer')
                                     : tr('Nuages bas', 'Low cloud')}</span
@@ -912,14 +884,14 @@
                             >{tip.genus === 'altocumulus'
                                 ? 'Altocumulus'
                                 : tip.genus === 'altostratus'
-                                  ? 'Altostratus, altocumulus'
-                                  : tr('Couche de nuages', 'Cloud layer')}</span
+                                  ? 'Altostratus'
+                                  : tr('Couche', 'Layer')}</span
                         ><b
                             title={tr(
                                 'Plus basse couche où le modèle prévoit au moins 50 % de nuages. Base et sommet placés entre deux niveaux du modèle : à quelques centaines de mètres près',
                                 'Lowest layer where the model forecasts at least 50 % cloud. Base and top placed between two model levels: accurate to a few hundred metres',
                             )}
-                            >~{r50(tip.ceiling.base)}–{r50(tip.ceiling.top)}{tip.ceiling.top >= profileTop(tip.col) - 25 ? '+' : ''} m</b
+                            >~{r50(tip.ceiling.base)}–{r50(tip.ceiling.top)}{tip.ceiling.top >= profileTop(tip.col) ? '+' : ''} m</b
                         >
                     </div>
                 {/if}
@@ -940,28 +912,18 @@
                         >
                     </div>
                 {/if}
-                {#if tip.col.showerBase != null && tip.col.showerTop != null}
+                <!-- Pluie et neige de l'heure. Le nuage d'où elles tombent (nuage d'averses, ou couche
+                     de la pluie) est donné sur la première de ces lignes ; sans précipitations, le nuage
+                     d'averses a sa propre ligne -->
+                {@const rainy = tip.col.precip - tip.col.snow >= 0.1}
+                {@const snowy = tip.col.snow >= 0.1}
+                {#if tip.rainCloud && !rainy && !snowy}
                     <div class="wpp-tip__row">
-                        <span>{tr('Nuage d’averses', 'Shower cloud')}</span><b
-                            title={showerCapped(tip.col)
-                                ? tr('Sommet au-delà du dernier niveau fourni par le modèle', 'Top beyond the highest level provided by the model')
-                                : undefined}
-                            >{r50(tip.col.showerBase)}–{r50(tip.col.showerTop)}{showerCapped(tip.col) ? '+' : ''} m</b
-                        >
+                        <span>{tr('Nuage d’averses', 'Shower cloud')}</span><b title={tip.rainCloud.title}>{tip.rainCloud.text}</b>
                     </div>
                 {/if}
-                {#if tip.layer}
-                    <div class="wpp-tip__row">
-                        <span>{tr('Nuages de la pluie', 'Rain cloud layer')}</span><b
-                            title={tip.layer.top >= profileTop(tip.col) - 25
-                                ? tr('Sommet au-delà du dernier niveau fourni par le modèle', 'Top beyond the highest level provided by the model')
-                                : undefined}
-                            >{r50(tip.layer.base)}–{r50(tip.layer.top)}{tip.layer.top >= profileTop(tip.col) - 25 ? '+' : ''} m</b
-                        >
-                    </div>
-                {/if}
-                {#if tip.col.precip - tip.col.snow >= 0.1}
-                    <div class="wpp-tip__row">
+                {#if rainy}
+                    <div class="wpp-tip__row wpp-tip__row--wrap">
                         <span
                             >{tip.col.showerBase != null
                                 ? tr('Averses', 'Showers')
@@ -969,16 +931,20 @@
                                   ? tr('Bruine', 'Drizzle')
                                   : tr('Pluie', 'Rain')}</span
                         ><b
-                            >{(tip.col.precip - tip.col.snow).toFixed(1)} mm{#if tip.col.precipStep > 1}{' '}<small
-                                    >({tr(`cumul de ${tip.col.precipStep} h réparti`, `${tip.col.precipStep} h total, spread`)})</small
-                                >{/if}</b
+                            >{(tip.col.precip - tip.col.snow).toFixed(1)} mm{#if tip.col.precipStep > 1}<small
+                                    title={tr(
+                                        `Cumul de ${tip.col.precipStep} h du modèle, réparti sur ses heures`,
+                                        `${tip.col.precipStep} h total of the model, spread over its hours`,
+                                    )}>({tr(`sur ${tip.col.precipStep} h`, `over ${tip.col.precipStep} h`)})</small
+                                >{/if}{#if tip.rainCloud}<small title={tip.rainCloud.title}>{tip.rainCloud.text}</small>{/if}</b
                         >
                     </div>
                 {/if}
-                {#if tip.col.snow >= 0.1}
-                    <div class="wpp-tip__row">
+                {#if snowy}
+                    <div class="wpp-tip__row wpp-tip__row--wrap">
                         <span>{tr('Neige', 'Snow')}</span><b
-                            >~{Math.max(1, Math.round(tip.col.snow))} cm <small>({tip.col.snow.toFixed(1)} mm {tr('d’eau', 'water')})</small></b
+                            >~{Math.max(1, Math.round(tip.col.snow))} cm <small>({tip.col.snow.toFixed(1)} mm {tr('d’eau', 'water')})</small
+                            >{#if tip.rainCloud && !rainy}<small title={tip.rainCloud.title}>{tip.rainCloud.text}</small>{/if}</b
                         >
                     </div>
                 {/if}
@@ -1041,29 +1007,13 @@
 
             <div class="wpp-tip__hint">
                 {pointerType === 'mouse'
-                    ? tr('Clic : la carte prend cette heure et cette altitude', 'Click: the map takes this hour and altitude')
-                    : tr('Onglet « Émagramme » : détail de cette heure', 'Sounding tab: details for this hour')}
+                    ? tr('Clic : heure et altitude de la carte', 'Click: map time and altitude')
+                    : tr('Détail de l’heure : onglet « Émagramme »', 'Hour details: Sounding tab')}
             </div>
         </div>
     {/if}
 </div>
 </div>
-
-    <!-- Front des heures qui ne sont pas affichées (nuit, veille, lendemain) : annoncé avec son
-         heure au bord du graphique, sans défiler avec lui -->
-    {#if around?.before}
-        <div
-            class="wpp-front-edge"
-            style="left:{left + 4}px;top:{frontPillY - 0.5}px;background:{FRONT[around.before.kind].color}"
-        >
-            ← {frontLabel(around.before)} {frontWhen(around.before)}
-        </div>
-    {/if}
-    {#if around?.after}
-        <div class="wpp-front-edge" style="right:4px;top:{frontPillY - 0.5}px;background:{FRONT[around.after.kind].color}">
-            {frontLabel(around.after)} {frontWhen(around.after)} →
-        </div>
-    {/if}
 
     <!-- Axe des altitudes, fixe (le graphique défile à sa droite sur smartphone) -->
     {#if n > 0}
@@ -1105,7 +1055,7 @@
                 >
             {/if}
             <text x={left - 6} y={skyY + 3.5} class="wpp-axis wpp-axis--ease" text-anchor="end"
-                >{tr('Ciel', 'Sky')}</text
+                >{tr('Nuages', 'Clouds')}</text
             >
             <text x={left - 6} y={easeTop + EASE_H - 1} class="wpp-axis wpp-axis--ease" text-anchor="end"
                 >Therm.</text
@@ -1119,9 +1069,12 @@
             <text x={left - 6} y={ixTop + IX_H - 3.5} class="wpp-axis wpp-axis--ix" text-anchor="end"
                 >CAPE LI</text
             >
-            <!-- Altitude de la carte : triangle orange sur l'axe -->
-            {#if mapY != null}
-                <path d="M{left - 8},{mapY - 5}l7.5,5l-7.5,5z" fill="#f5a623" stroke="#111" stroke-width="0.6" />
+            <!-- Altitude de la carte, écrite sur l'axe au bout de ses tirets orange -->
+            {#if mapY != null && mapZ != null}
+                <rect x="2" y={mapY - 8} width={left - 4} height="16" rx="3" fill="#f5a623" />
+                <text x={left / 2} y={mapY + 3.5} class="wpp-axis-hover" text-anchor="middle"
+                    >{Math.round(mapZ / 10) * 10}</text
+                >
             {/if}
             {#if hover?.z != null}
                 <rect x="2" y={hover.y - 8} width={left - 4} height="16" rx="3" fill="#ffd24a" />
@@ -1173,7 +1126,7 @@
 <script lang="ts">
     import { createEventDispatcher, tick } from 'svelte';
 
-    import { FRONT_TOP, frontsAround } from './fronts';
+    import { FRONT_TOP } from './fronts';
     import { clockText, hourShort, hourText } from './i18n';
     import StormIcon from './StormIcon.svelte';
     import {
@@ -1305,8 +1258,14 @@
 
     /** Tirets de l'air saturé (px) : écart entre deux lignes, épaisseur, longueur d'un tiret et période */
     const MIST = { pitch: 6, thick: 2, dash: 9, period: 15 };
-    /** Hauteur (px) du halo des nuages plus hauts que le graphique, sous son bord supérieur */
-    const GLOW = 18;
+    /**
+     * Halo des nuages plus hauts que le graphique, sous son bord supérieur : hauteur (px), hauteur
+     * (px) de la bande pleine tout en haut, et opacité au plus fort du halo pour quelques nuages et
+     * pour un ciel couvert
+     */
+    const GLOW = 38;
+    const GLOW_BAND = 5;
+    const GLOW_ALPHA: readonly [number, number] = [0.6, 1];
     /**
      * Nappes de nuages du fond : opacité du corps, épaisseur (px) du trait sombre de la base et du
      * dessus éclairé d'une mer de nuages, hauteur (px) de l'ombre au-dessus de la base, hauteurs (px)
@@ -1366,10 +1325,10 @@
     /** Bandeau de qualité des thermiques, entre le graphique et les heures */
     const EASE_H = 9;
     const easeTop = top + mainH + 6;
-    const hoursY = easeTop + EASE_H + 13;
-    /** Bandeau de pluviométrie sous les heures */
+
+    /** Bandeau de pluviométrie, sous celui des thermiques */
     const RAIN_H = 30;
-    const rainTop = hoursY + 7;
+    const rainTop = easeTop + EASE_H + 5;
     /** Bandeau de la CAPE et du LI sous la pluie : une case par heure, CAPE à gauche et LI à droite */
     const IX_H = 14;
     const ixTop = rainTop + RAIN_H + 5;
@@ -1816,7 +1775,10 @@
                 // Nuages plus hauts que le graphique : halo clair qui descend de son bord supérieur
                 const yMid = (gy + 0.5) * FIELD_RES;
                 if (above > 0.05 && yMid < GLOW) {
-                    mix(px, sky.cloud, (0.25 + 0.75 * above) * (1 - yMid / GLOW) ** 1.5);
+                    // Bande pleine au ras du bord, puis fondu : le halo se voit sur le ciel du jour
+                    // comme sur celui de la nuit
+                    const fade = yMid <= GLOW_BAND ? 1 : 1 - (yMid - GLOW_BAND) / (GLOW - GLOW_BAND);
+                    mix(px, sky.glow, (GLOW_ALPHA[0] + (GLOW_ALPHA[1] - GLOW_ALPHA[0]) * above) * fade);
                 }
 
                 // Nappe : corps à la base ombrée, d'un trait sombre dessous ; dessus éclairé d'une mer
@@ -1934,15 +1896,6 @@
         return { label, w, x: clamp(selX, left + w / 2, left + plotW - w / 2) };
     })();
 
-    /** Piste de la barre de l'heure : force des thermiques de chaque heure, nuit assombrie */
-    $: rail = shown.map(c =>
-        c.sunElev <= 0
-            ? 'var(--wpp-track-night)'
-            : c.climb >= 0.2
-              ? thermalColor(c.climb)
-              : 'var(--wpp-track-day)',
-    );
-
     // --- Barre de l'heure : appui ou glissé, l'heure choisie est celle de la colonne sous le doigt
     let railDrag = false;
     const railPick = (e: PointerEvent) => {
@@ -1968,22 +1921,14 @@
         .map(s => (s.ts == null ? null : { x: xOfTs(s.ts), label: `${s.icon} ${hhmm(s.ts, utcOffset)}` }))
         .filter((s): s is { x: number; label: string } => !!s && s.x != null);
 
-    // --- Passages de front : ceux des heures affichées, et ceux qui les encadrent (dernier front
-    // froid des heures qui précèdent, premier front de celles qui suivent), annoncés au bord
-    const FRONT_PILL_H = 15;
-    // Étiquettes au pied du graphique ; au-dessus de la ligne du sol quand elles y couvriraient le
-    // vent au sol écrit dans le relief
-    $: frontPillY = top + mainH - 21 < surfEnd ? y(ground) - FRONT_PILL_H - 4 : top + mainH - 21;
-    $: around = n ? frontsAround(fronts, shown[0].ts, shown[n - 1].ts) : null;
+    // --- Passages de front : ceux dont le trait traverse les heures affichées
     $: frontMarks = (() => {
         if (!n) return [];
         // Symboles entre deux rangées de flèches du vent, là où elles les cachent le moins, sous les
-        // icônes du haut et au-dessus des étiquettes
+        // icônes du haut et au-dessus de la ligne du sol
         const pipZs = range((Math.ceil(yMin / windStep) + 0.5) * windStep, yMax, windStep).filter(
-            z => y(z) > top + 40 && y(z) < frontPillY - 23,
+            z => y(z) > top + 40 && y(z) < y(Math.max(ground, yMin)) - 10,
         );
-        /** Étiquettes déjà posées : une étiquette qui en recouvrirait une autre monte d'une ligne */
-        const placed: { x0: number; x1: number; row: number }[] = [];
         const xOf = (ts: number) => cx((ts - shown[0].ts) / stepMs);
         return fronts.flatMap(front => {
             const { color } = FRONT[front.kind];
@@ -2003,7 +1948,6 @@
             const point = (z: number) => ({ x: xAt(z), y: y(z) });
             const bends = known.map(p => p.z).filter(z => z > zFoot && z < zHead);
             const line = [zFoot, ...bends, zHead].map(point);
-            const x = line[0].x;
             const x0 = Math.min(...line.map(p => p.x));
             const x1 = Math.max(...line.map(p => p.x));
             if (zHead <= zFoot || x1 < left || x0 > left + plotW) return [];
@@ -2017,58 +1961,25 @@
                 })
                 .join('');
 
-            // Étiquette au pied du trait, pour un front qui passe au sol pendant les heures affichées
-            let pill = null;
-            const label = [
-                frontLabel(front),
-                front.between ? frontWhen(front) : '',
-                front.gustJump && front.gustAfter != null
-                    ? `· ${tr('raf.', 'gusts')} ${Math.round(toKmh(front.gustAfter))}`
-                    : '',
-            ]
-                .filter(Boolean)
-                .join(' ');
-            // Heures entre lesquelles il passe au sol, quand le modèle n'est fourni que toutes les 3 h
-            const span = front.between
-                ? {
-                      x0: Math.max(left, xOf(front.between[0])),
-                      x1: Math.min(left + plotW, xOf(front.between[1])),
-                  }
-                : null;
-            if (around?.during.includes(front)) {
-                const w = label.length * 5.8 + 12;
-                const at = clamp(x, left + w / 2 + 3, left + plotW - w / 2 - 3);
-                let row = 0;
-                while (placed.some(p => p.row === row && at - w / 2 < p.x1 + 4 && at + w / 2 > p.x0 - 4)) row++;
-                placed.push({ x0: at - w / 2, x1: at + w / 2, row });
-                pill = { x: at, y: frontPillY - row * (FRONT_PILL_H + 3), w };
-            }
             return {
                 front,
                 color,
-                label,
-                // Au-dessus de l'étiquette quand il y en a une, sinon au ras du sol
-                span:
-                    span && span.x1 > span.x0
-                        ? { ...span, y: (pill ? pill.y : y(Math.max(ground, yMin))) - 8 }
-                        : null,
                 path: line.map((p, k) => `${k ? 'L' : 'M'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(''),
                 x0,
                 x1,
                 pips,
-                pill,
             };
         });
     })();
 
     /**
-     * Heure du passage au sol d'un front : « 13h–16h » quand le modèle n'est fourni que toutes les
-     * 3 h (`long` : « entre 13h et 16h »), sinon son heure
+     * Heure du passage au sol d'un front : « entre 13h et 16h » quand le modèle n'est fourni que
+     * toutes les 3 h, sinon son heure
      */
-    const frontWhen = (f: Front, long = false) => {
+    const frontWhen = (f: Front) => {
         if (!f.between) return hourText(f.at.hour);
         const [a, b] = f.between.map(ts => hourShort(localHour(ts, f.at.utcOffset)));
-        return long ? tr(`entre ${a} et ${b}`, `between ${a} and ${b}`) : `${a}–${b}`;
+        return tr(`entre ${a} et ${b}`, `between ${a} and ${b}`);
     };
     const round5 = (v: number) => Math.round(v / 5) * 5;
 
@@ -2163,7 +2074,35 @@
         const layer = deck && !low && deck.rain ? deck : null;
         const ceiling = deck && !low && !deck.rain ? deck : null;
         const genus = deck?.genus ?? null;
-        return { col, ease, alt, clouds, layer, low, ceiling, genus, snowLine, virga, strongVirga, dust, wave, spread: cumulusSpread(col) };
+        // Nuage d'où tombent les précipitations : nuage d'averses, sinon couche de la pluie
+        const cloudRange = (base: number, top: number, capped: boolean, name: string) => ({
+            text: `${r50(base)}–${r50(top)}${capped ? '+' : ''} m`,
+            title:
+                name +
+                (capped
+                    ? tr(
+                          ' ; sommet au-delà du dernier niveau fourni par le modèle',
+                          '; top beyond the highest level provided by the model',
+                      )
+                    : ''),
+        });
+        const rainCloud =
+            col.showerBase != null && col.showerTop != null
+                ? cloudRange(
+                      col.showerBase,
+                      col.showerTop,
+                      showerCapped(col),
+                      tr('Base et sommet du nuage d’averses', 'Base and top of the shower cloud'),
+                  )
+                : layer
+                  ? cloudRange(
+                        layer.base,
+                        layer.top,
+                        layer.top >= profileTop(col),
+                        tr('Base et sommet de la couche d’où tombe la pluie', 'Base and top of the layer the rain falls from'),
+                    )
+                  : null;
+        return { col, ease, alt, clouds, low, ceiling, genus, rainCloud, snowLine, virga, strongVirga, dust, wave, spread: cumulusSpread(col) };
     };
 
     // --- Position de l'infobulle, toujours dans le cadre. Au doigt, on la place dans la moitié
@@ -2323,22 +2262,6 @@
         }
     }
 
-    // Front des heures qui ne sont pas affichées : même étiquette que sur le graphique, fixe au bord
-    .wpp-front-edge {
-        position: absolute;
-        box-sizing: border-box;
-        height: 16px;
-        padding: 0 7px;
-        border: 1.2px solid #ffffff;
-        border-radius: 8px;
-        font-size: 10px;
-        font-weight: bold;
-        line-height: 13.6px;
-        color: #ffffff;
-        white-space: nowrap;
-        pointer-events: none;
-    }
-
     .wpp-field {
         position: absolute;
         border-radius: 3px;
@@ -2377,10 +2300,6 @@
         }
         .wpp-hour {
             font-size: 10.5px;
-            &--selected {
-                fill: #111;
-                font-weight: bold;
-            }
         }
         .wpp-sun {
             font-size: 10px;
@@ -2493,13 +2412,6 @@
                 stroke-width: 4;
             }
         }
-        // Heures entre lesquelles un front passe au sol (modèle fourni toutes les 3 h)
-        .wpp-front-span {
-            fill-opacity: 0.75;
-            stroke: #fff;
-            stroke-opacity: 0.8;
-            stroke-width: 0.8;
-        }
         // Ondes de relief possibles
         .wpp-wave {
             fill: none;
@@ -2512,11 +2424,7 @@
                 stroke-width: 4;
             }
         }
-        // Barre de l'heure : contour de la piste, bouton orange qui porte l'heure choisie
-        .wpp-rail-edge {
-            fill: none;
-            stroke: var(--wpp-border);
-        }
+        // Barre de l'heure : bouton orange qui porte l'heure choisie
         .wpp-rail-thumb {
             fill: #f5a623;
             stroke: #fff;
@@ -2560,8 +2468,8 @@
             stroke-width: 1.5;
             stroke-linecap: round;
         }
-        // Passage de front : trait, symboles et étiquette cernés de blanc, pour ressortir sur le ciel
-        // comme sur les nuages
+        // Passage de front : trait et symboles cernés de blanc, pour ressortir sur le ciel comme sur
+        // les nuages
         .wpp-front {
             fill: none;
             stroke-width: 2.2;
@@ -2573,16 +2481,10 @@
                 stroke-opacity: 0.85;
             }
         }
-        .wpp-front-pips,
-        .wpp-front-pill {
+        .wpp-front-pips {
             stroke: #ffffff;
             stroke-width: 1.2;
             stroke-linejoin: round;
-        }
-        .wpp-front-label {
-            font-size: 10px;
-            font-weight: bold;
-            fill: #ffffff;
         }
         .wpp-freezing-label {
             fill: var(--wpp-freezing);
@@ -2602,13 +2504,13 @@
         position: absolute;
         z-index: 5;
         width: 196px;
-        padding: 8px 10px;
+        padding: 6px 10px;
         border-radius: 8px;
         background: var(--wpp-popup-bg);
         border: 1px solid var(--wpp-popup-border);
         box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
         font-size: 11.5px;
-        line-height: 1.55;
+        line-height: 1.4;
         color: var(--wpp-fg-dim);
         pointer-events: none;
 
@@ -2616,7 +2518,7 @@
             font-size: 13px;
             font-weight: bold;
             color: var(--wpp-fg);
-            margin-bottom: 3px;
+            margin-bottom: 2px;
             span {
                 font-weight: normal;
                 color: var(--wpp-accent);
@@ -2634,6 +2536,11 @@
             &--alt span {
                 color: var(--wpp-accent);
             }
+            // Valeur suivie de précisions : elles passent à la ligne plutôt que de déborder
+            &--wrap b {
+                white-space: normal;
+                text-align: right;
+            }
         }
         // Titre d'un groupe de lignes, avec au besoin sa valeur de synthèse à droite
         &__group {
@@ -2641,8 +2548,8 @@
             justify-content: space-between;
             align-items: baseline;
             gap: 8px;
-            margin-top: 4px;
-            padding-top: 3px;
+            margin-top: 3px;
+            padding-top: 2px;
             border-top: 1px solid var(--wpp-border);
             color: var(--wpp-fg-faint);
             span {
@@ -2678,7 +2585,7 @@
             }
         }
         &__hint {
-            margin-top: 4px;
+            margin-top: 3px;
             font-size: 10px;
             opacity: 0.55;
         }

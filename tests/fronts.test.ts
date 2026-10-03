@@ -5,9 +5,7 @@ import { surroundingPoints } from '../src/forecast';
 import {
     type AirMass,
     airMassOf,
-    type Front,
     frontDays,
-    frontsAround,
     frontsOf,
     mapFronts,
     type MapFront,
@@ -125,9 +123,8 @@ describe('passages de front', () => {
         expect(rainy.tempChange).toBeCloseTo(-5, 1);
         expect(rainy.rain).toBeCloseTo(3.5, 1);
         expect(rainy.dry).toBe(false);
-        // Passage pendant le refroidissement
-        expect(rainy.at.ts).toBeGreaterThan(doussard[30].ts);
-        expect(rainy.at.ts).toBeLessThan(doussard[36].ts);
+        // Passage au début du refroidissement : le front est le bord avant de l'air froid
+        expect(rainy.at.ts).toBe(doussard[30].ts);
         // Sans pluie ni nuages, c'est encore un front : un front froid sec
         expect(fronts(whole(-5)).map(f => [f.kind, f.dry])).toEqual([['cold', true]]);
     });
@@ -204,7 +201,7 @@ describe('passages de front', () => {
         expect(thermalAdvection(whole(0)[0], 45)).toBeCloseTo(0, 9);
     });
 
-    it('front froid : au sol quelques heures avant l’altitude, là où l’air bas change le plus vite', () => {
+    it('front froid : au sol quelques heures avant l’altitude, à l’heure où l’air bas commence à changer', () => {
         // L'air se refroidit de 6 K : dès la 27e heure près du sol, à partir de la 32e en altitude
         const cols = air(
             i => -6 * done(i, 32, 4),
@@ -214,8 +211,7 @@ describe('passages de front', () => {
         const [f, ...none] = fronts(cols);
         expect(none).toEqual([]);
         expect(f.kind).toBe('cold');
-        expect(f.at.ts).toBeGreaterThanOrEqual(cols[27].ts);
-        expect(f.at.ts).toBeLessThanOrEqual(cols[30].ts);
+        expect(f.at.ts).toBe(cols[27].ts);
         expect(f.aloft.ts).toBeGreaterThan(cols[32].ts);
         expect(f.aloft.ts - f.at.ts).toBeGreaterThanOrEqual(2 * HOUR);
     });
@@ -232,7 +228,16 @@ describe('passages de front', () => {
         expect(none).toEqual([]);
         expect(f.kind).toBe('warm');
         expect(f.aloft.ts).toBeLessThan(f.at.ts);
-        expect(f.at.ts).toBeGreaterThan(cols[31].ts);
+        // Au sol à l'heure où l'air bas finit de se réchauffer : le front est le bord de l'air chaud
+        expect(f.at.ts).toBe(cols[35].ts);
+    });
+
+    it('front froid lent : le début du changement n’est pas cherché plus de 6 h avant son heure la plus rapide', () => {
+        // L'air perd 1 K par heure dès la 20e heure, puis 6 K de plus entre la 32e et la 34e
+        const drop = (i: number) => -12 * done(i, 20, 12) - 6 * done(i, 32, 2);
+        const [f] = fronts(air(drop, drop, wet(20, 40)));
+        expect(f.kind).toBe('cold');
+        expect(f.at.ts).toBe(doussard[27].ts);
     });
 
     it('la surface d’un front ne penche jamais à l’envers, ni de plus de 6 h', () => {
@@ -385,6 +390,9 @@ describe('passages de front', () => {
             const found = mapFronts(center, around, DOUSSARD_GROUND);
             expect(found.map(f => [f.kind, f.window, f.level])).toEqual([['cold', 6, 850]]);
             expect(Math.abs(found[0].ts - ts[30])).toBeLessThanOrEqual(HOUR);
+            // Il passe au niveau lu quand l'air commence à changer, avant l'heure où il change le plus vite
+            expect(found[0].passage).toBeLessThan(found[0].ts);
+            expect(found[0].passage).toBeGreaterThanOrEqual(found[0].ts - 6 * HOUR);
             expect(found[0].to - found[0].from).toBe(6 * HOUR);
             expect(found[0].z).toBe(1500);
             // Il avance vers l'est à 40 km/h : sa vitesse et sa direction se lisent sur les voisins
@@ -393,9 +401,12 @@ describe('passages de front', () => {
             expect(Math.abs(found[0].bearing! - 270)).toBeLessThan(10);
             // Le même front de l'autre sens : front chaud
             const warm = scene((x, h) => coldFront(x, h).map(v => -v) as [number, number]);
-            expect(mapFronts(warm.center, warm.around, DOUSSARD_GROUND).map(f => f.kind)).toEqual([
-                'warm',
-            ]);
+            const [warmFront, ...others] = mapFronts(warm.center, warm.around, DOUSSARD_GROUND);
+            expect(others).toEqual([]);
+            expect(warmFront.kind).toBe('warm');
+            // Front chaud : il passe au niveau lu quand l'air finit de changer, après l'heure la plus rapide
+            expect(warmFront.passage).toBeGreaterThan(warmFront.ts);
+            expect(warmFront.passage).toBeLessThanOrEqual(warmFront.ts + 6 * HOUR);
         });
 
         it('pas de front sans gradient, sans vent qui le pousse, ou quand seule l’humidité change', () => {
@@ -493,6 +504,7 @@ describe('passages de front', () => {
                 from: cols[26].ts,
                 to: cols[32].ts,
                 ts: cols[29].ts,
+                passage: cols[28].ts,
                 window: 6,
                 level: 850,
                 z: ground + 1500,
@@ -506,12 +518,11 @@ describe('passages de front', () => {
             expect([f.speed, f.bearing]).toEqual([62, 285]);
             // Prévision horaire : l'heure du passage n'a pas de fourchette
             expect(f.between).toBeNull();
-            // Au sol dans les 3 h qui précèdent le passage de la carte, jamais après
-            expect(f.at.ts).toBeGreaterThanOrEqual(cols[27].ts);
-            expect(f.at.ts).toBeLessThanOrEqual(cols[29].ts);
-            // Surface : sol, niveau de la carte à l'heure de la carte, air libre plus tard
+            // Au sol quand l'air bas commence à changer, avant le passage de la carte, jamais après
+            expect(f.at.ts).toBe(cols[27].ts);
+            // Surface : sol, niveau de la carte à l'heure où la carte l'y fait passer, air libre plus tard
             expect(f.surface.map(p => p.z)).toEqual([ground, ground + 1500, ground + 2250]);
-            expect(f.surface[1].ts).toBe(cols[29].ts);
+            expect(f.surface[1].ts).toBe(cols[28].ts);
             expect(f.surface[2].ts).toBe(f.aloft.ts);
             expect(f.aloft.ts).toBeGreaterThan(cols[32].ts);
             for (let k = 1; k < f.surface.length; k++) {
@@ -529,6 +540,7 @@ describe('passages de front', () => {
                 from: doussard[30].ts,
                 to: doussard[36].ts,
                 ts: doussard[33].ts,
+                passage: doussard[33].ts,
                 window: 6,
                 level: 850,
                 z: null,
@@ -538,8 +550,8 @@ describe('passages de front', () => {
             expect(fronts(whole(5, undefined, VEERING))).toEqual([]);
             const [f] = frontsOf(whole(5, undefined, VEERING), DOUSSARD.lat, [warm]);
             expect(f.kind).toBe('warm');
-            expect(f.at.ts).toBeGreaterThanOrEqual(doussard[33].ts);
-            expect(f.at.ts).toBeLessThanOrEqual(doussard[36].ts);
+            // Au sol à la fin du réchauffement de l'air bas
+            expect(f.at.ts).toBe(doussard[36].ts);
             // Sans niveau de carte entre l'air bas et l'air libre : sol et air libre seulement
             expect(f.surface.map(p => p.z)).toEqual([ground, ground + 2250]);
         });
@@ -561,101 +573,37 @@ describe('passages de front', () => {
     });
 
     it('saut de vent au sol : rafales des 3 h qui suivent le passage contre celles des 3 h qui précèdent', () => {
-        // Rafales de 20 km/h avant la 33e heure, de 55 km/h ensuite : le front passe pendant le refroidissement
+        // Rafales de 20 km/h avant la 30e heure, de 55 km/h ensuite : le front passe au début du refroidissement
         const gusty = (after: number) =>
-            whole(-5, i => ({ ...wet(30, 36)(i), gust: (i < 33 ? 20 : after) * KMH }));
+            whole(-5, i => ({ ...wet(30, 36)(i), gust: (i < 30 ? 20 : after) * KMH }));
         const [f] = fronts(gusty(55));
         expect(f.gustJump).toBe(true);
         expect(f.gustAfter!).toBeCloseTo(55 * KMH, 6);
-        expect(f.gustBefore!).toBeLessThanOrEqual(f.gustAfter!);
+        expect(f.gustBefore!).toBeCloseTo(20 * KMH, 6);
         // Rafales qui montent trop peu, ou qui restent faibles : pas de saut
         expect(fronts(gusty(28))[0].gustJump).toBe(false);
         expect(fronts(whole(-5, wet(30, 36)))[0].gustJump).toBe(false);
     });
 
     it('modèle fourni toutes les 3 h : le passage au sol est donné entre deux pas du modèle', () => {
-        // Heures 30 à 33 interpolées entre deux pas : le changement d'air y est une rampe
-        const stepped = whole(
-            -6,
-            i => {
-                const from = doussard[Math.floor(i / 3) * 3].ts;
-                const to = doussard[Math.min(doussard.length - 1, Math.ceil(i / 3) * 3)].ts;
-                return { ...wet(30, 36)(i), step: [from, to] as [number, number] };
-            },
-            undefined,
-            3,
-            30,
-        );
+        /** Pas du modèle qui encadrent l'heure i : les heures 30 à 33 sont interpolées entre deux pas */
+        const step = (i: number): [number, number] => [
+            doussard[Math.floor(i / 3) * 3].ts,
+            doussard[Math.min(doussard.length - 1, Math.ceil(i / 3) * 3)].ts,
+        ];
+        // Le changement d'air est une rampe entre les pas de la 30e et de la 33e heure
+        const stepped = whole(-6, i => ({ ...wet(30, 36)(i), step: step(i) }), undefined, 3, 30);
         const [f] = fronts(stepped);
         expect(f.between).toEqual([doussard[30].ts, doussard[33].ts]);
-        expect(f.at.ts).toBeGreaterThanOrEqual(f.between![0]);
-        expect(f.at.ts).toBeLessThanOrEqual(f.between![1]);
-    });
-});
-
-describe('fronts autour des heures affichées', () => {
-    it('pendant, dans les 12 h qui précèdent (froid seulement), dans les 6 h qui suivent', () => {
-        const cols = dayOf(doussard, 1);
-        const front = (ts: number, kind: Front['kind'] = 'cold'): Front => ({
-            kind,
-            at: { ...cols[0], ts },
-            aloft: { ...cols[0], ts },
-            tempChange: kind === 'cold' ? -4 : 4,
-            window: 6,
-            advection: null,
-            pressureRise: null,
-            windZ: 2000,
-            before: null,
-            after: null,
-            turns: false,
-            rain: 2,
-            dry: false,
-            gust: null,
-            speed: null,
-            bearing: null,
-            tempStep: 0,
-            abrupt: false,
-            gustBefore: null,
-            gustAfter: null,
-            gustJump: false,
-            between: null,
-            surface: [],
-        });
-        const start = cols[0].ts;
-        const end = cols[cols.length - 1].ts;
-        const all = [
-            front(start - 20 * HOUR),
-            front(start - 5 * HOUR, 'warm'),
-            front(start - 3 * HOUR),
-            front(start + 10 * HOUR),
-            front(end + 4 * HOUR, 'warm'),
-            front(end + 9 * HOUR),
-        ];
-
-        // Journée entière
-        expect(frontsAround(all, start, end)).toEqual({
-            during: [all[3]],
-            before: all[2],
-            after: all[4],
-        });
-        // De 8 h à 20 h
-        const [from, to] = [start + 8 * HOUR, start + 20 * HOUR];
-        expect(frontsAround(all, from, to)).toEqual({
-            during: [all[3]],
-            before: all[2],
-            after: null,
-        });
-        // Bornes comprises : 12 h avant la première heure, 6 h après la dernière
-        expect(frontsAround(all, start + 9 * HOUR, start + 10 * HOUR)).toEqual({
-            during: [all[3]],
-            before: all[2],
-            after: null,
-        });
-        expect(frontsAround(all, start + 9 * HOUR + 1, end - 2 * HOUR)).toEqual({
-            during: [all[3]],
-            before: null,
-            after: all[4],
-        });
-        expect(frontsAround([], from, to)).toEqual({ during: [], before: null, after: null });
+        // Le changement commence au pas de la 30e heure : le front passe dans le pas qui suit, et le
+        // trait est mis au milieu de ce pas
+        expect(f.at.ts).toBe(doussard[31].ts);
+        // Front chaud : le changement finit au pas de la 33e heure, le front passe dans le pas qui
+        // précède
+        const warming = whole(6, i => ({ cloudCover: 1, step: step(i) }), VEERING, 3, 30);
+        const [w] = fronts(warming);
+        expect(w.kind).toBe('warm');
+        expect(w.between).toEqual([doussard[30].ts, doussard[33].ts]);
+        expect(w.at.ts).toBe(doussard[32].ts);
     });
 });

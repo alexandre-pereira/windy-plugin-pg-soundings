@@ -21,7 +21,7 @@ Plugin Windy.com qui affiche, pour un site de vol, un graphique **altitude × he
   séparés par des trouées : couche de cumulus que nourrissent les thermiques, **altocumulus**
 - En montagne, tirets là où le **relief est pris dans les nuages**, du sol au niveau des crêtes
   voisines
-- **Ciel de chaque heure** : bandeau « Ciel » au-dessus du graphique, une case par heure où est
+- **Ciel de chaque heure** : bandeau « Nuages » au-dessus du graphique, une case par heure où est
   écrite la couverture nuageuse (%), tous étages confondus ; la case va de transparente (ciel
   dégagé) à grise (ciel couvert), de jour comme de nuit
 - **Limite pluie-neige** (pointillé pâle) aux heures de précipitations, **virga** (chevrons orange
@@ -33,15 +33,14 @@ Plugin Windy.com qui affiche, pour un site de vol, un graphique **altitude × he
   Un **orage voisin** (prévu à 55 km et poussé vers le lieu par le vent, quand le modèle n'en prévoit
   pas sur le lieu) a son bandeau, et son icône cerclée de tirets à l'heure où il peut arriver
 - **Passages de front**, dessinés comme sur une coupe météo : trait bleu à triangles (front froid),
-  rouge à demi-cercles (front chaud) ou violet aux deux symboles (occlusion), avec son étiquette
-  (front froid, front froid sec, front chaud, occlusion). Les fronts sont lus sur la carte autour
-  du lieu, pas sur le lieu seul. Le trait suit la surface du front : il part du sol à l'heure où le
-  front y passe et rejoint l'heure où il passe plus haut ; un front de la nuit ou de la veille est
-  annoncé au bord du graphique avec son heure. Le symbole du
-  front suit aussi le nom du jour où il passe, dans la liste des jours. Un front d'au moins 50 km/h
-  est dit **rapide** ; l'infobulle donne sa vitesse et sa direction, et l'étiquette les rafales au
-  sol quand elles sautent à son passage. Avec un modèle fourni toutes les 3 heures, l'étiquette
-  donne les deux heures entre lesquelles il passe
+  rouge à demi-cercles (front chaud) ou violet aux deux symboles (occlusion). Les fronts sont lus
+  sur la carte autour du lieu, pas sur le lieu seul. Le trait suit la surface du front : il part du
+  sol à l'heure où le front y passe et rejoint l'heure où il passe plus haut. Le symbole du front
+  suit aussi le nom du jour où il passe, dans la liste des jours. Un front d'au moins 50 km/h
+  est dit **rapide**, un front froid qui passe sans pluie **sec** ; l'infobulle des heures que le
+  trait traverse donne son nom, sa vitesse et sa direction, et les rafales au sol quand elles
+  sautent à son passage. Avec un modèle fourni toutes les 3 heures, elle donne les deux heures
+  entre lesquelles il passe
 - **Nébulosité du modèle** à chaque altitude (voile gris, d'autant plus opaque que le ciel y est
   couvert, halo clair en haut pour les nuages plus hauts que le graphique), **isotherme 0 °C**
   (tirets bleus), relief du modèle
@@ -49,7 +48,7 @@ Plugin Windy.com qui affiche, pour un site de vol, un graphique **altitude × he
   gauche et le LI à droite, chacun sur la couleur de son palier, du vert (stable) au rouge (très
   instable)
 - Infobulle au survol : vent, température, vario et nuages à l'altitude pointée, puis plafond,
-  qualité des thermiques, cumulus, vario max, vent et rafales au sol, T° au sol,
+  qualité des thermiques, cumulus, vario max, T° au sol (à l'altitude du sol dans le modèle),
   isotherme 0 °C, CAPE / LI, pluie ; aux heures que traverse le trait d'un front, le changement de
   température en altitude, la rotation du vent, la pluie autour du passage, les heures du passage
   au sol et en altitude et la remontée de la pression
@@ -58,13 +57,14 @@ Plugin Windy.com qui affiche, pour un site de vol, un graphique **altitude × he
   l'heure de la carte change le jour et l'heure du plugin (trait orange sur le graphique, curseur de
   l'heure), et choisir un jour ou une heure dans le plugin déplace la carte. Cliquer ou toucher le
   graphique à une altitude met la carte au niveau le plus proche (sol, 100 m, niveaux de pression),
-  repéré sur le graphique par des tirets orange et un triangle sur l'axe
+  repéré sur le graphique par des tirets orange, avec son altitude écrite sur l'axe
 - **Lieu synchronisé avec le sélecteur de la carte** (le point de Windy qu'on déplace pour lire le
   vent) : l'ouvrir ou le déplacer change le lieu du plugin, et cliquer ailleurs sur la carte l'y
-  amène. Un seul lieu est mis en valeur sur la carte : le sélecteur quand il est ouvert, sinon le
-  repère du plugin
-- **Barre de l'heure** en haut du graphique, alignée sur ses colonnes : le bouton orange porte
-  l'heure choisie, au sommet du trait orange qui traverse le graphique. Il se déplace au doigt ou à
+  amène. Le lieu dont le panneau affiche la prévision est toujours marqué sur la carte par le
+  repère du plugin, un viseur orange, que le sélecteur soit ouvert ou non
+- **Barre de l'heure** en haut du graphique : c'est l'axe des heures, et le bouton orange y porte
+  l'heure choisie, au sommet du trait orange qui descend jusqu'au bas du graphique, à travers les
+  bandeaux. Il se déplace au doigt ou à
   la souris, d'heure en heure, et la lecture de la journée (▶, dans la marge de l'axe) défile
   d'heure en heure aussi. Au-dessus de l'émagramme, un **curseur** au pas de 5 minutes, avec les
   flèches d'heure en heure et la lecture à ses bouts
@@ -88,8 +88,9 @@ Plugin Windy.com qui affiche, pour un site de vol, un graphique **altitude × he
   bourgeonnant, de la base au sommet des cumulus), et à droite la bande des **nuages du modèle** à
   chaque altitude (voile d'autant plus opaque que le ciel y est couvert, trait à la base du plafond
   nuageux de l'heure) puis le vent (flèches dimensionnées par la force) avec la couche convective
-  en jaune ; au survol, température, point de rosée, gradient, particule, vario, vent et nuages à
-  l'altitude pointée
+  en jaune ; au survol, les valeurs s'écrivent sur les courbes à l'altitude pointée : température,
+  point de rosée, particule, et le gradient de température en °C par 100 m, à la couleur de sa
+  stabilité
 - En option, la **courbe d'état du lever du jour** sur l'émagramme, en trait pâle avec son heure :
   l'écart avec la courbe de l'heure affichée montre ce que la journée a changé (inversion de la
   nuit résorbée, air réchauffé)
@@ -107,7 +108,7 @@ L'interface est en français ou en anglais, selon la langue de Windy.
 Sur <https://www.windy.com/plugins>, choisissez « Load plugin directly from URL » et collez :
 
 ```
-https://windy-plugins.com/2727410/windy-plugin-pg-soundings/1.8.0/plugin.min.js
+https://windy-plugins.com/2727410/windy-plugin-pg-soundings/1.9.0/plugin.min.js
 ```
 
 Le plugin signale ensuite lui-même les nouvelles versions. L'historique est dans
@@ -213,16 +214,18 @@ de pression (souvent 7 niveaux seulement pour ECMWF : rien entre 850 et 700 hPa,
   la nébulosité du modèle atteint 50 %, à n'importe quelle altitude, de l'altitude où elle dépasse
   40 % à celle où elle y retombe. Mesurée à 40 %, la base ne saute pas d'un niveau à l'autre quand
   la nébulosité oscille autour de 50 %. La couche naît à 50 % et se prolonge d'heure en heure tant
-  qu'elle garde 40 %. Deux heures voisines portent la même nappe quand leurs couches se recouvrent
-  en altitude, à 250 m près ; sinon ce sont deux nappes. Une couche épaisse, ou de l'étage haut,
-  s'estompe en montant : seule sa base est sûre, son sommet se perd dans le voile
+  qu'elle garde 40 % à la même altitude : une autre couche, plus basse ou plus haute, qui n'a
+  jamais atteint 50 %, ne prend pas sa place. Deux heures voisines portent la même nappe quand
+  leurs couches se recouvrent en altitude, à 250 m près ; sinon ce sont deux nappes. Une couche
+  épaisse, ou de l'étage haut, s'estompe en montant : seule sa base est sûre, son sommet se perd
+  dans le voile
 - quand la pluie n'est pas faite d'averses, elle tombe de cette nappe, dessinée en gris (**pluie de
   front**, bruine). Sans couche dense, elle garde la plus basse couche continue où la nébulosité
   atteint la moitié de sa plus forte valeur
 - dessine une **couche de nuages bas** (stratus, stratocumulus) quand la plus basse couche continue à
   50 % de nébulosité a sa base à moins de 2 000 m du sol et son sommet à moins de 3 000 m (plus
   épaisse, c'est une masse nuageuse de front). Elle naît à 50 % et se prolonge d'heure en heure tant
-  qu'elle garde 40 %. Elle touche le sol (**brouillard**) quand l'air y est saturé (T − Td ≤ 0,5 °C)
+  qu'elle garde 40 % à la même altitude. Elle touche le sol (**brouillard**) quand l'air y est saturé (T − Td ≤ 0,5 °C)
   et qu'elle commence à moins de 300 m. C'est une **mer de nuages** quand elle couvre au moins 70 %
   du ciel sous un air clair (20 % de nuages au plus) et sec (T − Td ≥ 5 °C) au niveau du modèle
   juste au-dessus. Base et sommet sont interpolés entre deux niveaux du modèle : ils ne sont justes
@@ -269,7 +272,7 @@ de pression (souvent 7 niveaux seulement pour ECMWF : rien entre 850 et 700 hPa,
   et l'heure, et moins de 30 % du ciel qui cache le soleil. Sur un mois de prévisions de 16 sites
   d'Europe (septembre-octobre), moins de 1 % des heures de thermiques les réunissent. Seuils tirés
   de la littérature : aucune observation de tourbillons ne permet de les caler
-- montre le **ciel de chaque heure** dans le bandeau « Ciel » : la couverture nuageuse totale
+- montre le **ciel de chaque heure** dans le bandeau « Nuages » : la couverture nuageuse totale
   (maximum de chaque étage, bas, moyen et haut, puis recouvrement aléatoire entre étages). Le
   calcul des thermiques, lui, compte la part qui cache le soleil, où les nuages bas comptent en
   entier, les nuages moyens pour 70 % et les nuages hauts pour 30 % : c'est elle qui atténue le
@@ -329,22 +332,39 @@ de pression (souvent 7 niveaux seulement pour ECMWF : rien entre 850 et 700 hPa,
   gagne puis reperd au moins 1,5 °C en 6 heures de part et d'autre, sous un ciel couvert et au moins
   2 mm de pluie de nuages en couches, quand l'air entre 250 et 1 000 m au-dessus du sol change de
   moins de 2 °C et qu'aucun autre front ne passe à moins de 12 heures ; ces seuils-là ne sont pas
-  calés. La carte dit qu'un front passe et à quelle heure il passe au niveau lu (celle où la masse
-  d'air y change le plus vite) ; la prévision du lieu dit où il passe plus bas et plus haut. Le
-  graphique trace la **surface du front** par trois points. Au **sol**, l'heure où la température
-  potentielle équivalente de l'air bas (250 à 1 000 m au-dessus du sol) change le plus vite, d'au
-  moins 1 °C en 2 heures, cherchée dans les 3 heures qui précèdent le passage de la carte pour un
-  front froid (il passe au sol avant l'altitude), dans les 3 heures qui le suivent pour un front
-  chaud ; à défaut, l'heure de la carte. C'est l'**heure du passage** que donnent l'étiquette, la
-  liste des jours et l'infobulle. À l'**altitude du niveau lu**, l'heure de la carte : le trait y
-  passe toujours (si ce niveau est à moins de 250 m du sol, son heure est celle du sol). À
+  calés. La carte dit qu'un front passe et à quelle heure il passe au niveau lu ; la prévision du
+  lieu dit où il passe plus bas et plus haut. Un front est le bord de l'air chaud, pas le milieu
+  du changement d'air. Un **front froid** est le bord avant de l'air froid : il passe quand l'air
+  commence à changer. Un **front chaud** est le bord arrière de l'air froid qu'il remplace : il
+  passe quand l'air finit de changer. Ce début (ou cette fin) se lit en remontant (ou en
+  descendant) le temps depuis l'heure du changement le plus rapide, tant que la température
+  potentielle équivalente change encore d'au moins 0,5 °C par heure, de 6 heures au plus. Sur les
+  prévisions de la période ci-dessus, le passage au sol d'un front froid ainsi lu (179 fronts)
+  tombe, en médiane, à l'heure où le vent au sol tourne et à celle de la plus forte pluie, une
+  heure après le creux de pression ; l'heure du changement le plus rapide vient 2 à 3 heures plus
+  tard. Celui d'un front chaud (38 fronts, dont 18 avec une rotation du vent au sol et 27 avec un
+  creux de pression) tombe en médiane à l'heure où le vent tourne et une heure avant le creux ;
+  l'heure du changement le plus rapide vient 2 à 3 heures plus tôt. Le graphique trace la
+  **surface du front** par trois points. Au **sol**, l'heure où la température potentielle
+  équivalente de l'air bas (250 à 1 000 m au-dessus du sol) change le plus vite, d'au moins 1 °C
+  en 2 heures, est cherchée dans les 3 heures qui précèdent le changement le plus rapide au niveau
+  lu pour un front froid (il passe au sol avant l'altitude), dans les 3 heures qui le suivent pour
+  un front chaud. Le front froid passe au sol à l'heure où ce changement de l'air bas commence, le
+  front chaud à celle où il finit ; à défaut, l'heure de la carte. C'est l'**heure du passage**
+  que donnent la liste des jours et l'infobulle. Quand Windy ne fournit le modèle que
+  toutes les 3 heures, le changement commence ou finit à un pas du modèle et le front passe dans le
+  pas voisin (celui qui suit pour un front froid, celui qui précède pour un front chaud) : le trait
+  est mis au milieu de ce pas, et l'infobulle en donne les deux heures. À l'**altitude du niveau
+  lu**, l'heure de la carte (début du changement pour un front froid, fin pour un front chaud) :
+  le trait y passe, jamais avant le sol pour un front froid ni après lui pour un front chaud, et
+  à 6 heures du sol au plus (si ce niveau est à moins de 250 m du sol, son heure est celle du
+  sol). À
   **2 250 m au-dessus du sol** (le milieu de la couche de l'air libre), l'heure où l'air libre
   change le plus vite, cherchée après les passages plus bas pour un front froid, avant pour un
   front chaud, à 6 heures du sol au plus : le trait ne penche jamais à l'envers. Quand le niveau lu
   est à 2 000 m du sol ou plus, c'est lui qui donne ce point. Il se prolonge jusqu'à 3 000 m au-dessus du sol : plus haut, rien ne
-  dit où est le front. Le graphique annonce à son bord le dernier front froid des 12 heures qui
-  précèdent les heures affichées et le premier front des 6 heures qui suivent, et la liste des
-  jours porte le symbole de chaque sorte de front qui passe au sol ce jour-là
+  dit où est le front. La liste des jours porte le symbole de chaque sorte de front qui passe au
+  sol ce jour-là
 - donne la **vitesse d'un front** et la direction d'où il vient, lues sur la carte : la température
   potentielle équivalente de chaque point voisin est décalée dans le temps (de −6 à +6 heures, par
   quart d'heure) jusqu'à se superposer à celle du lieu sur la fenêtre du front, élargie de 3 heures
