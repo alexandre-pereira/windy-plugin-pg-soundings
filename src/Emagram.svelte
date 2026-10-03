@@ -6,7 +6,10 @@
     - courbe d'état colorée selon la stabilité (rouge : instabilité absolue, vert : instabilité
       conditionnelle, clair : stable), point de rosée en bleu ;
     - zone de formation du nuage : couche claire à sommet bourgeonnant, de la base au sommet du cumulus ;
-    - colonne de vent à droite, flèches dimensionnées par la force, couche convective en jaune.
+    - points creux aux niveaux où le modèle fournit ses données (entre deux, les courbes sont interpolées) ;
+    - en option, courbe d'état du lever du jour en trait pâle, pour voir ce que la journée a changé ;
+    - à droite, bande des nuages du modèle à chaque altitude, puis colonne de vent, flèches
+      dimensionnées par la force, couche convective en jaune.
 
     Mise en page : axe des altitudes fixe à gauche, courbes au centre (défilement horizontal sur
     smartphone), colonne de vent fixe à droite. Les trois SVG partagent le même repère : chacun
@@ -63,6 +66,12 @@
                 <rect width="7" height="7" style="fill: var(--wpp-halo)" fill-opacity="0.45" />
                 <rect width="1.2" height="7" fill="currentColor" fill-opacity="0.22" />
             </pattern>
+            <!-- Nuages du modèle à chaque altitude, pour la bande à droite des courbes -->
+            <linearGradient id="wpp-ema-clouds" gradientUnits="userSpaceOnUse" x1="0" x2="0" y1={top} y2={top + plotH}>
+                {#each cloudStops as opacity, k}
+                    <stop offset={k / CLOUD_ROWS} style="stop-color: var(--wpp-cloud-layer)" stop-opacity={opacity} />
+                {/each}
+            </linearGradient>
         </defs>
 
         <rect x={left} y={top} width={plotW} height={plotH} rx="3" fill="url(#wpp-ema-sky)" />
@@ -147,6 +156,14 @@
                 <path {d} class="wpp-buoyant" />
             {/each}
 
+            <!-- Courbe d'état du lever du jour, en trait pâle sous les courbes de l'heure -->
+            {#if dawnCurve}
+                <path d={dawnCurve.d} class="wpp-curve wpp-curve--dawn" />
+                <text x={dawnCurve.x} y={dawnCurve.y} class="wpp-mark wpp-mark--dawn" text-anchor={dawnCurve.anchor}
+                    >{dawnCurve.label}</text
+                >
+            {/if}
+
             <!-- Point de rosée -->
             <path d={dewPath} class="wpp-halo" />
             <path d={dewPath} class="wpp-curve wpp-curve--dew" />
@@ -161,6 +178,11 @@
             <path d={tempHalo} class="wpp-halo" />
             {#each tempSegments as s}
                 <path d={s.d} class="wpp-curve wpp-curve--temp" style="stroke: {stabilityColor(s.kind)}" />
+            {/each}
+
+            <!-- Niveaux où le modèle fournit ses données : entre deux points, les courbes sont interpolées -->
+            {#each levelDots as d}
+                <circle cx={d.x} cy={d.y} r="2.6" class="wpp-level" class:wpp-level--dew={d.dew} />
             {/each}
 
             <!-- Ascension de la particule : son point de rosée, puis son trajet du sol à son sommet -->
@@ -283,6 +305,7 @@
             fill="transparent"
             pointer-events="all"
             class="wpp-hit"
+            use:scrub={onScrub}
             on:pointerdown={e => (pointerType = e.pointerType)}
             on:mousemove={onMove}
             on:click={onMove}
@@ -291,7 +314,7 @@
     </svg>
     </div>
 
-    <!-- Colonne de vent (fixe) -->
+    <!-- Nuages du modèle et colonne de vent (fixes) -->
     <svg
         class="wpp-ema wpp-ema-side"
         style="left:{panelX}px"
@@ -301,11 +324,22 @@
     >
         <g transform="translate({panelX},0)">
             <rect x="0" y={top} width={panelW} height={plotH} rx="3" fill="url(#wpp-ema-sky)" />
+            <!-- Bande des nuages : voile d'autant plus opaque que le modèle couvre le ciel à cette
+                 altitude, comme sur le graphique « Vent & thermiques » ; trait à la base du plafond
+                 nuageux de l'heure. Rien de connu au-dessus du dernier niveau du modèle -->
+            <rect x="0" y={top} width={CLOUD_W} height={plotH} fill="url(#wpp-ema-clouds)" />
+            {#if zProfileTop < yMax}
+                <rect x="0" y={top} width={CLOUD_W} height={y(zProfileTop) - top} fill="url(#wpp-ema-nodata)" />
+            {/if}
+            {#if deck && deck.base < yMax && deck.base >= Math.max(yMin, column.ground)}
+                <line x1="0" x2={CLOUD_W} y1={y(deck.base)} y2={y(deck.base)} class="wpp-deck" />
+            {/if}
+            <line x1={CLOUD_W} x2={CLOUD_W} y1={top} y2={top + plotH} stroke="currentColor" stroke-opacity="0.25" />
             {#if blTop != null}
                 <rect
-                    x="0"
+                    x={CLOUD_W}
                     y={y(blTop)}
-                    width={panelW}
+                    width={windW}
                     height={y(Math.max(yMin, column.ground)) - y(blTop)}
                     fill="#ffe14a"
                     opacity="0.22"
@@ -323,12 +357,12 @@
             {#each winds as w}
                 <path
                     d={w.arrow}
-                    transform="translate({panelW * 0.26},{w.y}) rotate({w.dir + 180})"
+                    transform="translate({CLOUD_W + windW * 0.26},{w.y}) rotate({w.dir + 180})"
                     fill={w.color}
                     style="stroke: var(--wpp-halo)"
                     stroke-width="0.7"
                 />
-                <text x={panelW * 0.52} y={w.y + 3.5} class="wpp-wind" fill={w.color}>{w.kmh}</text>
+                <text x={CLOUD_W + windW * 0.52} y={w.y + 3.5} class="wpp-wind" fill={w.color}>{w.kmh}</text>
             {/each}
             <rect
                 x="0"
@@ -340,7 +374,8 @@
                 stroke="currentColor"
                 stroke-opacity="0.25"
             />
-            <text x={panelW / 2} y={top + plotH + 14} class="wpp-axis" text-anchor="middle">km/h</text>
+            <text x={CLOUD_W / 2} y={top + plotH + 14} class="wpp-axis" text-anchor="middle">☁&#xFE0E;</text>
+            <text x={CLOUD_W + windW / 2} y={top + plotH + 14} class="wpp-axis" text-anchor="middle">km/h</text>
         </g>
 
         <!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions -->
@@ -352,6 +387,7 @@
             fill="transparent"
             pointer-events="all"
             class="wpp-hit"
+            use:scrub={onScrub}
             on:pointerdown={e => (pointerType = e.pointerType)}
             on:mousemove={onMove}
             on:click={onMove}
@@ -360,7 +396,7 @@
     </svg>
 
     {#if hover && readout}
-        <div class="wpp-tip" style="left:{tipX}px;top:{tipY}px">
+        <div class="wpp-tip" style="left:{tipX}px;top:{tipY}px" bind:offsetHeight={tipH}>
             <div class="wpp-tip__title">{r50(hover.z)} m <span>· {readout.p.toFixed(0)} hPa</span></div>
             {#if hover.z > zProfileTop}
                 <div class="wpp-tip__nodata">{noDataText}</div>
@@ -373,6 +409,13 @@
             {#if readout.t != null}
                 <div class="wpp-tip__row">
                     <span>{tr('Température', 'Temperature')}</span><b>{readout.t.toFixed(1)} °C</b>
+                </div>
+            {/if}
+            {#if readout.dawn != null && dawn}
+                <div class="wpp-tip__row">
+                    <span>{tr(`Température à ${hourText(dawn.hour)}`, `Temperature at ${hourText(dawn.hour)}`)}</span><b
+                        class="wpp-c-dawn">{readout.dawn.toFixed(1)} °C</b
+                    >
                 </div>
             {/if}
             {#if readout.td != null}
@@ -413,12 +456,17 @@
                     >
                 </div>
             {/if}
+            {#if readout.cloud > 3}
+                <div class="wpp-tip__row">
+                    <span>{tr('Nuages du modèle', 'Model cloud')}</span><b>{Math.round(readout.cloud)} %</b>
+                </div>
+            {/if}
         </div>
     {/if}
 </div>
 
 <script context="module" lang="ts">
-    import { tr } from './i18n';
+    import { hourText, tr } from './i18n';
     import { interpProfile as interpProfileM, parcelPath as parcelPathM, type Column as ColumnM } from './physics';
 
     /** Classes de stabilité de la courbe d'état, couleurs adaptées au fond sombre */
@@ -469,6 +517,8 @@
     import {
         type Column,
         cardinal,
+        cloudAt,
+        type CloudDeck,
         dewPointFromMixingRatio,
         interpProfile,
         moistAdiabat,
@@ -476,12 +526,15 @@
         parcelAscent,
         parcelPath,
         pressureAt,
+        type ProfilePoint,
         thermalColor,
         toKmh,
         varioAt,
         windAt,
         windColor,
+        withSurfaceLayer,
     } from './physics';
+    import { scrub, type ScrubPoint } from './scrub';
     import { arrowPath, cloudBand } from './svg';
     import { tick } from 'svelte';
 
@@ -498,6 +551,13 @@
      * elle est plus chaude que l'air, en plus de son chemin prolongé jusqu'en haut du cadre
      */
     export let showAscent = false;
+    /**
+     * Heure du lever du jour (option) : sa courbe d'état est tracée en trait pâle sous celle de
+     * l'heure affichée, pour voir ce que la journée a changé ; null sans l'option
+     */
+    export let dawn: Column | null = null;
+    /** Plafond nuageux de l'heure (voir cloudDecksOf), décidé avec les heures voisines ; null sans couche */
+    export let deck: CloudDeck | null = null;
 
     const K = 273.15;
     /** Gradient adiabatique sec (°C/m) : sert au « redressement » de l'axe des températures */
@@ -514,7 +574,10 @@
     // confortable et défile entre l'axe des altitudes et la colonne de vent, qui restent fixes
     $: narrow = width < 480;
     $: left = 38;
-    $: panelW = narrow ? 44 : 52;
+    /** Bande des nuages du modèle (px), à gauche de la colonne de vent */
+    const CLOUD_W = 10;
+    $: windW = narrow ? 44 : 52;
+    $: panelW = CLOUD_W + windW;
     /** Pas vertical (m) d'échantillonnage des courbes */
     const DZ = 10;
 
@@ -566,21 +629,67 @@
             : null;
 
     /** Échantillonne une variable du profil tous les DZ mètres (courbe interpolée) */
-    const sample = (col: Column, key: 't' | 'td', zTop: number) => {
+    const sample = (profile: ProfilePoint[], key: 't' | 'td', zTop: number) => {
         const pts: { z: number; t: number }[] = [];
-        const z0 = col.profile[0].z;
-        const z1 = Math.min(zTop, col.profile[col.profile.length - 1].z);
+        const z0 = profile[0].z;
+        const z1 = Math.min(zTop, profile[profile.length - 1].z);
         for (let z = z0; z <= z1; z += DZ) {
-            const v = interpProfile(col.profile, z, key);
+            const v = interpProfile(profile, z, key);
             if (v != null) pts.push({ z, t: v });
         }
-        const last = interpProfile(col.profile, z1, key);
+        const last = interpProfile(profile, z1, key);
         if (last != null) pts.push({ z: z1, t: last });
         return pts;
     };
 
-    $: tempPts = sample(column, 't', yMax + 300);
-    $: dewPts = sample(column, 'td', yMax + 300);
+    /**
+     * Profil de la courbe d'état : entre le sol et le premier niveau du modèle, la couche
+     * surchauffée est ramenée près du sol (voir withSurfaceLayer). Les calculs, eux, gardent le
+     * profil du modèle.
+     */
+    $: tProfile = withSurfaceLayer(column.profile);
+    $: tempPts = sample(tProfile, 't', yMax + 300);
+    $: dewPts = sample(column.profile, 'td', yMax + 300);
+
+    // --- Courbe d'état du lever du jour (option), sauf quand l'heure affichée en est trop proche
+    $: dawnProfile = dawn && Math.abs(dawn.ts - column.ts) >= 30 * 60e3 ? withSurfaceLayer(dawn.profile) : null;
+    $: dawnCurve = (() => {
+        if (!dawn || !dawnProfile) return null;
+        const pts = sample(dawnProfile, 't', yMax + 300);
+        // Étiquette à côté de la courbe, un peu au-dessus du sol
+        const zLabel = Math.max(yMin, dawn.ground) + span * 0.09;
+        const at = pts.find(p => p.z >= zLabel);
+        if (!at) return null;
+        const x = px(xOf(at.t, at.z));
+        const before = x - left > 34;
+        return {
+            d: toPath(pts),
+            label: hourText(dawn.hour),
+            x: before ? x - 6 : x + 6,
+            y: y(at.z) + 3.5,
+            anchor: before ? 'end' : 'start',
+        };
+    })();
+
+    /** Points des niveaux où le modèle fournit ses données : température et point de rosée */
+    $: levelDots = column.profile
+        .slice(1)
+        .filter(p => p.z >= yMin && p.z <= yMax)
+        .flatMap(p => [
+            { v: p.t, z: p.z, dew: false },
+            { v: p.td, z: p.z, dew: true },
+        ])
+        .filter((d): d is { v: number; z: number; dew: boolean } => d.v != null)
+        .map(d => ({ x: px(xOf(d.v, d.z)), y: y(d.z), dew: d.dew }));
+
+    // --- Bande des nuages du modèle : opacité à chaque altitude, du haut au bas du cadre (même
+    // courbe que le voile du graphique « Vent & thermiques »)
+    const CLOUD_ROWS = 92;
+    $: cloudStops = Array.from({ length: CLOUD_ROWS + 1 }, (_, k) => {
+        const z = yMin + (1 - k / CLOUD_ROWS) * span;
+        if (z < column.ground || z > zProfileTop) return 0;
+        return Math.pow(Math.min(1, cloudAt(column.profile, z) / 100), 0.8);
+    });
 
     // --- Plage de l'axe redressé : courbe d'état, particule et rosée près du sol
     // (plus haut, la rosée peut sortir du cadre)
@@ -631,8 +740,8 @@
 
     /** Gradient vertical (°C/m, positif si la température baisse) et stabilité à l'altitude z */
     $: stabilityAt = (z: number) => {
-        const a = interpProfile(column.profile, z - DZ, 't');
-        const b = interpProfile(column.profile, z + DZ, 't');
+        const a = interpProfile(tProfile, z - DZ, 't');
+        const b = interpProfile(tProfile, z + DZ, 't');
         if (a == null || b == null) return null;
         const lapse = (a - b) / (2 * DZ);
         const t = (a + b) / 2;
@@ -690,7 +799,7 @@
         };
         for (let z = column.ground; z <= ascent.top; z += DZ) {
             const p = parcelAt(z);
-            const t = interpProfile(column.profile, z, 't');
+            const t = interpProfile(tProfile, z, 't');
             if (p != null && t != null && p > t) run.push({ z, parcel: p, air: t });
             else close();
         }
@@ -754,7 +863,7 @@
 
     /** Abscisse de l'étiquette d'un niveau : juste à droite de la courbe d'état à cette altitude */
     $: markX = (z: number) => {
-        const t = interpProfile(column.profile, z, 't');
+        const t = interpProfile(tProfile, z, 't');
         const x = t == null ? left + 8 : px(xOf(t, z)) + 10;
         return Math.min(Math.max(x, left + 6), left + plotW - 120);
     };
@@ -809,7 +918,7 @@
     // --- Survol : lecture des valeurs à l'altitude pointée
     let hover: { z: number; x: number } | null = null;
 
-    const onMove = (e: MouseEvent) => {
+    const onMove = (e: ScrubPoint) => {
         // Coordonnées dans le cadre global (les trois SVG sont alignés en haut)
         const r = wrapEl.getBoundingClientRect();
         const mx = e.clientX - r.left;
@@ -818,17 +927,29 @@
         hover = z >= Math.max(yMin, column.ground) && z <= yMax ? { z, x: mx } : null;
     };
 
+    /** Au doigt, après un appui maintenu : la lecture suit le doigt en altitude */
+    const onScrub = (point: ScrubPoint) => {
+        pointerType = 'touch';
+        const before = hover;
+        onMove(point);
+        // Doigt sorti du cadre : la dernière altitude lue reste affichée
+        hover = hover ?? before;
+    };
+
     $: readout = hover
         ? (() => {
               const z = hover.z;
-              const t = interpProfile(column.profile, z, 't');
+              const t = interpProfile(tProfile, z, 't');
               const td = interpProfile(column.profile, z, 'td');
               const p = parcelAt(z);
               const w = windAt(column.profile, z);
               const s = stabilityAt(z);
+              const atDawn = dawnProfile ? interpProfile(dawnProfile, z, 't') : null;
               return {
                   p: pressureAt(column.profile, z),
                   t: t == null ? null : t - K,
+                  dawn: atDawn == null ? null : atDawn - K,
+                  cloud: z > zProfileTop ? 0 : cloudAt(column.profile, z),
                   td: td == null ? null : td - K,
                   parcel: p == null ? null : p - K,
                   lapse: s ? s.lapse * 1000 : null,
@@ -842,7 +963,8 @@
 
     // --- Position de l'infobulle, toujours dans le cadre ; au doigt, dans la moitié opposée
     const TIP_W = 196;
-    const TIP_H = 200;
+    /** Hauteur mesurée de l'infobulle : elle varie avec le nombre de lignes affichées */
+    let tipH = 200;
     let pointerType = 'mouse';
     let wrapEl: HTMLDivElement;
 
@@ -856,10 +978,10 @@
     $: tipY = !hover
         ? 0
         : pointerType === 'mouse'
-          ? clamp(y(hover.z) - 40, 4, height - TIP_H)
+          ? clamp(y(hover.z) - 40, 4, height - tipH)
           : y(hover.z) > top + plotH / 2
             ? top + 4
-            : clamp(top + plotH - TIP_H, 4, height - TIP_H);
+            : clamp(top + plotH - tipH, 4, height - tipH);
 
     /** Un toucher en dehors de l'émagramme ferme l'infobulle */
     const onWindowPointer = (e: PointerEvent) => {
@@ -995,6 +1117,26 @@
                 stroke-width: 2;
                 stroke-dasharray: 7 5;
             }
+            // Courbe d'état du lever du jour : pâle, sous les courbes de l'heure
+            &--dawn {
+                stroke: var(--wpp-fg-faint);
+                stroke-width: 1.8;
+                stroke-opacity: 0.8;
+            }
+        }
+        // Niveau du modèle : point creux sur la courbe d'état et sur le point de rosée
+        .wpp-level {
+            fill: var(--wpp-halo);
+            stroke: var(--wpp-stable);
+            stroke-width: 1.3;
+            &--dew {
+                stroke: #4ea3ff;
+            }
+        }
+        // Base du plafond nuageux de l'heure, dans la bande des nuages
+        .wpp-deck {
+            stroke: var(--wpp-fg);
+            stroke-width: 1.6;
         }
         .wpp-halo--thin {
             stroke-width: 4.5;
@@ -1054,6 +1196,9 @@
             stroke-linejoin: round;
             &--ascent {
                 fill: var(--wpp-parcel);
+            }
+            &--dawn {
+                fill: var(--wpp-fg-faint);
             }
         }
         .wpp-wind {
@@ -1123,6 +1268,9 @@
         }
         .wpp-c-parcel {
             color: var(--wpp-parcel);
+        }
+        b.wpp-c-dawn {
+            color: var(--wpp-fg-dim);
         }
     }
 </style>

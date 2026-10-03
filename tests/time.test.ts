@@ -6,7 +6,12 @@ import { dayKey, euSummerTime, inEuDstZone, localHour, makeOffsetAt } from '../s
 const HOUR = 3600e3;
 
 /** Prévision horaire minimale : `hours` calculées avec un décalage fixe (comme un en-tête unique) */
-const payload = (start: number, n: number, offset: number, hourOf?: (ts: number) => number): ForecastPayload => {
+const payload = (
+    start: number,
+    n: number,
+    offset: number,
+    hourOf?: (ts: number) => number,
+): ForecastPayload => {
     const ts = Array.from({ length: n }, (_, k) => start + k * HOUR);
     return {
         header: { elevation: 0, utcOffset: offset, availableLevels: [], model: 'ecmwf' },
@@ -40,7 +45,9 @@ describe('décalage horaire au fil de la prévision', () => {
         expect(offsetAt(Date.UTC(2026, 9, 24, 12))).toBe(2);
         expect(offsetAt(Date.UTC(2026, 9, 25, 12))).toBe(1);
         // Les jours suivent l'heure locale : 23 h 30 UTC le 25 octobre, c'est déjà le 26 à 0 h 30
-        expect(dayKey(Date.UTC(2026, 9, 25, 23, 30), offsetAt(Date.UTC(2026, 9, 25, 23, 30)))).toBe('2026-9-26');
+        expect(dayKey(Date.UTC(2026, 9, 25, 23, 30), offsetAt(Date.UTC(2026, 9, 25, 23, 30)))).toBe(
+            '2026-9-26',
+        );
     });
 
     it('suit l’heure locale de Windy quand elle tient compte du changement', () => {

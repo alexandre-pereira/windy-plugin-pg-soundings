@@ -50,12 +50,14 @@
                         class="wpp__day"
                         class:selected={i === dayIndex}
                         disabled={d.outOfRange || !visibleColumns(d, fullDay).length}
-                        on:click={() => (pinnedDay = d.key)}
+                        on:click={() => chooseDay(d.key)}
                     >
                         <b
                             >{d.label}{#if d.storm}<span class="wpp__daystorm"
                                     ><StormIcon level={d.storm || 1} size={12} /></span
-                                >{/if}</b
+                                >{/if}{#each frontKinds.get(d.key) ?? [] as kind}<span class="wpp__dayfront"
+                                    ><FrontIcon {kind} size={18} /></span
+                                >{/each}</b
                         >
                         {#if d.outOfRange}
                             <small
@@ -96,7 +98,7 @@
             <StormBanner watch={stormWatch} />
         {/if}
 
-        <!-- Onglets des quatre fonctions, légende de l'onglet affiché à droite -->
+        <!-- Onglets des deux fonctions, légende de l'onglet affiché à droite -->
         <div class="wpp__tabbar">
             <div class="wpp__tabs" role="tablist">
                 {#each TABS as t}
@@ -119,7 +121,6 @@
         </div>
 
         <div class="wpp__block" bind:clientWidth={chartWidth}>
-        {#if tab !== 'xc'}
         <div class="wpp__chart">
             {#if loading}
                 <div class="wpp__status"><span class="wpp__spinner"></span>{tr('Chargement des prévisions…', 'Loading forecast…')}</div>
@@ -136,16 +137,19 @@
                 <Chart
                     light={lightTheme}
                     columns={dayColumns}
+                    {fronts}
+                    {crest}
                     width={chartWidth}
                     {yMin}
                     {yMax}
-                    nowTs={Date.now()}
+                    {nowTs}
+                    selectedTs={selected?.ts ?? null}
                     sunrise={days[dayIndex]?.sunrise ?? null}
                     sunset={days[dayIndex]?.sunset ?? null}
                     utcOffset={dayColumns[Math.floor(dayColumns.length / 2)].utcOffset}
-                    on:select={e => (selectedTs = e.detail)}
+                    on:select={e => chooseTime(e.detail)}
                     on:open={e => {
-                        selectedTs = e.detail;
+                        chooseTime(e.detail);
                         tab = 'emagram';
                     }}
                 />
@@ -190,7 +194,7 @@
                         aria-valuetext={localClock(selected.ts)}
                         on:input={e => {
                             stopPlay();
-                            selectedTs = Number(e.currentTarget.value);
+                            chooseTime(Number(e.currentTarget.value));
                         }}
                     />
                     <div class="wpp__ticks">
@@ -215,7 +219,7 @@
                                 style="left:calc(10px + (100% - 20px) * {(c.ts - t0) / Math.max(1, t1 - t0)})"
                                 on:click={() => {
                                     stopPlay();
-                                    selectedTs = c.ts;
+                                    chooseTime(c.ts);
                                 }}>{hourShort(c.hour)}</button
                             >
                         {/each}
@@ -230,6 +234,8 @@
                 light={lightTheme}
                 xRange={emaRange}
                 {showAscent}
+                {dawn}
+                {deck}
             />
             <!-- Grille fixe : les valeurs changent sur place, rien ne bouge en faisant défiler l'heure -->
             <div class="wpp__summary">
@@ -259,8 +265,8 @@
                             >{/if}{#if selected.choppy > 0}<small
                                 class="wpp__choppy"
                                 title={tr(
-                                    'Thermiques hachés par le vent : plus de ~25 km/h en moyenne dans la couche des thermiques, ou vent au sol fort pour des thermiques faibles',
-                                    'Thermals broken up by the wind: more than ~25 km/h on average in the thermal layer, or strong surface wind for weak thermals',
+                                    'Thermiques hachés par le vent : plus de ~25 km/h en moyenne dans la couche des thermiques, plus de ~20 km/h d’écart entre le vent au sol et le vent au plafond, ou vent au sol fort pour des thermiques faibles',
+                                    'Thermals broken up by the wind: more than ~25 km/h on average in the thermal layer, more than ~20 km/h of difference between the surface wind and the wind at the ceiling, or strong surface wind for weak thermals',
                                 )}>{selected.choppy === 2 ? tr('très haché', 'very choppy') : tr('haché', 'choppy')}</small
                             >{/if}</span
                     >
@@ -312,25 +318,11 @@
                     >
                 </div>
             </div>
-            {:else if tab === 'bulletin' && loc && days[dayIndex] && !days[dayIndex].outOfRange}
-                <Bulletin {days} {dayIndex} {columns} lat={loc.lat} lon={loc.lon} />
             {:else if payload}
                 <div class="wpp__status">
                     {tr('Pas de données en altitude pour ce jour avec ce modèle.', 'No upper-air data for this day with this model.')}
                 </div>
             {/if}
-        </div>
-        {/if}
-
-        <!-- Carte des meilleurs départs : reste active (carte affichée) quand on change d'onglet -->
-        <div class="wpp__xc" class:wpp__xc--hidden={tab !== 'xc'}>
-            <XcLayer
-                {model}
-                selectedDay={days[dayIndex]?.key ?? null}
-                daysNeeded={dayIndex + 2}
-                siteLat={loc?.lat ?? null}
-                siteLon={loc?.lon ?? null}
-            />
         </div>
         </div>
 
@@ -360,6 +352,16 @@
                     <input type="checkbox" bind:checked={showAscent} />
                     {tr('Ascension de la particule', 'Parcel ascent')}
                 </label>
+                <label
+                    class="wpp__check"
+                    title={tr(
+                        'Courbe d’état de l’heure du lever du soleil, en trait pâle : l’écart avec la courbe de l’heure affichée montre ce que la journée a changé',
+                        'Temperature curve of the sunrise hour, as a pale line: the gap with the curve of the hour shown tells what the day has changed',
+                    )}
+                >
+                    <input type="checkbox" bind:checked={showDawn} />
+                    {tr('Courbe du lever du jour', 'Sunrise curve')}
+                </label>
             {/if}
             <label class="wpp__check">
                 <input type="checkbox" bind:checked={lightTheme} />
@@ -378,6 +380,12 @@
                     <dt>{tr('Altitude du sol dans le modèle', 'Model ground elevation')}</dt>
                     <dd>{groundModel} m</dd>
                 </div>
+                {#if crest != null}
+                    <div>
+                        <dt>{tr('Crêtes voisines (à 10 km)', 'Nearby ridges (within 10 km)')}</dt>
+                        <dd>~{Math.round(crest / 50) * 50} m</dd>
+                    </div>
+                {/if}
                 {#if payload.header.refTime}
                     <div>
                         <dt>{tr(`Prévision ${modelLabel} calculée le`, `${modelLabel} run`)}</dt>
@@ -391,7 +399,8 @@
 
 <script lang="ts">
     import bcast from '@windy/broadcast';
-    import { loadForecast } from './forecast';
+    import { loadForecast, loadSurroundings } from './forecast';
+    import { crestOf, loadRelief } from './relief';
     import { map, markers } from '@windy/map';
     import { singleclick } from '@windy/singleclick';
     import { setUrl } from '@windy/location';
@@ -400,23 +409,24 @@
     import store from '@windy/store';
     import products from '@windy/products';
 
-    import { onDestroy, onMount } from 'svelte';
+    import { onDestroy, onMount, tick } from 'svelte';
 
     import config from './pluginConfig';
     import { clockText, hourShort, hourText, lang, locale, tr } from './i18n';
-    import Bulletin from './Bulletin.svelte';
     import Chart from './Chart.svelte';
     import Emagram, { emagramRange } from './Emagram.svelte';
     import Legend from './Legend.svelte';
     import ModelPicker from './ModelPicker.svelte';
-    import XcLayer from './XcLayer.svelte';
+    import FrontIcon from './FrontIcon.svelte';
     import StormBanner from './StormBanner.svelte';
     import StormIcon, { STORM_LABELS } from './StormIcon.svelte';
     import { checkForUpdate, installUrl } from './update';
+    import { type AirMass, airMassOf, frontDays, frontsOf, mapFronts } from './fronts';
     import { payloadAt } from './interpolate';
     import {
         buildColumns,
         capeColor,
+        cloudDecksOf,
         liftedIndexColor,
         STORM_COLORS,
         stormWatchOf,
@@ -470,8 +480,8 @@
     ];
     type ModelId = 'ecmwf' | 'icon' | 'gfs' | 'iconEu' | 'iconD2' | 'aromeFrance' | 'ukv';
 
-    /** Onglets : graphique vent & thermiques, émagramme, carte des meilleurs départs, bulletin */
-    type Tab = 'chart' | 'emagram' | 'xc' | 'bulletin';
+    /** Onglets : graphique vent & thermiques, émagramme */
+    type Tab = 'chart' | 'emagram';
     /** label : texte complet ; short : texte court, sur téléphone */
     const TABS: { id: Tab; label: string; short: string; icon: string }[] = [
         {
@@ -487,20 +497,6 @@
             short: tr('Émagramme', 'Sounding'),
             // Axes et courbe de sondage
             icon: 'M4 3v17h17M8 16.5c3-2.5 4-6 5.5-9S17 4 20 3.5',
-        },
-        {
-            id: 'xc',
-            label: tr('Cross', 'Cross-country'),
-            short: tr('Cross', 'XC'),
-            // Décollage, trajectoire et drapeau d'arrivée
-            icon: 'M6 20a2 2 0 1 0 0-4a2 2 0 0 0 0 4M8 17.5c4-1 3-6 7.5-7.5M16 11V4l4 1.8L16 7.6',
-        },
-        {
-            id: 'bulletin',
-            label: tr('Bulletin', 'Bulletin'),
-            short: tr('Bulletin', 'Bulletin'),
-            // Feuille et lignes de texte
-            icon: 'M6 3h9l4 4v14H6zM14.5 3v4.5H19M9 12h7M9 15.5h7M9 8.5h2.5',
         },
     ];
     const TAB_KEY = 'wpp-tab';
@@ -519,6 +515,16 @@
         }
     };
     $: saveTab(tab);
+
+    // La carte des cross est retirée : le cache qu'elle gardait dans le navigateur (jusqu'à plusieurs
+    // Mo, pris sur la place que Windy partage avec le plugin) est effacé. À retirer si elle revient.
+    try {
+        Object.keys(localStorage)
+            .filter(k => k.startsWith('wpp-xc-'))
+            .forEach(k => localStorage.removeItem(k));
+    } catch {
+        /* stockage indisponible */
+    }
 
     const WEEKDAYS =
         lang === 'fr' ? ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'] : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -601,6 +607,7 @@
         } catch {
             // Presse-papiers refusé : on affiche le lien pour le copier à la main
             window.prompt(tr('Lien d’installation :', 'Install link:'), url);
+            return;
         }
         copied = true;
         setTimeout(() => (copied = false), 2500);
@@ -639,6 +646,23 @@
         }
     };
     $: saveAscent(showAscent);
+
+    // Courbe d'état du lever du jour sur l'émagramme : option, mémorisée dans le navigateur
+    const DAWN_KEY = 'wpp-dawn';
+    let showDawn = false;
+    try {
+        showDawn = localStorage.getItem(DAWN_KEY) === 'on';
+    } catch {
+        /* stockage indisponible : option décochée */
+    }
+    const saveDawn = (on: boolean) => {
+        try {
+            localStorage.setItem(DAWN_KEY, on ? 'on' : 'off');
+        } catch {
+            /* stockage indisponible */
+        }
+    };
+    $: saveDawn(showDawn);
     let altChoice: 'auto' | number = 'auto';
     let chartWidth = 760;
     let marker: L.Marker | null = null;
@@ -648,6 +672,15 @@
 
     $: modelLabel = MODELS.find(m => m.id === model)?.name ?? model;
     $: groundModel = columns[0]?.ground ?? Math.round(payload?.header.modelElevation ?? 0);
+
+    // --- Relief autour du lieu : altitude des crêtes voisines, lue une fois par lieu
+    let relief: { for: LatLon; elevations: (number | null)[] } | null = null;
+    const readRelief = (where: LatLon) =>
+        loadRelief(where.lat, where.lon).then(elevations => {
+            if (loc === where) relief = { for: where, elevations };
+        });
+    $: if (loc && relief?.for !== loc) readRelief(loc);
+    $: crest = relief && relief.for === loc && payload ? crestOf(relief.elevations, groundModel) : null;
 
     /** Heure de calcul du modèle, en heure locale du navigateur (ex. « lun. 29/09 à 02:00 ») */
     const formatRun = (iso: string) => {
@@ -659,6 +692,35 @@
 
     // --- Découpage par jour (heure locale du lieu)
     $: days = buildDays(payload, columns, loc);
+
+    /**
+     * Masse d'air des points voisins du lieu, pour lire sur la carte les fronts qui le traversent :
+     * chargée après la prévision du lieu (`for`), qui s'affiche sans l'attendre
+     */
+    let surroundings: { for: ForecastPayload; fields: AirMass[] } | null = null;
+    const readSurroundings = (center: ForecastPayload, where: LatLon, forModel: ModelId) => {
+        loadSurroundings(forModel, where.lat, where.lon, center.header.model).then(fields => {
+            if (payload === center) surroundings = { for: center, fields };
+        });
+    };
+    /** Voisins nécessaires pour lire la carte : en dessous, les fronts sont repérés sur le lieu seul */
+    const MAP_MIN_POINTS = 3;
+
+    /**
+     * Passages de front de toute la prévision : ceux de la carte autour du lieu, dès que les points
+     * voisins sont chargés (rien avant, plutôt que des fronts qui changeraient)
+     */
+    $: fronts = (() => {
+        if (!loc || !payload || surroundings?.for !== payload) return [];
+        const { fields } = surroundings;
+        const map =
+            fields.length >= MAP_MIN_POINTS
+                ? mapFronts(airMassOf(payload, loc.lat, loc.lon), fields, groundModel)
+                : null;
+        return frontsOf(columns, loc.lat, map);
+    })();
+    /** Sortes de front qui passent chaque jour : leur symbole suit le nom du jour */
+    $: frontKinds = frontDays(fronts);
 
     /**
      * Lever et coucher du soleil (timestamps) pour la journée locale commençant à `midnight`,
@@ -726,29 +788,10 @@
             });
     };
 
-    // Jour choisi par l'utilisateur (clé de date locale), conservé quand on change de lieu
-    // ou de modèle. Sinon, ou s'il n'existe pas ici : premier jour qui a des données à afficher.
-    // Mémorisé dans le navigateur, mais seulement pour la journée en cours : le lendemain, on repart
-    // du premier jour qui a des données
-    const DAY_KEY = 'wpp-day';
-    const todayStamp = () => new Date().toDateString();
-    let pinnedDay: string | null = (() => {
-        try {
-            const saved = JSON.parse(localStorage.getItem(DAY_KEY) || 'null');
-            return saved && saved.on === todayStamp() && typeof saved.day === 'string' ? saved.day : null;
-        } catch {
-            return null;
-        }
-    })();
-    const savePinnedDay = (day: string | null) => {
-        if (!day) return;
-        try {
-            localStorage.setItem(DAY_KEY, JSON.stringify({ day, on: todayStamp() }));
-        } catch {
-            /* stockage indisponible */
-        }
-    };
-    $: savePinnedDay(pinnedDay);
+    // Jour affiché (clé de date locale) : celui de l'heure de la carte, ou celui choisi dans le
+    // panneau, conservé quand on change de lieu ou de modèle. S'il n'existe pas ici : premier jour
+    // qui a des données à afficher.
+    let pinnedDay: string | null = null;
 
     type Day = ReturnType<typeof buildDays>[number];
 
@@ -776,14 +819,53 @@
     $: dayIndex = pickDay(days, pinnedDay, fullDay);
     $: dayColumns = visibleColumns(days[dayIndex], fullDay);
 
-    // --- Instant affiché dans l'émagramme, à la minute près (curseur) : choix de l'utilisateur,
-    // sinon l'heure actuelle si elle fait partie du jour affiché, sinon 14 h. En changeant de jour,
-    // on garde la même heure de la journée.
+    // --- Instant affiché, à 5 min près (curseur de l'émagramme, repère du graphique) : l'heure de la
+    // carte, sinon l'heure actuelle si elle fait partie du jour affiché, sinon 14 h. En changeant de
+    // jour, on garde la même heure de la journée.
     const HOUR_MS = 3600e3;
     const DAY_MS = 24 * HOUR_MS;
     /** Pas du curseur : 5 min */
     const SLIDER_STEP = 5 * 60e3;
-    let selectedTs: number | null = null;
+
+    // Heure synchronisée avec la carte, dans les deux sens : déplacer l'heure de la carte change le
+    // jour et l'heure du panneau, choisir un jour ou une heure dans le panneau déplace la carte
+    const mapTime = (ts: unknown = store.get('timestamp')) =>
+        typeof ts === 'number' && Number.isFinite(ts) ? Math.round(ts / SLIDER_STEP) * SLIDER_STEP : null;
+    let selectedTs: number | null = mapTime();
+    /** Heure de la carte dont le jour reste à afficher : il faut l'heure locale du lieu, donc sa prévision */
+    let mapTs: number | null = selectedTs;
+    $: if (mapTs != null && payload && loc) {
+        pinnedDay = dayKey(mapTs, makeOffsetAt(payload, loc.lat, loc.lon)(mapTs));
+        mapTs = null;
+    }
+    const onMapTime = (ts: unknown, from?: string) => {
+        // Changement venu du panneau lui-même
+        if (from === name) return;
+        const t = mapTime(ts);
+        if (t == null || t === selectedTs) return;
+        stopPlay();
+        selectedTs = mapTs = t;
+    };
+    let timeListener: number | null = null;
+
+    /** Heure choisie dans le panneau : la carte la prend aussi */
+    const chooseTime = (ts: number) => {
+        selectedTs = ts;
+        if (store.get('timestamp') === ts) return;
+        try {
+            store.set('timestamp', ts, { UIident: name });
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    /** Jour choisi dans le panneau : la carte passe à ce jour, à la même heure */
+    const chooseDay = async (key: string) => {
+        pinnedDay = key;
+        await tick();
+        if (selected) chooseTime(selected.ts);
+    };
+
     $: selected = pickSelected(dayColumns, selectedTs, payload, loc);
 
     const nearestColumn = (cols: Column[], t: number) =>
@@ -814,10 +896,13 @@
         }
         const exact = cols.find(c => c.ts === t);
         if (exact) return exact;
-        // Entre deux heures : prévision interpolée à cet instant, puis calcul complet (soleil compris)
+        // Entre deux heures : prévision interpolée à cet instant, puis calcul complet (soleil compris).
+        // Sa pluie est celle de l'heure qui le contient : elle en garde la nature (averses ou non),
+        // décidée avec les heures voisines
         if (p && where) {
             const at = payloadAt(p, t, where.lat, where.lon);
-            const col = at ? buildColumns(at, where.lat, where.lon)[0] : undefined;
+            const hour = cols.filter(c => c.ts <= (t as number)).pop();
+            const col = at ? buildColumns(at, where.lat, where.lon, { shower: hour?.showerBase != null })[0] : undefined;
             if (col) return col;
         }
         return nearestColumn(cols, t);
@@ -832,10 +917,40 @@
         return clockText(d.getUTCHours(), d.getUTCMinutes());
     };
 
+    /**
+     * Plafond nuageux de l'heure de l'émagramme, décidé comme sur le graphique avec les heures de la
+     * journée (une couche se prolonge d'heure en heure) : l'instant choisi y prend sa place
+     */
+    const deckAt = (cols: Column[], col: Column) => {
+        const list = cols.some(c => c.ts === col.ts) ? cols : [...cols, col].sort((a, b) => a.ts - b.ts);
+        const decks = cloudDecksOf(
+            list.map(c => c.profile),
+            list.map(c => c.precip >= 0.1 && c.showerBase == null),
+            list.map(c => (c.ceiling != null ? c.thermalTop : null)),
+        );
+        return decks[list.findIndex(c => c.ts === col.ts)] ?? null;
+    };
+    $: deck = selected && tab === 'emagram' ? deckAt(dayColumns, selected) : null;
+
     /** Plage de l'axe des températures de l'émagramme, commune à la journée affichée */
     $: emaRange = emagramRange(dayColumns, yMin, yMax, showAscent);
 
-    const nowTs = Date.now();
+    /** Heure du jour affiché la plus proche du lever du soleil : sa courbe d'état sert de repère (option) */
+    $: dawn = showDawn && days[dayIndex]?.sunrise != null ? nearestColumn(days[dayIndex].columns, days[dayIndex].sunrise as number) : null;
+
+    // --- Heure actuelle, relue chaque minute et au retour sur l'onglet du navigateur : le repère
+    // « maintenant » et l'alerte d'orage la suivent quand le panneau reste ouvert. Une prévision
+    // affichée depuis plus d'une heure est rechargée, sans quitter l'écran.
+    let nowTs = Date.now();
+    const RELOAD_MS = 60 * 60e3;
+    /** Heure du dernier chargement demandé */
+    let loadedAt = 0;
+    const refreshNow = () => {
+        if (document.visibilityState !== 'visible') return;
+        nowTs = Date.now();
+        if (loc && payload && !loading && nowTs - loadedAt > RELOAD_MS) load(loc, model, true);
+    };
+    let nowTimer: ReturnType<typeof setInterval> | null = null;
 
     // --- Orages : alerte du jour affiché (heures à venir), et orage attendu dans les 3 h qui
     // suivent l'heure de l'émagramme quand elle n'en a pas elle-même
@@ -889,26 +1004,25 @@
         if (playing) return stopPlay();
         if (!selected || !dayColumns.length) return;
         const end = dayColumns[dayColumns.length - 1].ts;
-        if (selected.ts >= end) selectedTs = dayColumns[0].ts;
+        if (selected.ts >= end) chooseTime(dayColumns[0].ts);
         playing = true;
         playTimer = setInterval(() => {
             const cur = selected?.ts ?? end;
             if (cur >= end) return stopPlay();
-            selectedTs = Math.min(end, cur + 2 * SLIDER_STEP);
+            chooseTime(Math.min(end, cur + 2 * SLIDER_STEP));
         }, 160);
     };
-    // Changement d'onglet, de jour ou de lieu : on arrête la lecture
-    $: if (tab !== 'emagram' || dayIndex >= 0 || loc) stopPlayIfNeeded(tab);
-    const stopPlayIfNeeded = (t: Tab) => {
-        if (t !== 'emagram') stopPlay();
-    };
+    // Changement d'onglet, de jour ou de lieu : on arrête la lecture (elle court jusqu'à la fin de
+    // la journée où elle a été lancée)
+    const stopPlayOn = (..._changed: unknown[]) => stopPlay();
+    $: stopPlayOn(tab, days[dayIndex]?.key, loc);
 
     /** Heure pleine précédente ou suivante */
     const stepHour = (dir: -1 | 1) => {
         stopPlay();
         if (!selected || !dayColumns.length) return;
         const t = dir > 0 ? Math.floor(selected.ts / HOUR_MS + 1e-9) * HOUR_MS + HOUR_MS : Math.ceil(selected.ts / HOUR_MS - 1e-9) * HOUR_MS - HOUR_MS;
-        selectedTs = Math.min(dayColumns[dayColumns.length - 1].ts, Math.max(dayColumns[0].ts, t));
+        chooseTime(Math.min(dayColumns[dayColumns.length - 1].ts, Math.max(dayColumns[0].ts, t)));
     };
 
     const r50 = (z: number) => Math.round(z / 50) * 50;
@@ -926,12 +1040,16 @@
               )
             : Math.max(Number(altChoice), yMin + 1000);
 
-    // --- Chargement
-    const load = async (where: LatLon, forModel: ModelId) => {
+    // --- Chargement. `quiet` : rechargement d'une prévision déjà affichée, qui reste à l'écran en
+    // attendant la nouvelle, et en cas d'échec
+    const load = async (where: LatLon, forModel: ModelId, quiet = false) => {
         const id = ++requestId;
-        loading = true;
-        error = '';
-        suggestModel = null;
+        loadedAt = Date.now();
+        if (!quiet) {
+            loading = true;
+            error = '';
+            suggestModel = null;
+        }
         try {
             const loaded = await loadForecast(forModel, where.lat, where.lon, {
                 header: true,
@@ -943,6 +1061,7 @@
             if (id !== requestId) return;
             payload = loaded.payload;
             columns = loaded.columns;
+            if (columns.length) readSurroundings(loaded.payload, where, forModel);
             if (!columns.length) {
                 suggestModel = forModel === 'ecmwf' ? 'icon' : 'ecmwf';
                 error = tr(
@@ -953,6 +1072,7 @@
         } catch (e) {
             if (id !== requestId) return;
             console.error(e);
+            if (quiet) return;
             payload = null;
             columns = [];
             error = tr(
@@ -1033,12 +1153,18 @@
     onMount(() => {
         singleclick.on(name, setLocation);
         productListener = store.on('product', onMapProduct);
+        timeListener = store.on('timestamp', onMapTime);
+        nowTimer = setInterval(refreshNow, 60e3);
+        document.addEventListener('visibilitychange', refreshNow);
     });
 
     onDestroy(() => {
         stopPlay();
+        if (nowTimer) clearInterval(nowTimer);
+        document.removeEventListener('visibilitychange', refreshNow);
         singleclick.off(name, setLocation);
         if (productListener !== null) store.off(productListener);
+        if (timeListener !== null) store.off(timeListener);
         removeMarker();
     });
 </script>
@@ -1074,6 +1200,8 @@
         --wpp-accent-fg: #111111;
         // Nuage de l'émagramme, à sa base (il s'éclaircit vers le sommet)
         --wpp-cloud: rgba(238, 242, 247, 0.3);
+        // Nuages du modèle dans la bande de l'émagramme, à 100 % de couverture
+        --wpp-cloud-layer: #ced6e1;
         --wpp-freezing: #5fd3ff;
         --wpp-rain: #8fc3ff;
         --wpp-snow: #e4dcff;
@@ -1110,6 +1238,7 @@
             --wpp-accent: #e0a800;
             --wpp-accent-fg: #111111;
             --wpp-cloud: rgba(255, 255, 255, 0.9);
+            --wpp-cloud-layer: #7f8ba0;
             --wpp-freezing: #0284c7;
             --wpp-rain: #2563eb;
             --wpp-snow: #8b7cf0;
@@ -1281,6 +1410,9 @@
         &__daystorm {
             margin-left: 3px;
         }
+        &__dayfront {
+            margin-left: 4px;
+        }
         &__update {
             display: flex;
             align-items: center;
@@ -1426,9 +1558,6 @@
             stroke-width: 1.8;
             stroke-linecap: round;
             stroke-linejoin: round;
-        }
-        &__xc--hidden {
-            display: none;
         }
         &__block {
             position: relative;

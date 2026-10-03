@@ -48,7 +48,11 @@ export const dayKey = (ts: number, offset: number) => {
 };
 
 /** Décalage horaire (h) du lieu à chaque instant, pour une prévision */
-export const makeOffsetAt = (payload: ForecastPayload, lat: number, lon: number): ((ts: number) => number) => {
+export const makeOffsetAt = (
+    payload: ForecastPayload,
+    lat: number,
+    lon: number,
+): ((ts: number) => number) => {
     const base = payload.header?.utcOffset || 0;
     const ts = (payload.data?.ts || []) as number[];
     const hours = payload.data?.hour;

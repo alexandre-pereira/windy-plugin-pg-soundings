@@ -43,6 +43,51 @@ export const arrowPath = (len: number, head = 6, headW = 4, shaftW = 1.1): strin
 };
 
 /**
+ * Secteur d'un disque de centre `cx`, `cy` et de rayon `r` : la part `share` (0 à 1) du disque,
+ * depuis le haut et dans le sens des aiguilles d'une montre. Vide sous 2 %, disque entier au-delà
+ * de 98 %.
+ */
+export const sectorPath = (cx: number, cy: number, r: number, share: number): string => {
+    const f = (v: number) => v.toFixed(1);
+    if (!(share > 0.02)) return '';
+    if (share >= 0.98) {
+        return `M${f(cx - r)},${f(cy)}a${r},${r} 0 1 0 ${2 * r},0a${r},${r} 0 1 0 ${-2 * r},0Z`;
+    }
+    const a = share * 2 * Math.PI;
+    const end = `${f(cx + r * Math.sin(a))},${f(cy - r * Math.cos(a))}`;
+    return `M${f(cx)},${f(cy)}V${f(cy - r)}A${r},${r} 0 ${share > 0.5 ? 1 : 0} 1 ${end}Z`;
+};
+
+/**
+ * Symboles d'un front posés sur son trait, un en chaque point de `at` : triangles (front froid),
+ * demi-cercles (front chaud) ou les deux en alternance (occlusion), de demi-hauteur `r`. Le trait
+ * va du point `from` (au sol) au point `to` (en altitude), droit ou penché ; les symboles sont du
+ * côté gauche, celui des heures qui précèdent.
+ */
+export const frontPips = (
+    kind: 'cold' | 'warm' | 'occluded',
+    from: Pt,
+    to: Pt,
+    at: Pt[],
+    r = 5,
+): string => {
+    const f = (v: number) => v.toFixed(1);
+    const len = Math.hypot(to.x - from.x, to.y - from.y) || 1;
+    // Le long du trait vers le haut, et perpendiculaire vers la gauche
+    const tx = ((to.x - from.x) / len) * r;
+    const ty = ((to.y - from.y) / len) * r;
+    return at
+        .map((p, k) => {
+            const lo = `${f(p.x - tx)},${f(p.y - ty)}`;
+            const hi = `${f(p.x + tx)},${f(p.y + ty)}`;
+            return kind === 'cold' || (kind === 'occluded' && k % 2 === 0)
+                ? `M${hi}L${f(p.x + ty * 1.5)},${f(p.y - tx * 1.5)}L${lo}Z`
+                : `M${hi}A${r},${r} 0 0 0 ${lo}Z`;
+        })
+        .join('');
+};
+
+/**
  * Couche de nuage vue de côté, de `x0` à `x1` : base plate à `yBase`, sommet bourgeonnant dont les
  * bosses, de largeurs et de hauteurs inégales, culminent à `yTop`. `fill` : la couche fermée ;
  * `edge` : son sommet seul, pour en tracer le contour.
@@ -68,30 +113,72 @@ export const cloudBand = (x0: number, x1: number, yBase: number, yTop: number) =
 };
 
 /**
- * « Bourgeons » d'un cumulus, du bas vers le haut : cercles empilés dont les plus bas débordent
- * sous la base (à rogner pour obtenir une base plate). La tour s'affine vers le sommet, ce qui
- * donne une silhouette réaliste aussi bien aux petits cumulus qu'aux gros développements.
- * Base à `yBase`, sommet à `yBase - h`, largeur `w`, centré sur `cx`.
+ * Bourgeons des flancs d'un cumulus, du bas vers le haut : hauteur `h` (part de la largeur du
+ * nuage) et saillie `out` (part de sa demi-largeur). Deux suites différentes, pour que les deux
+ * flancs ne se répondent pas
  */
-export const cumulusPuffs = (cx: number, yBase: number, w: number, h: number) => {
-    const r0 = w * 0.3;
-    const rows = Math.max(1, Math.round((h - r0) / (r0 * 1.5)));
-    const puffs: { x: number; y: number; r: number }[] = [];
-    for (let k = 0; k < rows; k++) {
-        const t = rows === 1 ? 0 : k / (rows - 1);
-        // Corps qui s'affine à peine, sommet arrondi en « chou-fleur »
-        const shrink = 1 - 0.15 * t;
-        const r = r0 * shrink;
-        const yc = yBase - r0 * 0.55 - t * Math.max(0, h - r0 * 0.55 - r * 1.1);
-        const dx = (k % 2 ? 0.05 : -0.04) * w;
-        if (k === rows - 1) {
-            puffs.push({ x: cx - 0.24 * w + dx, y: yc + r * 0.12, r: r * 0.92 });
-            puffs.push({ x: cx + 0.23 * w + dx, y: yc + r * 0.18, r: r * 0.86 });
-            puffs.push({ x: cx + dx, y: yc - r * 0.28, r: r * 1.12 });
-        } else {
-            puffs.push({ x: cx - 0.2 * w * shrink + dx, y: yc, r });
-            puffs.push({ x: cx + 0.21 * w * shrink + dx, y: yc + r * 0.1, r: r * 0.97 });
+const CU_LEFT = [
+    { h: 0.75, out: 0.06 },
+    { h: 1.1, out: -0.07 },
+    { h: 0.55, out: 0.08 },
+    { h: 0.9, out: -0.03 },
+    { h: 0.65, out: 0.05 },
+];
+const CU_RIGHT = [
+    { h: 1.05, out: -0.05 },
+    { h: 0.6, out: 0.08 },
+    { h: 0.85, out: -0.08 },
+    { h: 0.5, out: 0.04 },
+    { h: 1, out: -0.02 },
+];
+
+/**
+ * Silhouette d'un cumulus : base plate à `yBase`, flancs bourgeonnants qui se resserrent un peu en
+ * montant, sommet en chou-fleur à `yBase - h`. Largeur `w`, centré sur `cx`. Elle convient aussi
+ * bien à un petit cumulus aplati qu'à une tour de plusieurs kilomètres.
+ */
+export const cumulusPath = (cx: number, yBase: number, w: number, h: number): string => {
+    const f = (v: number) => v.toFixed(1);
+    const half = w / 2;
+    const yTop = yBase - h;
+    // Chou-fleur du sommet : trois bourgeons, celui du milieu plus haut. Il prend au plus la moitié
+    // de la largeur en hauteur ; le reste du nuage, ce sont les flancs
+    const crown = Math.min(h, w * 0.5);
+    const flank = yBase - yTop - crown * 0.62;
+
+    /**
+     * Bourgeons d'un flanc, du bas vers l'épaule : de hauteurs inégales (0,5 à 1,1 largeur), plus
+     * ou moins saillants. Le nuage perd un cinquième de sa largeur en montant
+     */
+    const side = (sign: 1 | -1) => {
+        const sizes = sign < 0 ? CU_LEFT : CU_RIGHT;
+        const points: Pt[] = [];
+        for (let k = 0, up = 0; up < flank; k++) {
+            up = Math.min(flank, up + w * sizes[k % sizes.length].h);
+            // Un dernier bourgeon trop court rejoint le précédent
+            if (flank - up < w * 0.3) up = flank;
+            const t = flank ? up / flank : 1;
+            const out = up < flank ? sizes[k % sizes.length].out : 0;
+            points.push({ x: cx + sign * half * (1 - 0.2 * t) * (1 + out), y: yBase - up });
         }
+        return points;
+    };
+    const points: Pt[] = [
+        { x: cx - half * 0.84, y: yBase },
+        ...side(-1),
+        { x: cx - w * 0.19, y: yTop + crown * 0.25 },
+        { x: cx + w * 0.21, y: yTop + crown * 0.3 },
+        ...side(1).reverse(),
+        { x: cx + half * 0.84, y: yBase },
+    ];
+
+    // Un arc bombé vers l'extérieur d'un point au suivant, presque un demi-cercle pour un petit
+    // bourgeon, plus tendu pour un long, puis la base plate
+    let d = `M${f(points[0].x)},${f(points[0].y)}`;
+    for (let k = 1; k < points.length; k++) {
+        const chord = Math.hypot(points[k].x - points[k - 1].x, points[k].y - points[k - 1].y);
+        const r = chord * (0.54 + 0.28 * Math.min(1, Math.max(0, (chord / w - 0.45) / 0.55)));
+        d += `A${f(r)},${f(r)} 0 0 1 ${f(points[k].x)},${f(points[k].y)}`;
     }
-    return puffs;
+    return `${d}Z`;
 };

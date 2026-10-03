@@ -1,8 +1,8 @@
 # PG Soundings
 
 Plugin Windy.com pour le vol libre (`windy-plugin-pg-soundings`) : graphique altitude × heure du
-vent et des thermiques, émagramme redressé, risque d'orage, carte des meilleurs départs de cross,
-bulletin météo de la journée. Svelte + TypeScript, compilé par Rollup. Ce que le plugin affiche et la façon dont chaque
+vent et des thermiques, émagramme redressé, risque d'orage, passages de front. Svelte + TypeScript,
+compilé par Rollup. Ce que le plugin affiche et la façon dont chaque
 estimation est calculée sont décrits dans [README.md](README.md).
 
 ## Commandes
@@ -18,18 +18,20 @@ estimation est calculée sont décrits dans [README.md](README.md).
 - `src/plugin.svelte` : panneau (onglets, réglages, chargement), variables CSS des thèmes
 - `src/physics.ts` : des données de Windy aux colonnes altitude/heure, tous les calculs
   aérologiques (thermiques, cumulus, CAPE / LI, orages) et les couleurs
-- `src/forecast.ts`, `src/interpolate.ts`, `src/time.ts` : chargement d'un point, passage au pas
-  horaire, heure locale
+- `src/forecast.ts`, `src/interpolate.ts`, `src/time.ts` : chargement d'un point et de ses quatre
+  points voisins (pour les fronts), passage au pas horaire, heure locale
 - `src/Chart.svelte`, `src/Emagram.svelte`, `src/Legend.svelte`, `src/StormBanner.svelte`,
-  `src/StormIcon.svelte`, `src/ModelPicker.svelte`, `src/svg.ts` : affichage
-- `src/cross.ts`, `src/xc.ts`, `src/XcLayer.svelte` : simulation des cross et couche de la carte
-- `src/bulletin.ts`, `src/Bulletin.svelte` : bulletin météo de la journée. Le premier tire les
-  faits des colonnes (ciel, fronts, précipitations, vent, thermiques, températures), le second
-  écrit le texte
+  `src/StormIcon.svelte`, `src/FrontIcon.svelte`, `src/ModelPicker.svelte`, `src/svg.ts` : affichage
+- `src/fronts.ts` : passages de front, lus sur la carte autour du lieu (points voisins) sur toute la
+  prévision et dessinés par le graphique
+- `src/relief.ts` : altitude des crêtes voisines, lue auprès de Windy autour du lieu choisi
+- `src/scrub.ts` : lecture au doigt du graphique et de l'émagramme (appui maintenu, puis glissé)
 - `src/update.ts` : recherche d'une version plus récente sur windy-plugins.com
 - `src/pluginConfig.ts` : nom, version et description envoyés à Windy
 - `scripts/publish.mjs` : envoi à Windy
-- `.tmp/` (ignoré par git) : bancs d'essai et brouillons, jamais publiés
+- `.tmp/` (ignoré par git) : bancs d'essai et brouillons, jamais publiés. `.tmp/cross-supprime/`
+  garde la carte des cross (onglet « Cross »), retirée le 2026-10-03 pour le moment, et la marche
+  à suivre pour la remettre
 
 ## Conventions
 
@@ -39,19 +41,15 @@ estimation est calculée sont décrits dans [README.md](README.md).
   (`src/i18n.ts`).
 - Les modules `@windy/*` n'existent que dans Windy. Les calculs testés n'en dépendent pas, ou
   passent par un bouchon de `tests/stubs/` déclaré dans `vitest.config.ts`.
-- Un changement de calcul dans `physics.ts`, `interpolate.ts`, `time.ts`, `cross.ts` ou
-  `bulletin.ts` va avec son test dans `tests/`, et avec la mise à jour de « Comment sont calculées les estimations » dans le
+- Un changement de calcul dans `physics.ts`, `interpolate.ts`, `time.ts` ou
+  `fronts.ts` va avec son test dans `tests/`, et avec la mise à jour de « Comment sont calculées les estimations » dans le
   README si une méthode ou un seuil change.
 - Classes CSS préfixées `wpp-`. Prettier : 4 espaces, guillemets simples, 100 colonnes.
 - Les textes publiés (interface, README, changelog, Instagram) décrivent le plugin dans ses propres
   termes, sans le comparer à d'autres sites ou outils de prévision.
-- Le bulletin est un seul texte suivi, tourné vers le vol libre (ciel, précipitations, fronts,
-  orage, vent, thermiques, températures), et l'onglet ne montre rien d'autre : ni cadre, ni
-  rubriques, ni liste. Il décrit le temps prévu et n'évalue rien. Pas de niveau de conditions (calmes,
-  fortes, défavorables…), de créneau, d'appréciation de la journée ni de couleur qui classe une
-  heure ; pas non plus de niveau de pilote ni d'aptitude à voler (« débutant », « pilote confirmé »,
-  « volable ») dans les textes publiés. En cas d'accident, le plugin ne doit pas avoir dit qu'un
-  moment convenait pour voler.
+- Les textes publiés ne disent ni niveau de pilote ni aptitude à voler (« débutant », « pilote
+  confirmé », « volable »), ni qu'une journée ou un créneau convient pour voler. En cas d'accident,
+  le plugin ne doit pas avoir dit qu'un moment convenait pour voler.
 - `.windy-api-key` contient la clé de publication : ne jamais l'afficher ni la versionner.
 
 ## Changelog

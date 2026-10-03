@@ -60,7 +60,10 @@ export const checkForUpdate = async (current: string = config.version): Promise<
     const result = latest === current ? null : latest;
 
     try {
-        localStorage.setItem(CACHE_KEY, JSON.stringify({ from: current, latest: result, t: Date.now() }));
+        localStorage.setItem(
+            CACHE_KEY,
+            JSON.stringify({ from: current, latest: result, t: Date.now() }),
+        );
     } catch {
         /* stockage indisponible */
     }
