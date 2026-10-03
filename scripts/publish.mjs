@@ -53,10 +53,11 @@ fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
 fs.copyFileSync(path.join(root, 'package.json'), path.join(dist, 'package.json'));
 
 console.log(`Création de l'archive de ${manifest.name} v${manifest.version}...`);
-// Chemins relatifs : le tar GNU de Git Bash prendrait « C: » pour un hôte distant. Le cache de
-// TypeScript n'a rien à faire dans l'archive, que Windy refuse à partir de 3 Mo.
+// Chemins relatifs : le tar GNU de Git Bash prendrait « C: » pour un hôte distant. Ni le cache de
+// TypeScript ni une carte des sources laissée par `npm start` n'ont à faire dans l'archive, que
+// Windy refuse à partir de 3 Mo : la carte en pèse plus de la moitié à elle seule.
 const archive = path.join(root, 'plugin.tar');
-execFileSync('tar', ['--exclude=*.tsbuildinfo', '-cf', '../plugin.tar', '.'], {
+execFileSync('tar', ['--exclude=*.tsbuildinfo', '--exclude=*.map', '-cf', '../plugin.tar', '.'], {
     cwd: dist,
     stdio: 'inherit',
 });

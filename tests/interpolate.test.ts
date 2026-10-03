@@ -49,6 +49,21 @@ describe('passage au pas horaire', () => {
         expect(rain[9]).toBeNull();
     });
 
+    it('garde la durée du pas d’où vient la pluie de chaque heure', () => {
+        expect((p.data as { precipStep?: (number | null)[] }).precipStep).toEqual([
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            null,
+        ]);
+    });
+
     it('prévision déjà horaire : chaque heure reçoit la pluie de l’heure qui suit', () => {
         const ts = [0, 1, 2, 3].map(h => start + h * HOUR);
         const hourly = toHourly(
@@ -78,5 +93,20 @@ describe('instant isolé (curseur de l’émagramme)', () => {
         expect(payloadAt(threeHourly(), start + 4.5 * HOUR, 45, 6)!.data.rainNear?.[0]).toBe(0);
         expect(payloadAt(threeHourly(), start + 5.5 * HOUR, 45, 6)!.data.rainNear?.[0]).toBe(2);
         expect(payloadAt(threeHourly(), start + 2.5 * HOUR, 45, 6)!.data.rainNear?.[0]).toBe(1);
+    });
+
+    it('rafales les plus fortes des heures qui encadrent l’instant et de leurs voisines (risque d’orage)', () => {
+        const ts = [0, 1, 2, 3, 4, 5].map(h => start + h * HOUR);
+        const hourly: ForecastPayload = {
+            header: { elevation: 0, utcOffset: 2, availableLevels: [], model: 'ecmwf' },
+            data: { ts, temperature: ts.map(() => 285), windGust: [5, 8, 25, 6, 4, 3] },
+        };
+        const near = (h: number) => payloadAt(hourly, start + h * HOUR, 45, 6)!.data.gustNear?.[0];
+        // Heure pleine : la sienne et ses deux voisines, comme dans le calcul heure par heure
+        expect(near(1)).toBe(25);
+        expect(near(4)).toBe(6);
+        // Entre 3 h et 4 h : les heures 2 à 5, tout ce que voient 3 h et 4 h
+        expect(near(3.5)).toBe(25);
+        expect(near(4.5)).toBe(6);
     });
 });

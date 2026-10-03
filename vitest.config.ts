@@ -7,6 +7,7 @@ export default defineConfig({
     resolve: {
         alias: {
             '@windy/store': fileURLToPath(new URL('./tests/stubs/windy-store.ts', import.meta.url)),
+            '@windy/fetch': fileURLToPath(new URL('./tests/stubs/windy-fetch.ts', import.meta.url)),
         },
     },
     test: {

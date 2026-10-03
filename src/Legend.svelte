@@ -77,26 +77,20 @@
                 </li>
                 <li>
                     <svg width="26" height="14"
-                        ><clipPath id="wpp-lg-cu"><rect x="0" y="0" width="26" height="12.5" /></clipPath><g
-                            clip-path="url(#wpp-lg-cu)"
-                            >{#each cu as p}<circle cx={p.x} cy={p.y} r={p.r} fill="#fff" stroke="#243244" stroke-width="1.6" />{/each}{#each cu as p}<circle cx={p.x} cy={p.y} r={p.r} fill="#fff" />{/each}</g
-                        ><line x1="4" x2="22" y1="12.5" y2="12.5" stroke="#243244" stroke-width="1.2" /></svg
+                        ><path d={cu} fill="#fff" stroke="#243244" stroke-width="1.1" stroke-linejoin="round" /></svg
                     >
-                    <span>{tr("Cumulus des thermiques (blanc), de la base au sommet estimé, aux heures de thermiques exploitables", "Thermal cumulus (white), from base to estimated top, at hours with usable thermals")}</span>
+                    <span>{tr("Cumulus des thermiques (blanc), de la base au sommet estimé, aux heures de thermiques exploitables ; d’autant plus larges que le modèle prévoit de nuages dans leur couche", "Thermal cumulus (white), from base to estimated top, at hours with usable thermals; the wider, the more cloud the model forecasts in their layer")}</span>
                 </li>
                 <li>
                     <svg width="26" height="14"
-                        ><clipPath id="wpp-lg-sh"><rect x="0" y="0" width="26" height="9" /></clipPath><g
-                            clip-path="url(#wpp-lg-sh)"
-                            >{#each showerCu as p}<circle cx={p.x} cy={p.y} r={p.r} fill="#9ea9ba" stroke="#243244" stroke-width="1.6" />{/each}{#each showerCu as p}<circle cx={p.x} cy={p.y} r={p.r} fill="#9ea9ba" />{/each}</g
-                        ><line x1="6" x2="20" y1="9" y2="9" stroke="#243244" stroke-width="1.2" /><path
+                        ><path d={showerCu} fill="#9ea9ba" stroke="#243244" stroke-width="1.1" stroke-linejoin="round" /><path
                             d="M10.5 10.5l-1.2 3M14 10.5l-1.2 3M17.5 10.5l-1.2 3"
                             stroke="#2f7cf6"
                             stroke-width="1.3"
                             stroke-linecap="round"
                         /></svg
                     >
-                    <span>{tr("Nuage de pluie (gris), de sa base à son sommet, d’autant plus large que la pluie est forte : nuage d’averses que le modèle développe lui-même, même sans thermiques (nuit, ciel couvert), ou couche de nuages du modèle quand la pluie vient d’elle (pluie de front). L’infobulle dit lequel ; la nature de la pluie se juge sur l’heure et les deux de chaque côté", "Rain cloud (grey), from base to top, the wider the heavier the rain: a shower cloud the model develops by itself, even without thermals (night, overcast), or the model’s cloud layer when the rain comes from it (frontal rain). The tooltip says which; the kind of rain is judged over the hour and the two on each side")}</span>
+                    <span>{tr("Nuage d’averses (gris, bourgeonnant), de sa base à son sommet : nuage que le modèle développe lui-même, même sans thermiques (nuit, ciel couvert). Les averses d’heures qui se suivent ne font qu’une masse. La nature de la pluie se juge sur l’heure et les deux de chaque côté : une pluie de front, elle, tombe d’une nappe grise", "Shower cloud (grey, billowing), from base to top: a cloud the model develops by itself, even without thermals (night, overcast). Showers at consecutive hours form a single mass. The kind of rain is judged over the hour and the two on each side: frontal rain falls from a grey sheet instead")}</span>
                 </li>
                 <li>
                     <svg width="26" height="14"
@@ -105,14 +99,111 @@
                     <span>{tr("Isotherme 0 °C", "Freezing level (0 °C)")}</span>
                 </li>
                 <li>
-                    <svg width="26" height="14"><rect x="3" y="2" width="20" height="10" rx="2" fill="#ced6e1" /></svg>
-                    <span>{tr("Nuages en couches prévus par le modèle (voile gris)", "Layer clouds forecast by the model (grey veil)")}</span>
+                    <svg width="26" height="14"
+                        ><rect x="2" y="0" width="22" height="14" rx="2" fill="#4a8fd0" /><line
+                            x1="4"
+                            y1="7"
+                            x2="22"
+                            y2="7"
+                            stroke="#e4dcff"
+                            stroke-width="1.6"
+                            stroke-dasharray="1.5 4"
+                            stroke-linecap="round"
+                        /></svg
+                    >
+                    <span>{tr("Limite pluie-neige, aux heures de précipitations : au-dessus, les flocons ne fondent pas (thermomètre mouillé à +1 °C). Dans un air sec, elle est nettement plus basse que l’isotherme 0 °C", "Snow line, at hours with precipitation: above it, snowflakes do not melt (wet-bulb temperature of +1 °C). In dry air it is well below the freezing level")}</span>
                 </li>
                 <li>
                     <svg width="26" height="14"
-                        ><rect x="3" y="4" width="20" height="8" rx="1" fill="#1d3a5c" /><rect x="3" y="4" width="20" height="3" fill="#ced6e1" /></svg
+                        ><path d="M9 3l4 4l4 -4M9 8l4 4l4 -4" fill="none" stroke="#f59e0b" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg
                     >
-                    <span>{tr("Bande claire en haut : nuages au-dessus du graphique", "Light strip at the top: clouds above the chart")}</span>
+                    <span>{tr("Virga : averses dont la base est à plus de 1 500 m du sol. La pluie s’évapore en tombant dans l’air sec et le refroidit : il descend en rafales, même sans pluie au sol", "Virga: showers whose base is more than 1,500 m above the ground. Rain evaporates as it falls through dry air and cools it: the air comes down in gusts, even with no rain at the ground")}</span>
+                </li>
+                <li>
+                    <svg width="26" height="14"
+                        ><rect x="2" y="0" width="22" height="14" rx="2" fill="#1d3a5c" /><path
+                            d="M5 9q4,-9 8,0t8,0"
+                            fill="none"
+                            stroke="#ffffff"
+                            stroke-width="1.8"
+                            stroke-linecap="round"
+                        /></svg
+                    >
+                    <span>{tr("Ondes de relief possibles, en montagne : au moins 30 km/h de vent au niveau des crêtes voisines, dans un air stable où le vent forcit avec l’altitude sans tourner. Rotors possibles sous le vent du relief. L’orientation des crêtes n’est pas connue : c’est un signal, pas une carte", "Mountain waves possible, in the mountains: at least 30 km/h of wind at the level of the nearby ridges, in stable air where the wind strengthens with height without turning. Rotors possible downwind of the terrain. The orientation of the ridges is not known: this is a signal, not a map")}</span>
+                </li>
+                <li>
+                    <svg width="26" height="14"><rect x="3" y="2" width="20" height="10" rx="2" fill="#ced6e1" /></svg>
+                    <span>{tr("Voile gris : nébulosité du modèle à chaque altitude, d’autant plus opaque que les nuages y couvrent le ciel", "Grey veil: the model’s cloud cover at each altitude, the more opaque the more cloud covers the sky there")}</span>
+                </li>
+                <li>
+                    <svg width="26" height="14"
+                        ><rect x="2" y="0" width="22" height="14" rx="2" fill="#4a8fd0" /><rect x="2" y="4" width="22" height="7" fill="#dce3ed" /><line
+                            x1="2"
+                            x2="24"
+                            y1="4"
+                            y2="4"
+                            stroke="#ffffff"
+                            stroke-width="2"
+                        /><line x1="2" x2="24" y1="11" y2="11" stroke="#8c99ad" stroke-width="1.4" /></svg
+                    >
+                    <span>{tr("Nappe : la plus basse couche où le modèle prévoit au moins 50 % de nuages, soulignée d’un trait sombre à sa base. C’est le plafond nuageux de l’heure. Couche basse (stratus, stratocumulus, base à moins de 2 000 m du sol, brouillard si elle le touche) : dessinée jusqu’à son sommet, souligné de blanc pour une mer de nuages, sous un air clair et sec. Couche épaisse, ou de l’étage haut : elle s’estompe en montant, son sommet se perd dans le voile. Base et sommet sont placés entre deux niveaux du modèle, à quelques centaines de mètres près", "Sheet: the lowest layer where the model forecasts at least 50 % cloud, underlined by a dark line at its base. It is the cloud ceiling of the hour. Low layer (stratus, stratocumulus, base less than 2,000 m above the ground, fog if it touches it): drawn up to its top, underlined in white for a sea of clouds, under clear dry air. Thick or high-level layer: it fades upwards, its top merging into the veil. Base and top are placed between two model levels, accurate to a few hundred metres")}</span>
+                </li>
+                <li>
+                    <svg width="26" height="14"
+                        ><rect x="2" y="0" width="22" height="14" rx="2" fill="#4a8fd0" /><path
+                            d="M2 11V6.5a3.2 3.2 0 0 1 5.5 0a2.4 2.4 0 0 1 4.5 0a3.4 3.4 0 0 1 6 0a3.2 3.2 0 0 1 6 0V11Z"
+                            fill="#dce3ed"
+                        /><line x1="2" x2="24" y1="11" y2="11" stroke="#8c99ad" stroke-width="1.4" /></svg
+                    >
+                    <span>{tr("Dessus moutonné : couche en amas, séparés par des trouées, plutôt qu’en nappe continue. Couche basse que les thermiques nourrissent (cumulus, stratocumulus), ou couche mince de l’étage moyen, à plus de 2 000 m du sol (altocumulus). Une couche épaisse de l’étage moyen garde un dessus lisse : altostratus, ou altocumulus épais", "Lumpy top: a layer of clumps separated by gaps, rather than a continuous sheet. Low layer fed by thermals (cumulus, stratocumulus), or thin mid-level layer, more than 2,000 m above the ground (altocumulus). A thick mid-level layer keeps a smooth top: altostratus, or thick altocumulus")}</span>
+                </li>
+                <li>
+                    <svg width="26" height="14"
+                        ><rect x="2" y="0" width="22" height="14" rx="2" fill="#78b0e2" /><rect x="2" y="0" width="22" height="7" fill="#9ea9ba" /><line
+                            x1="2"
+                            x2="24"
+                            y1="7"
+                            y2="7"
+                            stroke="#5c687c"
+                            stroke-width="1.6"
+                        /><path d="M8.5 8.5l-1.4 4M13.5 8.5l-1.4 4M18.5 8.5l-1.4 4" stroke="#2f7cf6" stroke-width="1.3" stroke-linecap="round" /></svg
+                    >
+                    <span>{tr("Nappe grise : la pluie en tombe (pluie de front, bruine sous un stratus), rideau de pluie dessous", "Grey sheet: the rain falls from it (frontal rain, drizzle under stratus), with a rain curtain below")}</span>
+                </li>
+                <li>
+                    <svg width="26" height="14"
+                        ><rect x="2" y="0" width="22" height="14" rx="2" fill="#4a8fd0" /><path
+                            d="M4 3.5h7M15 3.5h7M8 7h7M19 7h3M4 10.5h7M15 10.5h7"
+                            stroke="#d6dde8"
+                            stroke-width="1.5"
+                        /></svg
+                    >
+                    <span>{tr("Tirets : relief pris dans les nuages. L’air y est saturé (moins de 1,5 °C entre la température et le point de rosée) et condense sur les pentes, même là où le modèle n’annonce pas de couche. Dessinés seulement en montagne, du sol au niveau des crêtes voisines (pointillé brun, triangle sur l’axe) : le plus haut du terrain à 10 km à la ronde. Rien dans une nappe : elle dit déjà que le relief y est dans les nuages", "Dashes: terrain in cloud. The air there is saturated (less than 1.5 °C between temperature and dew point) and condenses on the slopes, even where the model forecasts no layer. Drawn only in the mountains, from the ground to the level of the nearby ridges (brown dotted line, triangle on the axis): the highest terrain within 10 km. Nothing inside a sheet: it already says the terrain there is in cloud")}</span>
+                </li>
+                <li>
+                    <svg width="26" height="14"
+                        ><linearGradient id="wpp-lg-glow" x1="0" y1="0" x2="0" y2="1"
+                            ><stop offset="0" stop-color="#ced6e1" /><stop offset="0.75" stop-color="#ced6e1" stop-opacity="0" /></linearGradient
+                        ><rect x="3" y="2" width="20" height="10" rx="1" fill="#3a78ba" /><rect x="3" y="2" width="20" height="10" rx="1" fill="url(#wpp-lg-glow)" /></svg
+                    >
+                    <span>{tr("Halo clair sous le bord supérieur : nuages plus hauts que le graphique", "Light glow under the top edge: clouds higher than the chart")}</span>
+                </li>
+                <li>
+                    <svg width="26" height="14"
+                        ><circle cx="5" cy="7" r="3.8" fill="#ffc94a" /><circle cx="13" cy="7" r="3.8" fill="#ffc94a" /><path
+                            d={halfSky}
+                            fill="#ced6e1"
+                        /><circle cx="21" cy="7" r="3.8" fill="#ced6e1" />{#each [5, 13, 21] as x}<circle
+                                cx={x}
+                                cy="7"
+                                r="3.8"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-opacity="0.55"
+                                stroke-width="0.8"
+                            />{/each}</svg
+                    >
+                    <span>{tr("Bandeau « Ciel », au-dessus du graphique : un disque par heure, jaune le jour, bleu sombre la nuit, couvert de gris sur la part du ciel que prennent les nuages, tous étages confondus, y compris plus haut que le graphique. Gris plein : la part qui cache le soleil (les nuages à moins de 1 500 m du sol comptent en entier, ceux à plus de 2 500 m pour 70 %, un voile d’altitude pour 30 %) ; gris léger : celle qui ne fait que le voiler", "“Sky” strip, above the chart: one disc per hour, yellow by day, dark blue by night, covered in grey over the share of the sky taken by clouds at all levels, including higher than the chart. Solid grey: the share that hides the sun (clouds less than 1,500 m above the ground count in full, those more than 2,500 m above it for 70 %, a high veil for 30 %); light grey: the share that only veils it")}</span>
                 </li>
                 <li>
                     <svg width="26" height="14"><rect x="3" y="2" width="20" height="10" rx="3" fill="#06090f" opacity="0.6" /></svg>
@@ -125,8 +216,35 @@
                     <span>{tr("Heure actuelle", "Current time")}</span>
                 </li>
                 <li>
+                    <svg width="26" height="14"
+                        ><line x1="1" y1="10.5" x2="25" y2="10.5" stroke={FRONT.cold.color} stroke-width="2.2" /><path
+                            d="M3.5 10.5l4.5-7l4.5 7zM14 10.5l4.5-7l4.5 7z"
+                            fill={FRONT.cold.color}
+                        /></svg
+                    >
+                    <span>{tr("Passage d’un front froid, lu sur la carte autour du lieu : vers 1 500 m d’altitude, la masse d’air (température et humidité ensemble) change vite d’un endroit à l’autre, et le vent pousse cet air plus froid sur le lieu, où elle change d’au moins 5 °C en 6 h (ou 7 °C en 12 h pour un front lent). Le trait suit la surface du front : il part du sol à l’heure où l’air change le plus vite près du sol, passe vers 1 500 m à l’heure que donne la carte, et rejoint l’heure où l’air change plus haut, jusqu’à 6 h plus tard. Il s’arrête à 3 000 m au-dessus du sol : plus haut, le front n’est pas repéré. Le front est dit « sec » quand il passe avec moins de 1 mm de pluie. L’infobulle des heures que le trait traverse donne le refroidissement, la rotation du vent, la pluie et les heures du passage au sol et en altitude. Le symbole du front suit aussi le nom du jour où il passe, dans la liste des jours", "Cold front passage, read on the map around the place: at about 1,500 m the air mass (temperature and humidity together) changes quickly from one place to the next, and the wind pushes this colder air over the place, where it changes by at least 5 °C in 6 h (or 7 °C in 12 h for a slow front). The line follows the frontal surface: it starts from the ground at the hour when the air near the ground changes fastest, passes about 1,500 m at the hour given by the map, and reaches the hour when the air changes higher up, up to 6 h later. It stops 3,000 m above the ground: higher up the front is not tracked. The front is called “dry” when it passes with less than 1 mm of rain. The tooltip of the hours the line crosses gives the cooling, the wind shift, the rain and the hours of the passage at the ground and aloft. The front symbol also follows the name of the day it passes, in the list of days")}</span>
+                </li>
+                <li>
+                    <svg width="26" height="14"
+                        ><line x1="1" y1="10.5" x2="25" y2="10.5" stroke={FRONT.warm.color} stroke-width="2.2" /><path
+                            d="M3.5 10.5a4.5 4.5 0 0 1 9 0zM14 10.5a4.5 4.5 0 0 1 9 0z"
+                            fill={FRONT.warm.color}
+                        /></svg
+                    >
+                    <span>{tr("Passage d’un front chaud : le vent pousse sur le lieu une masse d’air plus chaude, de la même façon. Son trait penche vers l’arrière : le front passe en altitude avant d’arriver au sol. Un front froid passé dans les 12 h qui précèdent le graphique, ou un front attendu dans les 6 h qui suivent, est annoncé au bord avec son heure. La carte est lue en quatre points à 55 km du lieu, chargés après lui : les fronts apparaissent un instant après le graphique. Si ces points ne répondent pas, les fronts sont cherchés sur le lieu seul, et un front peu actif peut manquer", "Warm front passage: the wind pushes a warmer air mass over the place, in the same way. Its line leans backwards: the front passes aloft before reaching the ground. A cold front that passed in the 12 h before the chart, or a front expected in the 6 h after it, is announced at the edge with its hour. The map is read at four points 55 km from the place, loaded after it: fronts appear a moment after the chart. If these points do not answer, fronts are looked for on the place alone, and a weak front can be missed")}</span>
+                </li>
+                <li>
+                    <svg width="26" height="14"
+                        ><line x1="1" y1="10.5" x2="25" y2="10.5" stroke={FRONT.occluded.color} stroke-width="2.2" /><path
+                            d="M3.5 10.5l4.5-7l4.5 7zM14 10.5a4.5 4.5 0 0 1 9 0z"
+                            fill={FRONT.occluded.color}
+                        /></svg
+                    >
+                    <span>{tr("Occlusion : une langue d’air chaud passe en altitude (l’air y gagne puis reperd au moins 1,5 °C), sous un ciel couvert et une pluie de nuages en couches, sans que l’air change près du sol", "Occluded front: a tongue of warm air passes aloft (the air there gains then loses at least 1.5 °C), under an overcast sky and rain from layered cloud, while the air near the ground does not change")}</span>
+                </li>
+                <li>
                     <span class="wpp-lg__icons"><StormIcon level={1} size={14} /></span>
-                    <span>{tr("Surdéveloppement possible : cumulus de plus de 2 000 m d’épaisseur, ou averses convectives prévues par le modèle", "Overdevelopment possible: cumulus over 2,000 m deep, or convective showers forecast by the model")}</span>
+                    <span>{tr("Surdéveloppement possible : cumulus qui ont de quoi dépasser 2 000 m d’épaisseur, ou averses convectives prévues par le modèle", "Overdevelopment possible: cumulus with enough energy to grow over 2,000 m deep, or convective showers forecast by the model")}</span>
                 </li>
                 <li>
                     <span class="wpp-lg__icons"><StormIcon level={2} size={14} /></span>
@@ -141,6 +259,59 @@
                         ><rect x="4" y="5" width="8" height="9" rx="1.5" fill="#5aa8ff" /><rect x="14" y="2" width="8" height="12" rx="1.5" fill="#e4dcff" /></svg
                     >
                     <span>{tr("Précipitations de l’heure qui suit (mm) : pluie en bleu, neige en violet pâle", "Precipitation over the following hour (mm): rain in blue, snow in pale violet")}</span>
+                </li>
+                <li>
+                    <svg width="26" height="14"
+                        ><line x1="16" y1="0" x2="16" y2="14" stroke="currentColor" stroke-opacity="0.4" /><circle
+                            cx="13"
+                            cy="3.5"
+                            r="2.2"
+                            fill="currentColor"
+                        /><circle cx="13" cy="10.5" r="2.2" fill="currentColor" /></svg
+                    >
+                    <span>{tr("Points sur l’axe des altitudes : niveaux où le modèle fournit ses données (leur altitude moyenne sur les heures affichées). Entre deux points, vent, température et nuages sont interpolés : un plafond qui tombe entre deux points éloignés est moins sûr", "Dots on the altitude axis: levels where the model provides its data (their mean altitude over the hours shown). Between two dots, wind, temperature and cloud are interpolated: a ceiling that falls between two distant dots is less certain")}</span>
+                </li>
+                <li>
+                    <svg width="26" height="14"
+                        ><rect x="0" y="0" width="26" height="14" rx="2" fill="#6b523c" /><path
+                            d={surfArrow}
+                            transform="translate(7,7) rotate(90)"
+                            fill={windColor(15)}
+                            stroke="#0f1822"
+                            stroke-width="0.7"
+                            stroke-opacity="0.8"
+                        /><text
+                            x="13.5"
+                            y="10.5"
+                            font-size="9.5"
+                            font-weight="bold"
+                            fill={windColor(15)}
+                            stroke="#0f1822"
+                            stroke-width="2.8"
+                            stroke-opacity="0.85"
+                            stroke-linejoin="round"
+                            paint-order="stroke">15</text
+                        ></svg
+                    >
+                    <span>{tr("Vent moyen au sol (km/h) et sa direction, aux couleurs du vent : écrit dans le relief brun du graphique, sous la ligne du sol (« Vent » sur l’axe)", "Mean surface wind (km/h) and its direction, in the wind colours: written in the brown terrain of the chart, under the ground line (“Wind” on the axis)")}</span>
+                </li>
+                <li>
+                    <svg width="26" height="14"
+                        ><rect x="2" y="0" width="22" height="14" rx="2" fill="#6b523c" /><text
+                            x="13"
+                            y="10.5"
+                            font-size="9.5"
+                            font-weight="bold"
+                            text-anchor="middle"
+                            fill={windColor(35)}
+                            stroke="#0f1822"
+                            stroke-width="2.8"
+                            stroke-opacity="0.85"
+                            stroke-linejoin="round"
+                            paint-order="stroke">35</text
+                        ></svg
+                    >
+                    <span>{tr("Rafales au sol (km/h), aux couleurs du vent : écrites dans le relief, sous le vent moyen (« Raf. » sur l’axe)", "Surface gusts (km/h), in the wind colours: written in the terrain, under the mean wind (“Gust” on the axis)")}</span>
                 </li>
             </ul>
             <div class="wpp-lg__subtitle">
@@ -190,99 +361,8 @@
             </p>
             <p class="wpp-lg__note">
                 {tr(
-                    "Survolez pour lire les valeurs, cliquez sur une heure pour ouvrir son émagramme.",
-                    "Hover to read values, click an hour to open its sounding.",
-                )}
-            </p>
-        {:else if kind === 'xc'}
-            <div class="wpp-lg__title">{tr('Meilleur départ pour un cross', 'Best take-off for cross-country')}</div>
-            <div class="wpp-lg__chips">
-                <span style="background:{KM_NONE_COLOR};color:#fff">0</span>
-                {#each KM_LEGEND as km, k}
-                    <span style="background:{kmColor(km)};color:{km >= 100 ? '#fff' : '#111'}"
-                        >{km}{k === KM_LEGEND.length - 1 ? '+' : ''}</span
-                    >
-                {/each}
-            </div>
-            <p class="wpp-lg__note">
-                {tr(
-                    "Distance en km. En gris : zone calculée où aucun cross n'est possible ce jour-là (thermiques trop faibles, plafond trop bas, pluie ou vent trop fort).",
-                    'Distance in km. Grey: computed area where no cross-country is possible that day (thermals too weak, ceiling too low, rain or too much wind).',
-                )}
-            </p>
-            <p class="wpp-lg__note">
-                {@html tr(
-                    "La couleur donne la distance qu'un bon pilote pourrait faire <b>en décollant de ce point</b>, en ligne droite. Pour chaque point, le plugin simule un vol : décollage dès que les thermiques le permettent, puis progression heure par heure à la vitesse de cross (spirales dans les thermiques et transitions à 35 km/h), poussée ou freinée par le vent de la couche thermique. Le vol s'arrête quand les thermiques s'éteignent (fin de journée, pluie, mer, plafond trop bas, vent trop fort ou haché), après une dernière transition depuis la hauteur exploitable, dérive du vent comprise. 16 directions sont essayées et la plus longue est retenue.",
-                    "The colour gives the distance a good pilot could fly <b>taking off from that point</b>, in a straight line. For each point the plugin simulates a flight: take-off as soon as thermals allow, then progress hour by hour at cross-country speed (circling in thermals and gliding at 35 km/h), pushed or slowed by the wind in the thermal layer. The flight ends when thermals die (end of day, rain, sea, low ceiling, strong or choppy wind), after a final glide from the usable height, drifted by the wind. 16 directions are tried and the longest is kept.",
-                )}
-            </p>
-            <p class="wpp-lg__note">
-                {@html tr(
-                    "En <b>aller-retour</b>, le vol part tout droit dans une direction, fait demi-tour au meilleur moment puis revient vers le décollage. Seule compte la partie volée dans les deux sens : le double de l'aller si la boucle est bouclée, moins si le retour s'arrête en route. Un bon aller-retour se fait plutôt en travers du vent ; face au vent fort il est vite impossible.",
-                    "In <b>out & return</b> mode, the flight goes straight in one direction, turns at the best moment and flies back towards take-off. Only the part flown both ways counts: twice the outbound leg if the loop is closed, less if the return ends early. A good out & return is usually flown across the wind; into a strong wind it quickly becomes impossible.",
-                )}
-            </p>
-            <ul class="wpp-lg__list">
-                <li>
-                    <svg width="26" height="14"
-                        ><line x1="2" y1="7" x2="24" y2="7" stroke="#2563eb" stroke-width="2.5" stroke-dasharray="4 3" /></svg
-                    >
-                    <span>{tr("Vol estimé depuis le site choisi (touchez la carte pour en changer), avec sa distance au bout de la trajectoire", "Estimated flight from the chosen site (tap the map to change it), with its distance at the end of the track")}</span>
-                </li>
-            </ul>
-            <p class="wpp-lg__note">
-                {@html tr(
-                    "Seule la carte visible est chargée : un vol qui en sort est arrêté au bord (sa distance réelle pourrait être plus grande), dézoomez pour voir les plus longs vols. Ce sont des <b>estimations</b> à partir du modèle : relief fin, brises, espaces aériens et choix de route ne sont pas pris en compte.",
-                    "Only the visible map is loaded: a flight that leaves it is stopped at the edge (its real distance could be longer); zoom out to see longer flights. These are <b>estimates</b> from the model: fine terrain, local breezes, airspace and route choice are not taken into account.",
-                )}
-            </p>
-        {:else if kind === 'bulletin'}
-            <div class="wpp-lg__title">{tr('Bulletin météo', 'Weather bulletin')}</div>
-            <p class="wpp-lg__note">
-                {tr(
-                    'Texte rédigé automatiquement à partir de la prévision du modèle choisi, pour les heures de jour du site : ciel, précipitations, fronts, orage, vent, thermiques et températures. Il décrit le temps prévu et n’évalue pas les conditions de vol : la décision de décoller appartient au pilote.',
-                    'Text written automatically from the chosen model’s forecast, for the daylight hours of the site: sky, precipitation, fronts, thunderstorms, wind, thermals and temperatures. It describes the forecast weather and does not assess flying conditions: the decision to take off is the pilot’s.',
-                )}
-            </p>
-            <div class="wpp-lg__subtitle">{tr('Ciel', 'Sky')}</div>
-            <p class="wpp-lg__note">
-                {tr(
-                    'Donné pour le matin (jusqu’à 13 h) et l’après-midi, d’après la couverture nuageuse du modèle. Les étages cités sont ceux où il met au moins 40 % de nuages : bas (sous 3 000 m environ), moyens, élevés (au-dessus de 6 000 m environ).',
-                    'Given for the morning (until 1 PM) and the afternoon, from the model’s cloud cover. The layers named are those where it puts at least 40% of cloud: low (below about 3,000 m), mid-level, high (above about 6,000 m).',
-                )}
-            </p>
-            <div class="wpp-lg__subtitle">{tr('Précipitations', 'Precipitation')}</div>
-            <p class="wpp-lg__note">
-                {tr(
-                    'Découpées en épisodes, qualifiés par leur heure la plus arrosée : faibles sous 1 mm/h, modérées sous 4 mm/h, fortes au-delà. Averses quand l’essentiel tombe de nuages convectifs, pluie quand il tombe de nuages en couches.',
-                    'Split into episodes, described by their wettest hour: light under 1 mm/h, moderate under 4 mm/h, heavy beyond. Showers when most of it falls from convective cloud, rain when it falls from layered cloud.',
-                )}
-            </p>
-            <div class="wpp-lg__subtitle">{tr('Vent', 'Wind')}</div>
-            <p class="wpp-lg__note">
-                {tr(
-                    'Vent moyen des heures de jour, le matin puis l’après-midi, à 10 m du sol et à deux altitudes au-dessus du site, avec son secteur sur huit directions. Sous 10 km/h, il est dit faible et sa direction n’est pas donnée. Les rafales sont celles du modèle.',
-                    'Mean wind of the daylight hours, morning then afternoon, at 10 m above the ground and at two altitudes above the site, with its sector on eight directions. Under 10 km/h it is called light and its direction is not given. Gusts are those of the model.',
-                )}
-            </p>
-            <div class="wpp-lg__subtitle">{tr('Thermiques', 'Thermals')}</div>
-            <p class="wpp-lg__note">
-                {tr(
-                    'Heures, montée au vario, plafond et cumulus sont ceux du graphique « Vent & thermiques » : première et dernière heure de thermiques exploitables, meilleure montée et plafond le plus haut de la journée.',
-                    'Hours, vario climb, ceiling and cumulus are those of the “Wind & thermals” chart: first and last hour of usable thermals, best climb and highest ceiling of the day.',
-                )}
-            </p>
-            <div class="wpp-lg__subtitle">{tr('Passages de front', 'Front passages')}</div>
-            <p class="wpp-lg__note">
-                {tr(
-                    'Un front se repère au changement de masse d’air : la température entre 1 500 et 3 000 m au-dessus du sol varie d’au moins 3 °C en 6 h, avec la pluie, le ciel couvert ou la rotation du vent qui l’accompagnent. Le bulletin ne voit que la prévision du point choisi, pas la carte : un front peu actif, ou qui passe à côté, peut lui échapper.',
-                    'A front shows as a change of air mass: the temperature between 1,500 and 3,000 m above the ground changes by at least 3 °C in 6 h, with the rain, overcast sky or wind shift that come with it. The bulletin only sees the forecast of the chosen point, not the map: a weak front, or one passing nearby, can be missed.',
-                )}
-            </p>
-            <p class="wpp-lg__note">
-                {tr(
-                    'Le modèle lisse le relief : le vent au décollage, les brises de vallée, le foehn et les effets de site ne sont pas décrits. Le bulletin ne remplace ni l’observation sur place ni l’avis des pilotes locaux.',
-                    'The model smooths out the terrain: wind at take-off, valley breezes, foehn and local effects are not described. The bulletin replaces neither observation on site nor the advice of local pilots.',
+                    "Survolez pour lire les valeurs, cliquez sur une heure pour ouvrir son émagramme. Au doigt : touchez une heure pour la lire, ou gardez le doigt appuyé un instant puis glissez pour lire en continu.",
+                    "Hover to read values, click an hour to open its sounding. By touch: tap an hour to read it, or hold your finger down for a moment then slide to read continuously.",
                 )}
             </p>
         {:else}
@@ -303,6 +383,30 @@
                         <span><b style="color:{s.color}">{s.label}</b> — {s.text}</span>
                     </li>
                 {/each}
+            </ul>
+            <ul class="wpp-lg__list">
+                <li>
+                    <svg width="26" height="14" class="wpp-lg__level"
+                        ><line x1="2" y1="7" x2="24" y2="7" stroke-width="3" /><circle cx="13" cy="7" r="2.6" /></svg
+                    >
+                    <span
+                        >{tr(
+                            "Points creux : niveaux où le modèle fournit ses données. Entre deux points, les courbes sont interpolées. Entre le sol et le premier niveau, quand le sol est surchauffé, l'air surchauffé est dessiné dans les 100 premiers mètres, puis la courbe suit l'adiabatique sèche jusqu'à ce niveau",
+                            "Hollow dots: levels where the model provides its data. Between two dots, the curves are interpolated. Between the ground and the first level, when the ground is superheated, the superheated air is drawn in the lowest 100 m, then the curve follows the dry adiabat up to that level",
+                        )}</span
+                    >
+                </li>
+                <li>
+                    <svg width="26" height="14"
+                        ><line x1="2" y1="7" x2="24" y2="7" style="stroke: var(--wpp-fg-faint)" stroke-width="1.8" /></svg
+                    >
+                    <span
+                        >{tr(
+                            "Courbe d'état du lever du jour (option en bas de page), en trait pâle avec son heure : l'écart avec la courbe de l'heure affichée montre ce que la journée a changé",
+                            "Temperature curve at sunrise (option at the bottom of the page), as a pale line with its hour: the gap with the curve of the hour shown tells what the day has changed",
+                        )}</span
+                    >
+                </li>
             </ul>
             <div class="wpp-lg__subtitle">{tr('Autres courbes', 'Other lines')}</div>
             <ul class="wpp-lg__list">
@@ -389,14 +493,30 @@
                     >
                     <span
                         >{tr(
-                            "Zone de formation du nuage : le cumulus des thermiques, de sa base (niveau de condensation) à son sommet, où le thermique cesse d'être plus léger que l'air",
-                            "Cloud formation zone: the cumulus fed by the thermals, from its base (condensation level) to its top, where the thermal stops being lighter than the air",
+                            "Zone de formation du nuage : le cumulus des thermiques, de sa base (niveau de condensation) à son sommet, où le thermique, dilué par l'air qui l'entoure, cesse d'être plus léger que lui",
+                            "Cloud formation zone: the cumulus fed by the thermals, from its base (condensation level) to its top, where the thermal, diluted by the surrounding air, stops being lighter than it",
                         )}</span
                     >
                 </li>
             </ul>
             <div class="wpp-lg__subtitle">{tr('Colonne de droite', 'Right column')}</div>
             <ul class="wpp-lg__list">
+                <li>
+                    <svg width="26" height="14" class="wpp-lg__strip"
+                        ><rect x="9" y="0" width="8" height="14" /><rect x="9" y="3" width="8" height="6" /><line
+                            x1="9"
+                            x2="17"
+                            y1="9"
+                            y2="9"
+                        /></svg
+                    >
+                    <span
+                        >{tr(
+                            "Bande des nuages (☁) : nébulosité du modèle à chaque altitude, d'autant plus opaque que les nuages y couvrent le ciel ; trait à la base du plafond nuageux de l'heure",
+                            "Cloud strip (☁): the model's cloud cover at each altitude, the more opaque the more cloud covers the sky there; a line at the base of the hour's cloud ceiling",
+                        )}</span
+                    >
+                </li>
                 <li>
                     <svg width="26" height="14"
                         ><path d={arrow} transform="translate(13,7) rotate(90)" fill={windColor(35, light)} /></svg
@@ -418,6 +538,12 @@
             <p class="wpp-lg__note">{instabilityNote}</p>
             <p class="wpp-lg__note">
                 {tr(
+                    "Au doigt : touchez pour lire une altitude, ou gardez le doigt appuyé un instant puis glissez pour lire en continu.",
+                    'By touch: tap to read an altitude, or hold your finger down for a moment then slide to read continuously.',
+                )}
+            </p>
+            <p class="wpp-lg__note">
+                {tr(
                     "« max » : CAPE de l'air le plus instable, quand il se trouve plus haut que les 1 000 premiers mètres. C'est lui qui nourrit un orage venu d'ailleurs, même si l'air près du sol est stable (soir, nuit).",
                     '“max”: CAPE of the most unstable air, when it lies above the lowest 1,000 m. It is what feeds a storm arriving from elsewhere, even when the air near the ground is stable (evening, night).',
                 )}
@@ -433,15 +559,14 @@
 {/if}
 
 <script lang="ts">
-    import { EASE } from './Chart.svelte';
+    import { EASE, FRONT } from './Chart.svelte';
     import { STABILITY } from './Emagram.svelte';
     import { INSTABILITY_COLORS, thermalColor, windColor } from './physics';
-    import { arrowPath, cloudBand, cumulusPuffs } from './svg';
-    import { KM_LEGEND, KM_NONE_COLOR, kmColor } from './cross';
+    import { arrowPath, cloudBand, cumulusPath, sectorPath } from './svg';
     import { tr } from './i18n';
     import StormIcon from './StormIcon.svelte';
 
-    export let kind: 'chart' | 'emagram' | 'xc' | 'bulletin';
+    export let kind: 'chart' | 'emagram';
     /** Thème clair : couleurs du vent plus soutenues à côté de l'émagramme (le graphique ne change pas) */
     export let light = false;
 
@@ -476,39 +601,48 @@
     ];
 
     const arrow = arrowPath(16, 5.5, 4, 1.2);
-    const cu = cumulusPuffs(13, 12.5, 20, 12);
-    const showerCu = cumulusPuffs(13, 9, 15, 8.5);
+    const surfArrow = arrowPath(11, 4.5, 3.4, 1);
+    const cu = cumulusPath(13, 13, 22, 12);
+    const showerCu = cumulusPath(13, 9, 16, 8.5);
     const emaCloud = cloudBand(1, 25, 12, 3);
+    const halfSky = sectorPath(13, 7, 3.8, 0.5);
 
     // Bandeau des thermiques, du plus facile au plus difficile à exploiter
     const easeItems = [
         {
             ...EASE.easy,
             text: tr(
-                'au moins +0,5 m/s au vario et 300 m de hauteur exploitable, sans vent fort',
-                'at least +0.5 m/s on the vario and 300 m of usable height, without strong wind',
+                'au moins +0,5 m/s au vario et 300 m de hauteur exploitable, sans vent fort, ni pluie, ni risque d’orage',
+                'at least +0.5 m/s on the vario and 300 m of usable height, without strong wind, rain or storm risk',
+            ),
+        },
+        {
+            ...EASE.unsettled,
+            text: tr(
+                'au moins 0,5 mm de pluie dans l’heure, ou surdéveloppement ou orage signalé en haut de la colonne : la case ne dit rien de la facilité des thermiques',
+                'at least 0.5 mm of rain in the hour, or overdevelopment or a storm flagged at the top of the column: the cell says nothing about how easy thermals are',
             ),
         },
         {
             ...EASE.weak,
             label: tr('faibles ou plafond bas', 'weak or low ceiling'),
             text: tr(
-                'moins de +0,5 m/s au vario, ou moins de 300 m au-dessus du sol : difficiles à tenir',
-                'under +0.5 m/s on the vario, or less than 300 m above the ground: hard to stay in',
+                'moins de +0,5 m/s au vario, moins de 300 m au-dessus du sol ou, en montagne, plafond sous le niveau des crêtes voisines : difficiles à tenir',
+                'under +0.5 m/s on the vario, less than 300 m above the ground or, in the mountains, a ceiling below the level of the nearby ridges: hard to stay in',
             ),
         },
         {
             ...EASE.choppy,
             text: tr(
-                'plus de 25 km/h de vent dans la couche thermique, ou vent au sol fort pour des thermiques faibles : difficiles à centrer',
-                'over 25 km/h of wind in the thermal layer, or strong surface wind for weak thermals: hard to centre',
+                'plus de 25 km/h de vent dans la couche thermique, plus de 20 km/h d’écart entre le vent au sol et le vent au plafond, ou vent au sol fort pour des thermiques faibles : difficiles à centrer',
+                'over 25 km/h of wind in the thermal layer, over 20 km/h of difference between the surface wind and the wind at the ceiling, or strong surface wind for weak thermals: hard to centre',
             ),
         },
         {
             ...EASE.rough,
             text: tr(
-                'plus de 40 km/h dans la couche, ou vent au sol très fort pour la force des thermiques : inexploitables',
-                'over 40 km/h in the layer, or very strong surface wind for the thermal strength: unusable',
+                'plus de 40 km/h dans la couche, plus de 35 km/h d’écart entre le sol et le plafond, ou vent au sol très fort pour la force des thermiques : inexploitables',
+                'over 40 km/h in the layer, over 35 km/h of difference between the surface and the ceiling, or very strong surface wind for the thermal strength: unusable',
             ),
         },
     ];
@@ -542,10 +676,10 @@
                 'energy of a rising air bubble: the “fuel” of thunderstorms.',
             ),
             levels: levels([
-                ['< 300', tr('faible : convection peu profonde', 'weak: shallow convection')],
-                [tr('300 – 1 000', '300 – 1,000'), tr('modérée : cumulus bourgeonnants, averses possibles', 'moderate: towering cumulus, showers possible')],
-                [tr('1 000 – 2 500', '1,000 – 2,500'), tr('forte : orages si la convection se déclenche', 'strong: thunderstorms if convection triggers')],
-                [tr('> 2 500', '> 2,500'), tr('très forte : orages violents possibles', 'very strong: severe storms possible')],
+                ['< 200', tr('faible : convection peu profonde', 'weak: shallow convection')],
+                ['200 – 650', tr('modérée : cumulus bourgeonnants, averses possibles', 'moderate: towering cumulus, showers possible')],
+                [tr('650 – 1 600', '650 – 1,600'), tr('forte : orages si la convection se déclenche', 'strong: thunderstorms if convection triggers')],
+                [tr('> 1 600', '> 1,600'), tr('très forte : orages violents possibles', 'very strong: severe storms possible')],
             ]),
         },
         {
@@ -565,8 +699,8 @@
     ];
 
     const instabilityNote = tr(
-        "Valeurs standard (air des 1 000 premiers mètres, sans chauffage du sol), à la couleur de leur palier. Un potentiel seulement : il faut un déclencheur, et une couche stable peut tout bloquer.",
-        'Standard values (air of the lowest 1,000 m, no ground heating), in the colour of their level. A potential only: it takes a trigger, and a stable layer can block everything.',
+        "Valeurs standard (air des 1 000 premiers mètres, sans chauffage du sol), à la couleur de leur palier. La CAPE s'arrête au dernier niveau fourni par le modèle (souvent 400 hPa, vers 7 000 m) : elle vaut environ les deux tiers d'une CAPE complète, et ses paliers sont abaissés d'autant. Un potentiel seulement : il faut un déclencheur, et une couche stable peut tout bloquer.",
+        'Standard values (air of the lowest 1,000 m, no ground heating), in the colour of their level. CAPE stops at the highest level the model provides (often 400 hPa, around 7,000 m): it is about two thirds of a full CAPE, and its levels are lowered accordingly. A potential only: it takes a trigger, and a stable layer can block everything.',
     );
 </script>
 
@@ -662,20 +796,6 @@
                 }
             }
         }
-        &__chips {
-            display: flex;
-            border-radius: 4px;
-            overflow: hidden;
-            margin-bottom: 6px;
-            span {
-                flex: 1;
-                padding: 2px 0;
-                text-align: center;
-                font-size: 10.5px;
-                font-weight: bold;
-                color: #111;
-            }
-        }
         &__icons {
             flex: none;
             display: inline-flex;
@@ -695,6 +815,30 @@
             svg {
                 flex: none;
                 margin-top: 1px;
+            }
+        }
+        // Point d'un niveau du modèle sur la courbe d'état
+        &__level {
+            line {
+                stroke: var(--wpp-stable);
+            }
+            circle {
+                fill: var(--wpp-halo);
+                stroke: var(--wpp-stable);
+                stroke-width: 1.3;
+            }
+        }
+        // Bande des nuages de l'émagramme, sur un morceau de son fond
+        &__strip {
+            rect {
+                fill: var(--wpp-sky-top);
+            }
+            rect + rect {
+                fill: var(--wpp-cloud-layer);
+            }
+            line {
+                stroke: var(--wpp-fg);
+                stroke-width: 1.6;
             }
         }
         // Nuage de l'émagramme, sur un morceau de son fond

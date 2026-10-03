@@ -8,6 +8,220 @@ Le dépôt git ne commence qu'après la 1.2.7 : les entrées plus anciennes ont 
 coup à partir des notes de publication. Chaque version reste installable depuis Windy à l'adresse
 `https://windy-plugins.com/2727410/<nom-du-plugin>/<version>/plugin.min.js`.
 
+## [1.7.0] - 2026-10-03
+
+Cette version modifie le sommet affiché des cumulus des thermiques : il est plus bas qu'avant quand
+l'air est sec ou à peine instable. Leur base, les plafonds, les ascendances et le risque
+d'orage ne changent pas. Elle déplace aussi l'heure des fronts froids, donnée au sol
+et non plus en altitude (souvent quelques heures plus tôt), et resserre le voile des nuages en
+couches là où l'air est sec entre deux niveaux du modèle : la base et le sommet des couches de
+nuages changent en conséquence. La couche d'où tombe une pluie de front est maintenant le plafond
+nuageux de l'heure, mesuré là où la nébulosité dépasse 40 % : sa base, donnée par l'infobulle, est
+souvent plus basse qu'avant, et plus régulière d'une heure à l'autre.
+
+Le sommet des petits cumulus baisse encore : un cumulus dont la base est proche du sol se dilue plus
+vite qu'une tour (200 m de moins en médiane sur les prévisions d'essai, rien de changé quand la
+base est à 2 000 m du sol ou plus). Sur les sites à plus de 500 m d'altitude, les nuages situés à
+moins de 2 500 m du sol cachent davantage le soleil qu'avant : sous un ciel couvert vers 3 000 m,
+les ascendances et les plafonds y sont plus faibles. Le bandeau « Therm. »
+passe à l'orange quand le vent change beaucoup entre le sol et le plafond (cisaillement) et, en
+montagne, au jaune quand le plafond reste sous les crêtes. Les cases de la CAPE changent de couleur
+à des valeurs plus basses ; les valeurs elles-mêmes, le LI et le risque d'orage ne changent pas.
+
+La pluie est plus souvent dessinée en averses, surtout avec ECMWF, qui ne fournit pas de
+précipitations convectives : des heures dessinées jusqu'ici en pluie de front portent maintenant un
+nuage d'averses, avec sa base et son sommet, et une virga quand sa base est haute. Avec un modèle
+qui fournit ses précipitations convectives, une pluie où elles comptent pour moins de la moitié
+reste une pluie de front.
+
+L'isotherme 0 °C change quand il gèle au sol sous un air plus doux (inversion) : elle est donnée au
+sommet de la couche douce, et non plus à l'altitude du sol. Dans le bandeau « Therm. », une heure
+de pluie ou de risque d'orage n'est plus verte.
+
+### Ajouté
+
+- L'heure du plugin et celle de la carte Windy restent synchronisées dans les deux sens. Déplacer
+  l'heure de la carte affiche ce jour et cette heure dans le plugin ; choisir un jour ou une heure
+  dans le plugin (onglets des jours, curseur et lecture de l'émagramme, clic sur le graphique)
+  déplace la carte. À l'ouverture, le plugin se place sur l'heure de la carte.
+- Graphique : l'heure choisie est repérée par un trait orange, avec son heure sur l'axe. Si elle
+  est hors de la partie affichée, le graphique défile jusqu'à elle.
+- Graphique « Vent & thermiques » : les passages de front y sont dessinés, comme sur une coupe
+  météo. Un trait bleu à triangles marque un front froid, un trait rouge à demi-cercles un front
+  chaud, avec son étiquette au pied. Le trait suit la surface du front : il part du sol à l'heure
+  où le front y passe et penche vers l'heure où il passe en altitude, quelques heures plus tard
+  pour un front froid, plus tôt pour un front chaud. L'infobulle des heures qu'il traverse donne le
+  refroidissement ou le réchauffement de l'air en altitude, la rotation du vent, la pluie autour du
+  passage et les heures du passage au sol et en altitude. Un front froid passé dans les 12 heures
+  qui précèdent le graphique, ou un front attendu dans les 6 heures qui suivent, est annoncé au
+  bord avec son heure. La légende les explique.
+- Liste des jours : le symbole du front (triangles bleus, demi-cercles rouges, ou les deux en
+  violet pour une occlusion) suit le nom de chaque jour où un front passe.
+- Fronts : l'heure d'un front est celle où il passe au sol, celle où l'air change le plus vite près
+  du sol. Un front froid y passe souvent quelques heures avant d'atteindre l'altitude, un front
+  chaud après. Le trait passe par l'heure du sol, par l'heure que donne la carte à son altitude
+  (vers 1 500 m) et par l'heure où l'air change plus haut : il ne penche jamais à l'envers, ni de
+  plus de 6 heures. L'infobulle donne aussi la variation de la pression après le passage, quand le
+  modèle la fournit.
+- Fronts lents : un changement de masse d'air étalé sur 12 heures est reconnu lui aussi, front
+  froid comme front chaud.
+- Occlusions : un trait violet à triangles et demi-cercles marque une langue d'air chaud qui passe
+  en altitude sous la pluie, sans que l'air change près du sol.
+- Front froid sec : un front froid qui passe avec moins de 1 mm de pluie est nommé « front froid
+  sec ».
+- Graphique « Vent & thermiques » : le plafond nuageux de chaque heure y est dessiné en nappe.
+  C'est la plus basse couche où le modèle prévoit au moins 50 % de nuages, à n'importe quelle
+  altitude, soulignée d'un trait sombre à sa base. Une couche de nuages bas (stratus, base à moins
+  de 2 000 m du sol, brouillard quand elle le touche) est dessinée jusqu'à son sommet, souligné de
+  blanc quand l'air est clair et sec juste au-dessus : c'est une mer de nuages. Une couche
+  épaisse, ou de l'étage haut, s'estompe en montant. L'infobulle donne la base et le sommet, à
+  quelques centaines de mètres près, parce que le modèle n'a que quelques niveaux.
+- Graphique « Vent & thermiques » : une couche faite d'amas séparés par des trouées a le dessus
+  moutonné, une nappe continue le dessus lisse. Sont dessinées en amas la couche de nuages bas que
+  les thermiques nourrissent (cumulus, stratocumulus), nommée « Couche de cumulus » dans
+  l'infobulle, et la couche mince de l'étage moyen, à plus de 2 000 m du sol, nommée
+  « Altocumulus » et dessinée en bande mince. Une couche épaisse de l'étage moyen est nommée
+  « Altostratus, altocumulus ». Sous une couche de cumulus, les observateurs de 62 stations
+  d'Europe notent des cumulus 8 fois sur 10 ; sous une couche de nuages bas sans thermique, 4 fois
+  sur 10. La légende l'explique.
+- Graphique « Vent & thermiques » : un bandeau « Ciel », au-dessus du graphique, montre le ciel de
+  chaque heure. Un disque, jaune le jour et bleu sombre la nuit, se couvre de gris sur la part du
+  ciel que prennent les nuages, tous étages confondus, y compris plus haut que le graphique. Le
+  gris est plein pour la part qui cache le soleil, léger pour celle qui ne fait que le voiler,
+  comme un voile d'altitude.
+- Graphique « Vent & thermiques » : le vent au sol de chaque heure y est écrit dans le relief brun,
+  sous la ligne du sol, aux couleurs du vent en altitude. Le vent moyen (flèche et km/h) est repéré
+  par « Vent » sur l'axe, les rafales, en dessous, par « Raf. ». Quand le relief est trop mince pour
+  eux (site proche du niveau de la mer, grande altitude max), le bas du graphique descend un peu
+  sous l'altitude du sol pour leur faire la place. Vent moyen et rafales n'étaient jusqu'ici que
+  dans l'infobulle.
+- Graphique « Vent & thermiques » : en montagne, des tirets marquent le relief pris dans les
+  nuages. Ils couvrent les altitudes où l'air est saturé, du sol au niveau des crêtes voisines,
+  même là où le modèle n'annonce pas de couche. Ce niveau, le plus haut du terrain à 10 km à la
+  ronde, est repéré par un pointillé brun et un triangle sur l'axe ; il figure aussi sous le
+  graphique. En plaine, rien n'est dessiné, ni dans une nappe de nuages, qui dit déjà que le relief
+  y est dans les nuages.
+- Limite pluie-neige : un pointillé pâle la trace aux heures de précipitations, et l'infobulle la
+  donne. Au-dessus, les flocons ne fondent pas. Dans un air sec, elle est nettement plus basse que
+  l'isotherme 0 °C.
+- Virga : des chevrons orange sous une averse dont la base est à plus de 1 500 m du sol. La pluie
+  s'évapore en tombant dans l'air sec et le refroidit : il descend en rafales, même sans pluie au
+  sol.
+- Ondes de relief : en montagne, une vague en haut de la colonne signale les heures où le vent
+  atteint 30 km/h au niveau des crêtes voisines dans un air stable, sans tourner avec l'altitude.
+  Des ondes et leurs rotors sont alors possibles sous le vent du relief.
+- Lecture au doigt : sur le graphique et sur l'émagramme, gardez le doigt appuyé un instant puis
+  glissez. L'infobulle suit le doigt, d'heure en heure et d'altitude en altitude, sans que la page
+  défile. Un glissé sans appui fait défiler comme avant, un simple toucher lit un point.
+- Niveaux du modèle : des points sur l'axe des altitudes du graphique, et sur la courbe d'état et le
+  point de rosée de l'émagramme, marquent les niveaux où le modèle fournit ses données. Entre deux
+  points, vent, température et nuages sont interpolés : un plafond qui tombe entre deux points
+  éloignés est moins sûr.
+- Émagramme : une bande, à gauche de la colonne de vent, montre les nuages du modèle à chaque
+  altitude, comme le voile gris du graphique, avec un trait à la base du plafond nuageux de l'heure.
+  L'infobulle donne la nébulosité à l'altitude pointée.
+- Émagramme : option « Courbe du lever du jour », en bas de page. La courbe d'état de l'heure du
+  lever du soleil est tracée en trait pâle sous celle de l'heure affichée : l'écart entre les deux
+  montre ce que la journée a changé. L'infobulle donne aussi la température de cette heure-là.
+- Bandeau « Therm. » : en montagne, un plafond qui n'atteint pas le niveau des crêtes voisines est
+  signalé en jaune, « sous les crêtes », même s'il dépasse de plus de 300 m le sol du modèle.
+- Thermiques hachés : le cisaillement compte aussi. Plus de 20 km/h d'écart entre le vent au sol et
+  le vent au plafond (très hachés au-delà de 35 km/h), en force comme en direction, signale des
+  thermiques couchés et cassés même quand le vent moyen de la couche reste modéré.
+- Infobulle : « Bruine » pour une faible pluie qui tombe d'une couche de nuages bas, « Cumulus
+  étalés » quand le modèle met au moins 60 % de nuages dans la couche des cumulus, et la mention
+  « cumul de 3 h réparti » quand la pluie de l'heure vient d'un pas de 3 heures du modèle.
+- Panneau resté ouvert : le trait de l'heure actuelle et l'alerte d'orage suivent l'heure, relue
+  chaque minute, et une prévision affichée depuis plus d'une heure est rechargée sur place.
+
+### Modifié
+
+- Averses : les averses de traîne, derrière un front froid, sont reconnues. Presque sans énergie
+  (CAPE), elles passaient pour une pluie de front. Elles se lisent maintenant à l'air froid en
+  altitude au-dessus d'un air humide. Comparé au temps noté par les observateurs de 62 stations
+  d'Europe, le plugin dessine en averses 5 à 7 heures d'averses sur 10, contre 3 sur 10 avant avec
+  ECMWF, et 7 heures dessinées en averses sur 10 en sont bien. Avec un modèle qui fournit ses
+  précipitations convectives, une pluie de front où elles comptent pour moins de la moitié reste
+  une pluie de front.
+- Bandeau « Therm. » : une heure où il tombe au moins 0,5 mm de pluie, ou qui porte un risque
+  d'orage (surdéveloppement compris), n'est plus verte. Quand ses thermiques seraient dits faciles,
+  sa case est grise, « pluie ou orage ». La légende l'explique.
+- Isotherme 0 °C : quand il gèle au sol sous un air plus doux (inversion d'hiver en vallée), elle
+  est donnée là où l'air repasse sous 0 °C au-dessus de la couche douce, au lieu de l'altitude du
+  sol.
+- Émagramme : entre deux heures pleines, la pluie garde la nature de l'heure en cours (averses ou
+  non), l'orage violent compte les rafales des heures voisines comme aux heures pleines, et le
+  trait du plafond nuageux est celui du graphique, décidé avec les heures de la journée. Ils ne
+  changent plus quand le curseur passe entre deux heures qui les partagent.
+- Fronts : ils sont lus sur la carte autour du lieu. Le plugin charge, en plus de la prévision du
+  lieu, celle de quatre points à 55 km au nord, au sud, à l'est et à l'ouest : un front est une
+  zone où la masse d'air (température et humidité ensemble) change vite d'un endroit à l'autre, et
+  que le vent pousse sur le lieu. Jusqu'ici, le front était cherché sur le lieu seul, là où l'air
+  se refroidit ou se réchauffe d'au moins 3 °C en 6 heures entre 1 500 et 3 000 m sous la pluie, un
+  ciel couvert ou un vent qui tourne : sur un mois de prévisions de 16 sites d'Europe, 3 fronts de
+  la carte sur 10 seulement étaient reconnus, et presque aucun front chaud. Les fronts
+  apparaissent un instant après le graphique, le temps de lire les points voisins. Si
+  ces points ne répondent pas, le front est cherché sur le lieu seul, par le changement de sa
+  masse d'air entre 750 et 2 000 m au-dessus du sol.
+- Vent en altitude : les rangées de flèches sont plus serrées, pour lire le vent à davantage
+  d'altitudes. Avec l'altitude max automatique, il y en a une tous les 200 m au lieu de 250 m ;
+  quand le graphique monte plus haut, tous les 250 à 400 m au lieu de 500 m, et tous les 500 m au
+  lieu de 1 000 m avec une altitude max de 8 000 m.
+- Pluie de front : la couche de nuages d'où elle tombe est dessinée en nappe grise, continue d'une
+  heure à l'autre, avec son rideau de pluie dessous, au lieu d'une tour grise par heure. Les tours
+  sont réservées aux nuages qui bourgeonnent : cumulus des thermiques et nuages d'averses.
+- Nuages d'averses : ceux d'heures qui se suivent ne font plus une rangée de tours mais une seule
+  masse, de la base au sommet de chacun.
+- Cumulus et nuages d'averses : nouvelle silhouette, à base plate, flancs bourgeonnants et sommet
+  en chou-fleur.
+- Nuages plus hauts que le graphique : un halo clair descend de son bord supérieur, à la place de
+  la bande claire.
+- Nuages en couches : entre deux niveaux du modèle, le voile s'arrête là où l'air s'assèche, au lieu
+  de s'estomper jusqu'à mi-chemin. Sous une inversion, le sommet d'une mer de nuages est ainsi placé
+  plus bas, plus près du niveau saturé. Les couches de pluie et de nuages bas suivent la même règle.
+- Modèle qui ne fournit pas la nébulosité par niveau : elle est estimée d'après l'humidité, au lieu
+  d'un ciel vide. L'infobulle le signale.
+- Le jour sélectionné n'est plus mémorisé d'une ouverture de Windy à l'autre : c'est l'heure de la
+  carte qui décide du jour affiché.
+- Cumulus des thermiques : leur largeur dit leur quantité. Étroits quand le modèle prévoit peu de
+  nuages dans leur couche, ils s'élargissent jusqu'à occuper la colonne quand ils s'étalent.
+- Cumulus des thermiques : le sommet d'un petit cumulus, dont la base est proche du sol, est plus
+  bas qu'avant. Un petit nuage se mélange plus vite à l'air sec qui l'entoure qu'une tour.
+- Part du ciel qui cache le soleil : les étages de nuages se comptent depuis le sol, et non plus à
+  altitude fixe. Sur un site d'altitude, un nuage à 1 000 ou 1 500 m au-dessus du sol compte comme
+  un nuage bas, qui cache tout le soleil, au lieu d'un nuage moyen. Les thermiques y sont plus
+  faibles sous ces nuages. Sous 500 m d'altitude, rien ne change.
+- CAPE : les paliers de couleur passent à 200, 650 et 1 600 J/kg, au lieu de 300, 1 000 et 2 500.
+  La CAPE affichée s'arrête au dernier niveau fourni par le modèle (souvent 400 hPa) et vaut environ
+  les deux tiers d'une CAPE complète : les anciens paliers la laissaient au vert trop longtemps.
+- Émagramme : près du sol, l'air surchauffé est dessiné dans les 100 premiers mètres, puis la courbe
+  d'état suit l'adiabatique sèche jusqu'au premier niveau du modèle. Elle ne montre plus une
+  instabilité absolue sur les 300 à 500 m qui séparent le sol de ce niveau. Les valeurs calculées
+  (plafond, sommet des thermiques, CAPE) ne changent pas.
+- Émagramme : l'infobulle ne déborde plus du cadre quand elle a beaucoup de lignes.
+
+### Corrigé
+
+- Cumulus des thermiques : de petits cumulus ne sont plus dessinés comme une tour qui monte jusqu'en
+  haut du graphique, souvent jusqu'à un voile d'altitude, quand l'air est à peine instable. Leur
+  sommet tient maintenant compte de l'air que le nuage brasse en montant : un air sec l'arrête vite,
+  un air humide et instable le laisse monter. Graphique, infobulle et émagramme donnent ce
+  sommet. Le risque d'orage se juge toujours sur la hauteur que le nuage peut atteindre sans se
+  diluer.
+- Graphique : le trait de l'heure actuelle n'est tracé que le jour même. Avec « 24 h », il
+  apparaissait peu avant minuit au bord gauche du graphique du lendemain.
+- Émagramme : la lecture automatique s'arrête quand on change de jour ou de lieu. Après le choix
+  d'un jour antérieur, elle continuait et restait bloquée en fin de journée.
+- Mise à jour : « Lien copié » ne s'affiche que si le lien a bien été copié.
+
+### Supprimé
+
+- Onglet « Bulletin » : le bulletin météo rédigé de la journée n'existe plus. Les passages de front
+  restent dessinés sur le graphique « Vent & thermiques », et l'alerte d'orage du jour reste
+  au-dessus des onglets.
+- Onglet « Cross » : la carte des meilleurs départs de cross est retirée pour le moment. Les
+  données qu'elle gardait dans le navigateur sont effacées à l'ouverture du plugin.
+
 ## [1.6.2] - 2026-10-01
 
 ### Modifié
