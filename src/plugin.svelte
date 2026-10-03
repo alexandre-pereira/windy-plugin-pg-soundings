@@ -70,10 +70,15 @@
                             <div class="wpp__day-stats">
                                 {#if d.bestCeiling != null}
                                     <small title={tr('Plafond thermique le plus haut de la journée', 'Highest thermal ceiling of the day')}
-                                        >{tr('Plafond', 'Ceiling')} {d.bestCeiling} m</small
+                                        ><span class="wpp__day-word">{tr('Plafond', 'Ceiling')} </span>{d.bestCeiling} m</small
                                     >
                                 {:else}
-                                    <small>{tr('Pas de thermique', 'No thermals')}</small>
+                                    <small
+                                        ><span class="wpp__day-word">{tr('Pas de thermique', 'No thermals')}</span><span
+                                            class="wpp__day-short"
+                                            title={tr('Pas de thermique', 'No thermals')}>—</span
+                                        ></small
+                                    >
                                 {/if}
                                 {#if d.bestClimb >= 0.2}
                                     <small
@@ -83,7 +88,7 @@
                                             'Meilleure montée au vario estimée dans la journée (taux de chute en spirale déduit)',
                                             'Best estimated vario climb of the day (circling sink deducted)',
                                         )}
-                                        >+{d.bestClimb.toFixed(1)} m/s</small
+                                        >+{d.bestClimb.toFixed(1)}<span class="wpp__day-word"> m/s</span></small
                                     >
                                 {/if}
                             </div>
@@ -255,9 +260,12 @@
                         )}
                         >{tr('Plafond', 'Ceiling')} <b>{selected.ceiling != null ? `${r50(selected.ceiling)} m` : '—'}</b></span
                     >
-                    <span title={tr('Fin de la flottabilité de la bulle d’air', 'Where the rising air stops being buoyant')}
-                        >{tr('Sommet thermique', 'Thermal top')}
-                        <b>{selected.thermalTop != null ? `${r50(selected.thermalTop)} m` : '—'}</b></span
+                    <span
+                        >Cumulus <b
+                            >{selected.cuBase != null
+                                ? `${r50(selected.cuBase)}–${r50(selected.cuTop ?? selected.cuBase)}${selected.cuTopCapped ? '+' : ''} m`
+                                : '—'}</b
+                        ></span
                     >
                 </div>
                 <div class="wpp__pair">
@@ -280,13 +288,6 @@
                     <span>0 °C <b>{selected.freezing != null ? `${r50(selected.freezing)} m` : '—'}</b></span>
                 </div>
                 <div class="wpp__pair">
-                    <span
-                        >Cumulus <b
-                            >{selected.cuBase != null
-                                ? `${r50(selected.cuBase)}–${r50(selected.cuTop ?? selected.cuBase)}${selected.cuTopCapped ? '+' : ''} m`
-                                : '—'}</b
-                        ></span
-                    >
                     <span
                         >{tr('T° / rosée sol', 'Ground T° / dew')}
                         <b
@@ -411,7 +412,7 @@
     import { nearbyStormOf } from './nearby';
     import StormNearby from './StormNearby.svelte';
     import { crestOf, loadRelief } from './relief';
-    import { map, markers } from '@windy/map';
+    import { map } from '@windy/map';
     import { singleclick } from '@windy/singleclick';
     import { emitter as picker } from '@windy/picker';
     import { setUrl } from '@windy/location';
@@ -433,7 +434,7 @@
     import StormBanner from './StormBanner.svelte';
     import StormIcon, { STORM_LABELS } from './StormIcon.svelte';
     import { checkForUpdate, installUrl } from './update';
-    import { type AirMass, airMassOf, frontDays, frontsOf, mapFronts } from './fronts';
+    import { airMassOf, frontDays, frontsOf, mapFronts } from './fronts';
     import { payloadAt } from './interpolate';
     import {
         buildColumns,
@@ -1145,20 +1146,51 @@
 
     $: if (loc) load(loc, model);
 
+    // --- Repère du lieu sur la carte : un viseur orange propre au plugin, toujours posé sur le lieu
+    // dont le panneau montre la prévision, que le sélecteur de Windy soit ouvert ou non. Il ne suit
+    // que `loc` : si le sélecteur ou un autre point de Windy est ailleurs, l'écart se voit.
+    /** Côté (px) du repère : cercle de 9 px de rayon, quatre traits qui en sortent, point au centre */
+    const PLACE_SIZE = 34;
+    const PLACE_SHAPE = '<circle r="9"/><path d="M0-15V-9M0 9V15M-15 0H-9M9 0H15"/>';
+    const PLACE_SVG =
+        `<svg width="${PLACE_SIZE}" height="${PLACE_SIZE}" viewBox="${-PLACE_SIZE / 2} ${-PLACE_SIZE / 2} ${PLACE_SIZE} ${PLACE_SIZE}" ` +
+        'style="display:block;pointer-events:none" fill="none" stroke-linecap="round">' +
+        // Liseré sombre sous le trait orange : lisible sur toutes les couleurs de la carte
+        `<g stroke="#10141a" stroke-opacity="0.8" stroke-width="5">${PLACE_SHAPE}</g>` +
+        `<g stroke="#f5a623" stroke-width="2.5">${PLACE_SHAPE}</g>` +
+        '<circle r="2.75" fill="#f5a623" stroke="#10141a" stroke-opacity="0.8" stroke-width="1.25"/>' +
+        '</svg>';
+
     const removeMarker = () => {
         marker?.remove();
         marker = null;
     };
-    const showMarker = (lat: number, lon: number) => {
-        removeMarker();
-        marker = new L.Marker({ lat, lng: lon }, { icon: markers.pulsatingIcon }).addTo(map);
+    const placeMarker = (where: LatLon | null) => {
+        if (!where) return removeMarker();
+        const at = { lat: where.lat, lng: where.lon };
+        if (marker) {
+            marker.setLatLng(at);
+            return;
+        }
+        // Ni clic ni survol : un clic sur le repère va à la carte. Sous les autres repères de Windy
+        // (le sélecteur garde son texte lisible).
+        marker = new L.Marker(at, {
+            icon: L.divIcon({
+                className: 'wpp-place',
+                html: PLACE_SVG,
+                iconSize: [PLACE_SIZE, PLACE_SIZE],
+                iconAnchor: [PLACE_SIZE / 2, PLACE_SIZE / 2],
+            }),
+            interactive: false,
+            keyboard: false,
+            zIndexOffset: -1000,
+        }).addTo(map);
     };
+    $: placeMarker(loc);
 
-    // --- Sélecteur de la carte (le point de Windy qu'on déplace pour lire le vent) : un seul lieu
-    // est mis en valeur sur la carte, celui du plugin. Quand le sélecteur s'ouvre ou se déplace, le
-    // lieu du plugin le rejoint, et c'est lui qui montre le lieu tant qu'il est ouvert ; quand le
-    // lieu change autrement (clic sur la carte), le sélecteur ouvert vient s'y placer. Sans
-    // sélecteur, le lieu est montré par le repère du plugin.
+    // --- Sélecteur de la carte (le point de Windy qu'on déplace pour lire le vent). Quand il
+    // s'ouvre ou se déplace, le lieu du plugin le rejoint ; quand le lieu change autrement (clic sur
+    // la carte), le sélecteur ouvert vient s'y placer. Le repère du plugin reste affiché avec lui.
     /** Position du sélecteur de la carte ; null quand il est fermé */
     let pickerAt: LatLon | null = null;
     /** Écart (°) sous lequel deux positions sont le même lieu : une cinquantaine de mètres */
@@ -1176,17 +1208,14 @@
         const lon = Number(at?.lon);
         if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
         pickerAt = { lat, lon };
-        removeMarker();
         if (pickerTimer) clearTimeout(pickerTimer);
         pickerTimer = setTimeout(() => {
             if (pickerAt && !sameSpot(pickerAt, loc)) setLocation(pickerAt);
         }, PICKER_DELAY);
     };
-    /** Le sélecteur se ferme : le repère du plugin reprend sa place */
     const onPickerClosed = () => {
         pickerAt = null;
         if (pickerTimer) clearTimeout(pickerTimer);
-        if (loc) showMarker(loc.lat, loc.lon);
     };
 
     const setLocation = (latLon: LatLon) => {
@@ -1198,9 +1227,7 @@
         placeName = '';
         saveLastLocation(lat, lon);
 
-        if (!pickerAt) {
-            showMarker(lat, lon);
-        } else if (!sameSpot(pickerAt, loc)) {
+        if (pickerAt && !sameSpot(pickerAt, loc)) {
             // Sélecteur ouvert ailleurs : il vient sur le lieu choisi
             pickerAt = { lat, lon };
             try {
@@ -1313,7 +1340,6 @@
         --wpp-stable: #e9edf2;
         --wpp-parcel: #ffd24a;
         --wpp-accent: #ffd24a;
-        --wpp-accent-fg: #111111;
         // Nuage de l'émagramme, à sa base (il s'éclaircit vers le sommet)
         --wpp-cloud: rgba(238, 242, 247, 0.3);
         // Nuages du modèle dans la bande de l'émagramme, à 100 % de couverture
@@ -1352,7 +1378,6 @@
             --wpp-stable: #1f2933;
             --wpp-parcel: #c98a00;
             --wpp-accent: #e0a800;
-            --wpp-accent-fg: #111111;
             --wpp-cloud: rgba(255, 255, 255, 0.9);
             --wpp-cloud-layer: #7f8ba0;
             --wpp-freezing: #0284c7;
@@ -1498,6 +1523,40 @@
             align-items: center;
             gap: 4px;
             margin-top: 2px;
+        }
+        // Version courte d'un texte de la liste des jours, pour le téléphone
+        &__day-short {
+            display: none;
+        }
+        // Sur téléphone, chaque jour tient sur une ligne : nom, plafond et vario à la suite, sans
+        // leurs mots (« Plafond », « m/s »)
+        @media (max-width: 560px) {
+            &__days {
+                margin-bottom: 6px;
+            }
+            &__day {
+                flex-direction: row;
+                gap: 6px;
+                min-width: 0;
+                padding: 3px 7px;
+                white-space: nowrap;
+            }
+            &__day-stats {
+                margin-top: 0;
+            }
+            &__day-word {
+                display: none;
+            }
+            &__day-short {
+                display: inline;
+            }
+            &__head {
+                gap: 8px;
+                margin: 4px 0 8px;
+            }
+            &__name {
+                font-size: 15px;
+            }
         }
         &__w {
             padding: 0 4px;
@@ -1645,14 +1704,13 @@
                     color: var(--wpp-accent);
                 }
             }
-            // Sur téléphone : pictogramme au-dessus du nom court, qui n'est jamais coupé. La largeur
+            // Sur téléphone : pictogramme et nom court sur une seule ligne, jamais coupés. La largeur
             // de chaque onglet suit son texte, le reste de la place est partagé.
             @media (max-width: 560px) {
                 flex: 1 1 auto;
-                flex-direction: column;
-                gap: 3px;
-                padding: 6px 2px 5px;
-                font-size: 11px;
+                gap: 5px;
+                padding: 4px 6px;
+                font-size: 12px;
                 line-height: 1.2;
 
                 span {
@@ -1671,11 +1729,12 @@
                 display: inline;
             }
             &__tab-icon {
-                width: 19px;
-                height: 19px;
+                width: 15px;
+                height: 15px;
             }
             &__tabbar {
                 gap: 6px;
+                margin: 2px 0 8px;
             }
             &__tabs {
                 gap: 1px;
@@ -1962,7 +2021,7 @@
     @media (pointer: coarse) {
         .wpp {
             &__day {
-                padding: 6px 10px;
+                padding: 5px 8px;
             }
             // Au doigt : curseur et flèches plus faciles à attraper
             &__range {

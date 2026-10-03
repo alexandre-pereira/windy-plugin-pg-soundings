@@ -3,7 +3,7 @@
  *
  * Windy ne donne qu'un décalage horaire (`header.utcOffset`) pour toute la prévision. Quand elle
  * couvre un passage à l'heure d'hiver ou d'été (fin mars, fin octobre), les jours suivants seraient
- * décalés d'une heure (axe des heures, jours, fenêtre des cross). On corrige, dans l'ordre :
+ * décalés d'une heure (axe des heures, jours). On corrige, dans l'ordre :
  * 1. avec l'heure locale donnée par Windy pour chaque pas (`data.hour`), si elle en tient compte ;
  * 2. sinon, en Europe, avec la règle européenne (dernier dimanche de mars et d'octobre à 1 h UTC).
  */
@@ -41,7 +41,7 @@ export const inEuDstZone = (lat: number, lon: number) => {
 /** Heure locale (0-23) de l'instant ts pour un décalage donné (h) */
 export const localHour = (ts: number, offset: number) => new Date(ts + offset * HOUR).getUTCHours();
 
-/** Clé de jour local (même format partout : onglets du panneau, carte des cross) */
+/** Clé de jour local (même format partout : liste des jours, heure actuelle, fronts) */
 export const dayKey = (ts: number, offset: number) => {
     const d = new Date(ts + offset * HOUR);
     return `${d.getUTCFullYear()}-${d.getUTCMonth()}-${d.getUTCDate()}`;

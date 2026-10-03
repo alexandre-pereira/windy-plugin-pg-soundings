@@ -8,6 +8,73 @@ Le dépôt git ne commence qu'après la 1.2.7 : les entrées plus anciennes ont 
 coup à partir des notes de publication. Chaque version reste installable depuis Windy à l'adresse
 `https://windy-plugins.com/2727410/<nom-du-plugin>/<version>/plugin.min.js`.
 
+## [1.9.0] - 2026-10-04
+
+Les heures des fronts changent. Les fronts froids sont affichés de 1 à 6 heures plus tôt
+(2 heures en médiane), à l'heure où l'air commence à changer ; les fronts chauds jusqu'à 6 heures
+plus tard (2 heures en médiane), à l'heure où il finit de changer. Les uns et les autres étaient
+placés à l'heure où l'air change le plus vite.
+
+### Modifié
+
+- Le lieu du plugin est toujours marqué sur la carte par son propre repère, un viseur orange,
+  même quand le sélecteur de Windy est ouvert. Le repère est posé sur le lieu dont le panneau
+  affiche la prévision : si le sélecteur ou un autre point de la carte est ailleurs, l'écart se
+  voit.
+- Sur téléphone, le haut du panneau prend moins de place : les onglets « Vent » et « Émagramme »
+  tiennent sur une ligne, pictogramme et nom côte à côte, et chaque jour de la liste aussi (nom,
+  plafond et vario à la suite, sans les mots « Plafond » et « m/s »).
+- Le choix du modèle est plus petit.
+- Émagramme : au survol, les valeurs s'écrivent sur les courbes, à côté de leur point, à la place
+  de l'infobulle : température, point de rosée, particule et courbe du lever du jour. Le gradient
+  de température est écrit sous la ligne, en °C par 100 m (et non plus par km), à la couleur de
+  sa stabilité.
+- Infobulle du graphique plus courte : nuages plus hauts que le graphique sur la ligne du total,
+  nuage de la pluie ou des averses sur la ligne de la pluie, noms de couches raccourcis
+  (« Couche », « Brouillard »), lignes plus serrées. La température au sol est donnée avec
+  l'altitude du sol dans le modèle (« Sol (466 m) »), sans le point de rosée.
+- Graphique « Vent & thermiques » : le bandeau « Ciel » s'appelle « Nuages ».
+- Graphique « Vent & thermiques » : l'altitude du niveau de la carte, celle qu'un clic sur le
+  graphique choisit, est écrite en orange sur l'axe des altitudes, au bout de ses tirets, à la
+  place du triangle.
+- Graphique « Vent & thermiques » : les heures sont écrites en haut, sur la barre de l'heure, et
+  plus sous le graphique. Le trait orange de l'heure choisie descend jusqu'en bas, à travers les
+  bandeaux « Therm. », « Pluie » et « CAPE LI ».
+- Graphique « Vent & thermiques » : le halo qui signale des nuages plus hauts que le graphique est
+  plus visible. Il est plus haut, plus clair, et plein au ras du bord supérieur, de jour comme de
+  nuit.
+
+### Supprimé
+
+- Fronts : l'étiquette au pied du trait (« Front chaud 13h–16h », « Front froid rapide · raf. 55 »),
+  la barre qui reliait les deux heures d'un modèle fourni toutes les 3 heures, et l'annonce, au
+  bord du graphique, d'un front de la nuit ou de la veille (« ← Front froid 22h »). Le trait et ses
+  symboles restent ; le nom du front, ses heures et ses rafales se lisent dans l'infobulle des
+  heures qu'il traverse, et le symbole du front suit toujours le nom du jour où il passe.
+- Infobulle du graphique : le vent et les rafales au sol, déjà écrits dans le relief du graphique,
+  et le sommet thermique.
+- Émagramme : le sommet thermique, dans les valeurs sous le graphique. Il reste marqué sur la
+  courbe avec l'option « Ascension de la particule ».
+- Émagramme : l'infobulle du survol, et avec elle la pression, le vario, le vent et les nuages à
+  l'altitude pointée. Le vent et les nuages se lisent dans les colonnes de droite.
+
+### Corrigé
+
+- Fronts froids : le trait était dessiné 2 à 3 heures trop tard. Il était placé à l'heure où l'air
+  change le plus vite, au milieu du refroidissement ; il l'est maintenant à l'heure où l'air
+  commence à changer, celle où le vent tourne au sol. Le pied du trait, l'heure de l'infobulle et
+  le symbole de la liste des jours avancent d'autant (de 1 à 6 heures selon le front), et le trait
+  passe plus tôt jusque vers 1 500 m.
+- Fronts chauds : le trait était dessiné 2 à 3 heures trop tôt au sol, au milieu du réchauffement.
+  Il est maintenant placé à l'heure où l'air finit de changer, celle où le vent tourne au sol : le
+  pied du trait, l'heure de l'infobulle et le symbole de la liste des jours reculent d'autant
+  (jusqu'à 6 heures selon le front).
+- Plafond nuageux : quand la couche faiblit, la nappe ne saute plus, le temps d'une heure ou deux,
+  sur un lambeau de nuages d'une autre altitude qui n'a jamais couvert la moitié du ciel. Elle
+  reste à l'altitude de la couche tant que celle-ci garde 40 % de nuages, puis s'arrête.
+- Mer de nuages : elle est reconnue aussi quand le sommet de la couche tombe sur un niveau du
+  modèle. L'air « juste au-dessus » était alors lu à ce niveau, dans la couche elle-même.
+
 ## [1.8.0] - 2026-10-03
 
 Les valeurs affichées ne changent pas : plafonds, ascendances, seuils et heures des fronts restent

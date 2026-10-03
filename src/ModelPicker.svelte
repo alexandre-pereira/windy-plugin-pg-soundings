@@ -11,7 +11,7 @@
     >
         <span class="wpp-mp__name">{current?.name ?? value}</span>
         <span class="wpp-mp__res">{current?.res ?? ''}</span>
-        <svg class="wpp-mp__caret" width="14" height="14" viewBox="0 0 12 12"
+        <svg class="wpp-mp__caret" width="12" height="12" viewBox="0 0 12 12"
             ><path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg
         >
     </button>
@@ -69,8 +69,8 @@
         &__btn {
             display: inline-flex;
             align-items: center;
-            gap: 7px;
-            padding: 7px 11px 7px 13px;
+            gap: 5px;
+            padding: 4px 8px 4px 9px;
             border: 1px solid var(--wpp-border);
             border-radius: 7px;
             background: var(--wpp-surface);
@@ -88,11 +88,11 @@
             }
         }
         &__name {
-            font-size: 15px;
+            font-size: 13px;
             font-weight: 600;
         }
         &__res {
-            font-size: 12px;
+            font-size: 11px;
             color: var(--wpp-fg-faint);
         }
         &__caret {

@@ -133,8 +133,8 @@ export interface Column {
     cuTopCapped: boolean;
     /**
      * Sommet (m AMSL) que le cumulus atteindrait sans se diluer (pseudo-adiabatique pure) : le
-     * développement possible, qui sert au risque d'orage et aux cross. Souvent bien plus haut que
-     * cuTop dans un air à peine instable.
+     * développement possible, qui sert au risque d'orage. Souvent bien plus haut que cuTop dans un
+     * air à peine instable.
      */
     cuFreeTop: number | null;
     /** Température de départ de la particule (K) : air de la couche mélangée + surchauffe */
@@ -190,10 +190,7 @@ export interface Column {
      * moins le taux de chute en spirale ; 0 sans thermique exploitable
      */
     climb: number;
-    /** Vent moyen de la couche thermique (sol → plafond), composantes vers l'est et le nord (m/s) */
-    blU: number;
-    blV: number;
-    /** Vitesse moyenne du vent dans la couche thermique (m/s) */
+    /** Vitesse moyenne du vent dans la couche thermique, du sol au plafond (m/s) */
     blSpeed: number;
     /**
      * Cisaillement de la couche thermique (m/s) : écart entre le vent au sol et le vent au plafond
@@ -213,10 +210,6 @@ export interface Column {
 
 /** Options du calcul des colonnes */
 export interface BuildOptions {
-    /** Ne calcule que les heures locales retenues (carte des cross : heures de vol seulement) */
-    keepHour?: (hour: number) => boolean;
-    /** CAPE, indice de soulèvement et risque d'orage (inutiles pour la carte des cross) ; oui par défaut */
-    stability?: boolean;
     /**
      * Nature de la pluie, déjà décidée : averses ou non. Pour un instant isolé (curseur de
      * l'émagramme), qui n'a pas ses heures voisines : c'est celle de l'heure qui le contient
@@ -304,10 +297,6 @@ export const uvToWind = (u: number, v: number) => ({
     dir: (Math.atan2(-u, -v) / DEG + 360) % 360,
 });
 
-/**
- * Interpolation linéaire dans le profil. Retourne null hors du profil
- * ou si la valeur n'est pas disponible.
- */
 type ProfileKey = 't' | 'td' | 'u' | 'v' | 'cloud';
 
 /**
@@ -1230,33 +1219,40 @@ export const showerHours = (
 /** Pas (m) du balayage vertical d'un profil à la recherche d'une couche */
 const LAYER_STEP = 25;
 
+/** Couche de nuages d'un profil (altitudes en m AMSL) */
+interface CloudLayer {
+    base: number;
+    top: number;
+    /** Plus forte nébulosité (%) de la couche */
+    most: number;
+}
+
 /**
- * Plus basse couche continue (m AMSL) où la nébulosité du modèle, placée entre ses niveaux d'après
- * l'humidité (cloudAt), atteint `limit` %, de sa base à son sommet (au plus le dernier niveau
- * fourni) ; null sans une telle couche. Avec `peak`, seule compte une couche dont la nébulosité
- * atteint quelque part `peak` %.
+ * Couches continues, de bas en haut, où la nébulosité du modèle, placée entre ses niveaux d'après
+ * l'humidité (cloudAt), atteint `limit` %, de leur base à leur sommet (au plus le dernier niveau
+ * fourni). Le profil est lu tous les 25 m depuis le sol, et à chaque niveau du modèle : une couche
+ * qui s'arrête à un niveau le contient, le niveau « juste au-dessus » d'elle n'est jamais le sien.
  */
-const lowestLayer = (
-    profile: ProfilePoint[],
-    limit: number,
-    peak = limit,
-): { base: number; top: number } | null => {
+const cloudLayers = (profile: ProfilePoint[], limit: number): CloudLayer[] => {
     const zTop = profile[profile.length - 1].z;
-    let layer = null as { base: number; top: number } | null;
-    let most = 0;
-    for (let z = profile[0].z; z <= zTop; z += LAYER_STEP) {
+    const heights = profile.map(p => p.z);
+    for (let z = profile[0].z + LAYER_STEP; z < zTop; z += LAYER_STEP) heights.push(z);
+    const layers: CloudLayer[] = [];
+    let layer: CloudLayer | null = null;
+    for (const z of heights.sort((a, b) => a - b)) {
         const cloud = cloudAt(profile, z);
-        if (cloud >= limit) {
-            layer = { base: layer?.base ?? z, top: z };
-            most = Math.max(most, cloud);
-        } else if (layer) {
-            if (most >= peak) break;
-            layer = null;
-            most = 0;
-        }
+        if (cloud < limit) layer = null;
+        else if (layer) {
+            layer.top = z;
+            layer.most = Math.max(layer.most, cloud);
+        } else layers.push((layer = { base: z, top: z, most: cloud }));
     }
-    return most >= peak ? layer : null;
+    return layers;
 };
+
+/** Plus basse couche continue où la nébulosité atteint `limit` % (voir cloudLayers) ; null sans elle */
+const lowestLayer = (profile: ProfilePoint[], limit: number): CloudLayer | null =>
+    cloudLayers(profile, limit)[0] ?? null;
 
 /** Nébulosité (%) d'une couche de nuages du modèle assez dense pour porter la pluie dessinée */
 const RAIN_CLOUD = 50;
@@ -1270,7 +1266,8 @@ const RAIN_CLOUD = 50;
 export const rainLayer = (profile: ProfilePoint[]): { base: number; top: number } | null => {
     const peak = Math.max(0, ...profile.map(p => p.cloud));
     if (peak < 5) return null;
-    return lowestLayer(profile, Math.min(RAIN_CLOUD, peak / 2));
+    const layer = lowestLayer(profile, Math.min(RAIN_CLOUD, peak / 2));
+    return layer && { base: layer.base, top: layer.top };
 };
 
 /** Écart (K) entre la température et le point de rosée d'un niveau ; null si l'un manque */
@@ -1337,37 +1334,51 @@ export const lowCloudOf = (profile: ProfilePoint[], limit = LOW_CLOUD): LowCloud
     };
 };
 
-/** Suites d'heures consécutives de `kept` où au moins une heure est dans `born` ; null ailleurs */
-const persisting = <T>(born: (T | null)[], kept: (T | null)[]): (T | null)[] => {
-    const out: (T | null)[] = kept.map(() => null);
-    for (let i = 0; i < kept.length; i++) {
-        if (!kept[i]) continue;
-        let j = i;
-        while (j + 1 < kept.length && kept[j + 1]) j++;
-        if (born.slice(i, j + 1).some(Boolean)) for (let k = i; k <= j; k++) out[k] = kept[k];
-        i = j;
-    }
-    return out;
-};
-
-/**
- * Couches de nuages bas d'une suite d'heures (voir lowCloudOf). Une couche naît à 50 % de
- * nébulosité et se prolonge d'heure en heure tant qu'elle en garde 40 % : une couverture qui
- * oscille autour du seuil ne fait pas clignoter la couche.
- */
-export const lowCloudsOf = (profiles: ProfilePoint[][]): (LowCloud | null)[] => {
-    const born = profiles.map(p => lowCloudOf(p));
-    return persisting(
-        born,
-        profiles.map((p, k) => born[k] ?? lowCloudOf(p, LOW_CLOUD_KEEP)),
-    );
-};
-
 /**
  * Écart (m) toléré entre les couches de deux heures voisines pour y voir la même : elles sont
  * placées à quelques centaines de mètres près
  */
 const DECK_JOIN = 250;
+
+/** Les couches de deux heures voisines sont-elles la même ? Oui si leurs altitudes se recouvrent */
+const sameLayer = (a: { base: number; top: number }, b: { base: number; top: number }) =>
+    a.base <= b.top + DECK_JOIN && b.base <= a.top + DECK_JOIN;
+
+/**
+ * Couches qui durent : celle de `born` à l'heure où elle naît, prolongée d'heure en heure, avant
+ * comme après, par celle des couches de `kept` (les couches de l'heure, de bas en haut) qui est la
+ * même que la couche de l'heure voisine ; null ailleurs. Une autre couche, à une autre altitude, ne
+ * prolonge rien.
+ */
+const persisting = <T extends { base: number; top: number }>(
+    born: (T | null)[],
+    kept: T[][],
+): (T | null)[] => {
+    const out = [...born];
+    const extend = (k: number, from: number) => {
+        const near = out[from];
+        if (!out[k] && near) out[k] = kept[k].find(l => sameLayer(l, near)) ?? null;
+    };
+    for (let k = 1; k < out.length; k++) extend(k, k - 1);
+    for (let k = out.length - 2; k >= 0; k--) extend(k, k + 1);
+    return out;
+};
+
+/**
+ * Couches de nuages bas d'une suite d'heures (voir lowCloudOf). Une couche naît à 50 % de
+ * nébulosité et se prolonge d'heure en heure tant qu'elle en garde 40 % à la même altitude, à
+ * 250 m près : une couverture qui oscille autour du seuil ne fait pas clignoter la couche.
+ */
+export const lowCloudsOf = (profiles: ProfilePoint[][]): (LowCloud | null)[] => {
+    const born = profiles.map(p => lowCloudOf(p));
+    return persisting(
+        born,
+        profiles.map((p, k) => {
+            const low = born[k] ? null : lowCloudOf(p, LOW_CLOUD_KEEP);
+            return low ? [low] : [];
+        }),
+    );
+};
 
 /**
  * Écart (m) toléré entre le sommet des thermiques et la base de la couche basse qu'ils nourrissent :
@@ -1422,11 +1433,12 @@ export const isCumuliform = (deck: Pick<CloudDeck, 'genus'>): boolean =>
  * plus basse couche dense du modèle, à n'importe quelle altitude : celle où la nébulosité atteint
  * 50 %, de l'altitude où elle dépasse 40 % à celle où elle y retombe. Mesurée à 40 %, la base ne
  * saute pas d'un niveau à l'autre quand la nébulosité oscille autour de 50 %. Comme la couche
- * basse, elle naît à 50 % et se prolonge d'heure en heure tant qu'elle garde 40 %. Sans couche
- * dense, une heure de pluie garde la couche d'où elle tombe (rainLayer : la moitié de la plus forte
- * nébulosité). `rains` : heures où la pluie ne vient pas d'un nuage d'averses. Deux heures voisines
- * portent la même couche quand leurs altitudes se recouvrent, à 250 m près : sinon ce sont deux
- * couches (un stratus qui se dissipe sous un voile d'altitude). null sans couche.
+ * basse, elle naît à 50 % et se prolonge d'heure en heure tant qu'elle garde 40 % à la même
+ * altitude. Sans couche dense, une heure de pluie garde la couche d'où elle tombe (rainLayer : la
+ * moitié de la plus forte nébulosité). `rains` : heures où la pluie ne vient pas d'un nuage
+ * d'averses. Deux heures voisines portent la même couche quand leurs altitudes se recouvrent, à
+ * 250 m près : sinon ce sont deux couches (un stratus qui se dissipe sous un voile d'altitude).
+ * null sans couche.
  * `thermalTops` : sommet des thermiques (m AMSL) aux heures où ils sont exploitables, null sinon ;
  * il donne le genre d'une couche basse (voir DeckGenus).
  */
@@ -1436,10 +1448,10 @@ export const cloudDecksOf = (
     thermalTops: (number | null)[] = [],
 ): (CloudDeck | null)[] => {
     const lows = lowCloudsOf(profiles);
-    const born = profiles.map(p => lowestLayer(p, LOW_CLOUD_KEEP, LOW_CLOUD));
+    const layers = profiles.map(p => cloudLayers(p, LOW_CLOUD_KEEP));
     const dense = persisting(
-        born,
-        profiles.map((p, k) => born[k] ?? lowestLayer(p, LOW_CLOUD_KEEP)),
+        layers.map(hour => hour.find(l => l.most >= LOW_CLOUD) ?? null),
+        layers,
     );
     const decks = profiles.map((p, k): CloudDeck | null => {
         const rain = !!rains[k];
@@ -1459,8 +1471,7 @@ export const cloudDecksOf = (
     });
     decks.forEach((deck, k) => {
         const before = decks[k - 1];
-        if (!deck || !before) return;
-        deck.joined = deck.base <= before.top + DECK_JOIN && before.base <= deck.top + DECK_JOIN;
+        if (deck && before) deck.joined = sameLayer(deck, before);
     });
     return decks;
 };
@@ -1919,15 +1930,12 @@ const nearestNum = (serie: Series | undefined, i: number, maxDist = 3): number |
     return null;
 };
 
-/**
- * Colonnes altitude × heure de la prévision. `options.keepHour` : ne calcule que les heures locales
- * retenues, pour aller plus vite quand seule une partie de la journée sert (carte des cross).
- */
+/** Colonnes altitude × heure de la prévision */
 export const buildColumns = (
     payload: ForecastPayload,
     lat: number,
     lon: number,
-    { keepHour, stability = true, shower }: BuildOptions = {},
+    { shower }: BuildOptions = {},
 ): Column[] => {
     const { data, header } = payload;
     const offsetAt = makeOffsetAt(payload, lat, lon);
@@ -1955,7 +1963,6 @@ export const buildColumns = (
     tsList.forEach((ts, i) => {
         const utcOffset = offsetAt(ts);
         const hour = localHour(ts, utcOffset);
-        if (keepHour && !keepHour(hour)) return;
         const t2m = num(data.temperature, i, NaN);
         if (!Number.isFinite(t2m)) return;
 
@@ -2265,17 +2272,12 @@ export const buildColumns = (
         // --- Vent de la couche thermique (sol → plafond, ou 500 m sans thermique) et turbulence
         // mécanique : u* par la loi logarithmique depuis le vent à 10 m, comparé à w*
         const blTop = Math.max(ceiling ?? ground + 500, ground + 60);
-        let su = 0;
-        let sv = 0;
         let ss = 0;
         let nw = 0;
         for (let z = ground + 50; z <= blTop; z += 100) {
-            const u = interpProfile(profile, z, 'u');
-            const v = interpProfile(profile, z, 'v');
-            if (u == null || v == null) continue;
-            su += u;
-            sv += v;
-            ss += Math.hypot(u, v);
+            const wind = windAt(profile, z);
+            if (!wind) continue;
+            ss += wind.speed;
             nw++;
         }
         const blSpeed = nw ? ss / nw : windSurf;
@@ -2305,48 +2307,42 @@ export const buildColumns = (
         }
 
         // --- CAPE et indice de soulèvement standard (affichés)
-        const std = stability ? standardStability(profile, ground) : NO_STABILITY;
+        const std = standardStability(profile, ground);
 
-        // --- Risque d'orage (inutile sans la CAPE standard : carte des cross)
-        let stormRisk: StormRisk = 0;
-        let mu = std;
-        let deepWind = { shear: 0, steerU: 0, steerV: 0 };
-        let severeEnv = false;
-        if (stability) {
-            mu = mostUnstable(profile, std);
-            deepWind = deepLayerWind(profile, ground);
-            severeEnv = isSevereEnv({
-                cape: mu.cape,
-                liftedIndex: mu.liftedIndex,
-                shear: deepWind.shear,
-            });
-            // Rafales du modèle à ±1 h : le front de rafales précède l'orage. Fournies par la prévision
-            // réduite à un instant, comme la pluie voisine
-            const gustNear = data.gustNear
-                ? num(data.gustNear, i)
-                : Math.max(0, ...[i - 1, i, i + 1].map(k => num(data.windGust, k)));
-            const cloudWhere = (keep: (p: ProfilePoint) => boolean) =>
-                Math.max(0, ...profile.filter(keep).map(p => p.cloud / 100));
-            const midCloud = cloudWhere(p => p.p <= 700 && p.p >= 500);
-            const coldCloud = cloudWhere(p => p.p >= 350 && p.t != null && p.t <= KELVIN - 20);
-            stormRisk = stormRiskOf({
-                cumulus,
-                cape: std.cape,
-                muCape: mu.cape,
-                muTopTemp: mu.topTemp,
-                severe: severeEnv || gustNear >= SEVERE_GUST,
-                precip: num(data.precipAmount, i),
-                convRain: num(data.precipConvectiveAmount, i),
-                rainNear: data.rainNear
-                    ? num(data.rainNear, i)
-                    : Math.max(
-                          num(data.precipAmount, i - 1),
-                          num(data.precipAmount, i),
-                          num(data.precipAmount, i + 1),
-                      ),
-                deepCloud: Math.min(midCloud, coldCloud),
-            });
-        }
+        // --- Risque d'orage
+        const mu = mostUnstable(profile, std);
+        const deepWind = deepLayerWind(profile, ground);
+        const severeEnv = isSevereEnv({
+            cape: mu.cape,
+            liftedIndex: mu.liftedIndex,
+            shear: deepWind.shear,
+        });
+        // Rafales du modèle à ±1 h : le front de rafales précède l'orage. Fournies par la prévision
+        // réduite à un instant, comme la pluie voisine
+        const gustNear = data.gustNear
+            ? num(data.gustNear, i)
+            : Math.max(0, ...[i - 1, i, i + 1].map(k => num(data.windGust, k)));
+        const cloudWhere = (keep: (p: ProfilePoint) => boolean) =>
+            Math.max(0, ...profile.filter(keep).map(p => p.cloud / 100));
+        const midCloud = cloudWhere(p => p.p <= 700 && p.p >= 500);
+        const coldCloud = cloudWhere(p => p.p >= 350 && p.t != null && p.t <= KELVIN - 20);
+        const stormRisk = stormRiskOf({
+            cumulus,
+            cape: std.cape,
+            muCape: mu.cape,
+            muTopTemp: mu.topTemp,
+            severe: severeEnv || gustNear >= SEVERE_GUST,
+            precip: num(data.precipAmount, i),
+            convRain: num(data.precipConvectiveAmount, i),
+            rainNear: data.rainNear
+                ? num(data.rainNear, i)
+                : Math.max(
+                      num(data.precipAmount, i - 1),
+                      num(data.precipAmount, i),
+                      num(data.precipAmount, i + 1),
+                  ),
+            deepCloud: Math.min(midCloud, coldCloud),
+        });
 
         // --- Nuage d'averses : convection que le modèle développe lui-même. La nature de la pluie se
         // décide après la boucle, avec les heures voisines
@@ -2405,8 +2401,6 @@ export const buildColumns = (
             ceiling,
             wStar,
             climb: ceiling == null ? 0 : netClimb(wStar),
-            blU: nw ? su / nw : 0,
-            blV: nw ? sv / nw : 0,
             blSpeed,
             blShear,
             convRatio,
@@ -2428,24 +2422,22 @@ export const buildColumns = (
     });
 
     // --- Nuage d'averses aux heures dont la pluie est faite d'averses, s'il y a un nuage convectif
-    if (stability) {
-        const showers =
-            shower != null
-                ? columns.map(() => shower)
-                : showerHours(
-                      columns.map((c, k) => ({
-                          ts: c.ts,
-                          precip: c.precip,
-                          convective: convective[k].alone,
-                      })),
-                  );
-        columns.forEach((c, k) => {
-            const { base, top } = convective[k];
-            if (!showers[k] || base == null || top == null) return;
-            c.showerBase = base;
-            c.showerTop = top;
-        });
-    }
+    const showers =
+        shower != null
+            ? columns.map(() => shower)
+            : showerHours(
+                  columns.map((c, k) => ({
+                      ts: c.ts,
+                      precip: c.precip,
+                      convective: convective[k].alone,
+                  })),
+              );
+    columns.forEach((c, k) => {
+        const { base, top } = convective[k];
+        if (!showers[k] || base == null || top == null) return;
+        c.showerBase = base;
+        c.showerTop = top;
+    });
 
     return columns;
 };
@@ -2466,11 +2458,13 @@ const SKY = {
         top: [58, 120, 186] as RGB3,
         bottom: [120, 176, 226] as RGB3,
         cloud: [206, 214, 225] as RGB3,
+        glow: [240, 243, 248] as RGB3,
     },
     night: {
         top: [9, 16, 38] as RGB3,
         bottom: [20, 34, 68] as RGB3,
         cloud: [92, 104, 130] as RGB3,
+        glow: [158, 170, 196] as RGB3,
     },
 };
 
@@ -2518,6 +2512,8 @@ export const skyColors = (night: number) => {
         top: lerp3(SKY.day.top, SKY.night.top, t),
         bottom: lerp3(SKY.day.bottom, SKY.night.bottom, t),
         cloud: lerp3(SKY.day.cloud, SKY.night.cloud, t),
+        // Halo des nuages plus hauts que le graphique : plus clair que les nuages eux-mêmes
+        glow: lerp3(SKY.day.glow, SKY.night.glow, t),
     };
 };
 

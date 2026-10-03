@@ -922,6 +922,14 @@ describe('nuages bas, mer de nuages et relief accroché', () => {
         );
     });
 
+    it('mer de nuages dont le sommet tombe sur un niveau du modèle : l’air du dessus est celui du niveau suivant', () => {
+        // Le niveau de 1 601 m, entre deux pas du balayage, est le sommet de la couche : le niveau
+        // « juste au-dessus » est celui de 3 200 m, clair et sec, pas lui
+        const low = lowCloudOf([GROUND, level(913, 90, 0.5), level(1601, 51, 1), ...HIGH])!;
+        expect(low.top).toBe(1601);
+        expect(low.sea).toBe(true);
+    });
+
     it('brouillard : la couche touche le sol quand l’air y est saturé', () => {
         const low = lowCloudOf([
             level(500, 0, 0.3),
@@ -1089,6 +1097,23 @@ describe('plafond nuageux d’heure en heure', () => {
     it('la couche naît à 50 % et se prolonge tant qu’elle garde 40 %', () => {
         const decks = cloudDecksOf([45, 60, 45, 30, 45].map(middle), dry(5));
         expect(decks.map(d => d != null)).toEqual([true, true, true, false, false]);
+    });
+
+    it('elle ne se prolonge qu’à la même altitude : un lambeau plus bas ne prend pas sa place', () => {
+        /** Couche vers 3 200 m, et lambeau de 42 % vers 900 m */
+        const withScrap = (cloud: number) => [
+            GROUND,
+            level(900, 42, 1),
+            level(1600, 0, 8),
+            level(3200, cloud, 0.5),
+            level(4400, 0, 9),
+        ];
+        // La couche faiblit une heure à 45 % : c'est elle qui reste le plafond, pas le lambeau
+        const [, weak] = cloudDecksOf([middle(90), withScrap(45), middle(90)], dry(3));
+        expect(weak!.base).toBeGreaterThan(1600);
+        expect(weak!.joined).toBe(true);
+        // La couche se dissipe : le lambeau, qui n'a jamais atteint 50 %, ne la prolonge pas
+        expect(cloudDecksOf([middle(90), withScrap(0), CLEAR], dry(3))[1]).toBeNull();
     });
 
     it('couche basse : en amas quand les thermiques montent jusqu’à elle, à 300 m près', () => {

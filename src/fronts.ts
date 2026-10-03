@@ -1,7 +1,8 @@
 /**
  * Passages de front : lus sur la carte autour du lieu (sa masse d'air et celle de quatre points
- * voisins), placés au sol et en altitude d'après la prévision du lieu, puis rangés par rapport aux
- * heures qu'affiche le graphique. Sans les points voisins, ils sont repérés sur le lieu seul.
+ * voisins), placés au sol et en altitude d'après la prévision du lieu, puis rangés par jour. Sans
+ * les points voisins, ils sont repérés sur le lieu seul. Un front froid passe à l'heure où l'air
+ * commence à changer, un front chaud à celle où il finit de changer.
  */
 
 import {
@@ -77,8 +78,21 @@ const LOW_AIR_STEP = 1;
 const GROUND_LEAD = 3;
 /** Heures après la fenêtre où l'on cherche le passage au sol d'un front chaud : il suit l'altitude */
 const GROUND_LAG = 6;
-/** Heures avant (front froid) ou après (front chaud) le passage lu sur la carte où l'on cherche le passage au sol */
+/**
+ * Heures avant (front froid) ou après (front chaud) le changement le plus rapide lu sur la carte où
+ * l'on cherche celui de l'air bas, qui date le passage au sol
+ */
 const MAP_GROUND = 3;
+/**
+ * Un front est le bord de l'air chaud, pas le milieu du changement d'air. Un front froid est le bord
+ * avant de l'air froid : il passe quand l'air commence à changer (le vent tourne, la pression cesse
+ * de baisser), deux à trois heures avant l'heure où il change le plus vite. Un front chaud est le
+ * bord arrière de l'air froid qu'il remplace : il passe quand l'air finit de changer, deux heures
+ * environ après cette heure. Le début (ou la fin) du changement se lit en remontant (ou en
+ * descendant) le temps depuis l'heure où l'air change le plus vite, tant qu'il change encore d'au
+ * moins `rate` K par heure, de `hours` heures au plus.
+ */
+const EDGE = { rate: 0.5, hours: 6 };
 /**
  * Écart minimal (m) entre deux points de la surface d'un front : plus près du sol, l'heure du niveau
  * lu sur la carte est celle du sol ; plus près du milieu de l'air libre, elle en tient lieu
@@ -107,8 +121,9 @@ export interface WindPart {
 export interface Front {
     kind: 'cold' | 'warm' | 'occluded';
     /**
-     * Heure du passage au sol : celle où l'air bas (250 à 1 000 m au-dessus du sol) change le plus
-     * vite, sinon celle où la masse d'air change le plus vite
+     * Heure du passage au sol : celle où l'air bas (250 à 1 000 m au-dessus du sol) commence à
+     * changer pour un front froid, finit de changer pour un front chaud (voir EDGE) ; sinon celle
+     * où la masse d'air commence ou finit de changer
      */
     at: Column;
     /**
@@ -168,10 +183,10 @@ export interface Front {
     between: [number, number] | null;
     /**
      * Surface du front, du sol vers le haut : à chaque altitude (m AMSL), l'heure (timestamp) où le
-     * front y passe. Le sol à l'heure de `at`, le niveau lu sur la carte à l'heure qu'elle donne,
-     * le milieu de la couche de l'air libre à l'heure de `aloft` (sauf si le niveau de la carte est
-     * à cette hauteur ou plus haut : il en tient lieu). Elle ne penche jamais à l'envers : un front
-     * froid passe de plus en plus tard en montant, un front chaud de plus en plus tôt.
+     * front y passe. Le sol à l'heure de `at`, le niveau lu sur la carte à l'heure où elle l'y fait
+     * passer, le milieu de la couche de l'air libre à l'heure de `aloft` (sauf si le niveau de la
+     * carte est à cette hauteur ou plus haut : il en tient lieu). Elle ne penche jamais à l'envers :
+     * un front froid passe de plus en plus tard en montant, un front chaud de plus en plus tôt.
      */
     surface: { z: number; ts: number }[];
 }
@@ -223,6 +238,24 @@ export const thermalAdvection = (c: Column, lat: number): number | null => {
     if (u1 == null || v1 == null || u2 == null || v2 == null || t == null) return null;
     const coriolis = 2 * 7.292e-5 * Math.sin((lat * Math.PI) / 180);
     return -((coriolis * t) / (9.81 * (hi - lo))) * (u1 * v2 - u2 * v1) * 3600;
+};
+
+/**
+ * Heure (indice) où le front passe, quand `serie` change le plus vite à l'heure `k` dans le sens
+ * `sign` : celle où ce changement commence s'il est un refroidissement (front froid), celle où il
+ * finit s'il est un réchauffement (front chaud) ; voir EDGE
+ */
+const edgeOf = (serie: (number | null)[], k: number, sign: number): number => {
+    // Front froid : on remonte le temps ; front chaud : on le descend
+    const step = sign < 0 ? -1 : 1;
+    let at = k;
+    while (at + step >= 0 && at + step < serie.length && Math.abs(at - k) < EDGE.hours) {
+        const a = serie[Math.min(at, at + step)];
+        const b = serie[Math.max(at, at + step)];
+        if (a == null || b == null || (b - a) * sign < EDGE.rate) break;
+        at += step;
+    }
+    return at;
 };
 
 /** Moyenne des valeurs connues ; null s'il n'y en a aucune */
@@ -329,11 +362,16 @@ export interface MapFront {
     /** Début et fin (timestamps) de la fenêtre où la masse d'air change */
     from: number;
     to: number;
-    /** Heure (timestamp) où elle change le plus vite au niveau lu : le passage du front à ce niveau */
+    /** Heure (timestamp) où elle change le plus vite au niveau lu */
     ts: number;
+    /**
+     * Heure (timestamp) où le front passe au niveau lu : celle où la masse d'air commence à changer
+     * pour un front froid, celle où elle finit de changer pour un front chaud (voir EDGE)
+     */
+    passage: number;
     /** Durée de la fenêtre (h) : 6 pour un front franc, 12 pour un front lent */
     window: number;
-    /** Niveau de pression lu (hPa), et son altitude (m AMSL) à l'heure du passage */
+    /** Niveau de pression lu (hPa), et son altitude (m AMSL) à l'heure où le front y passe */
     level: MapLevel;
     z: number | null;
     /** Vitesse de déplacement du front (km/h) et direction d'où il vient (°) ; null si elles ne se lisent pas (voir MOVE) */
@@ -533,14 +571,16 @@ export const mapFronts = (center: AirMass, around: AirMass[], ground: number): M
                         at = k;
                     }
                 }
+                const passage = edgeOf(smooth, at, sign);
                 found.push({
                     kind: sign < 0 ? 'cold' : 'warm',
                     from: center.ts[i],
                     to: center.ts[w.j],
                     ts: center.ts[at],
+                    passage: center.ts[passage],
                     window,
                     level,
-                    z: here.z[at],
+                    z: here.z[passage],
                     ...motionOf(level, i, w.j),
                 });
             });
@@ -660,6 +700,23 @@ export const frontsOf = (cols: Column[], lat: number, map: MapFront[] | null = n
         return a == null || b == null ? null : b - a;
     };
 
+    /**
+     * Heure où le front passe au sol, quand l'air bas change le plus vite à l'heure k dans le sens
+     * `sign` : début du changement pour un front froid, fin pour un front chaud (voir EDGE). Modèle
+     * fourni toutes les 3 heures : entre deux pas tout est interpolé, le changement commence ou
+     * finit à un pas du modèle et le front passe dans le pas voisin, du côté du changement ;
+     * l'heure rendue est le milieu de ce pas.
+     */
+    const lowEdge = (k: number, sign: number) => {
+        const at = edgeOf(low, k, sign);
+        const inward = sign < 0 ? 1 : -1;
+        const here = cols[at].step;
+        const next = cols[at + inward]?.step;
+        if (!here || here[1] > here[0] || !next || next[1] <= next[0]) return at;
+        const half = Math.floor((next[1] - next[0]) / HOUR / 2);
+        return sign < 0 ? Math.min(k, at + half) : Math.max(k, at - half);
+    };
+
     /** Fronts retenus, avec l'heure (indice) où la masse d'air change le plus vite */
     const fronts: (Front & { mid: number })[] = [];
     /** Plus fortes rafales (vent moyen sans elles) entre les heures `from` et `to` ; null hors de la prévision */
@@ -758,16 +815,17 @@ export const frontsOf = (cols: Column[], lat: number, map: MapFront[] | null = n
 
     /**
      * Retient le front dont la masse d'air change de l'heure i à l'heure j, le plus vite à l'heure
-     * `mid`, et trace sa surface. Au sol, il passe à l'heure où l'air bas change le plus vite,
-     * cherchée entre les heures `from` et `to`. À l'altitude `levelZ` (m AMSL) du niveau lu sur la
-     * carte, s'il y en a un, il passe à l'heure `mid` : c'est elle que donne la carte. Plus haut, à
-     * l'heure où l'air libre change le plus vite : après les passages plus bas pour un front froid,
-     * avant pour un front chaud.
+     * `mid`, et trace sa surface. L'heure où l'air bas change le plus vite est cherchée entre les
+     * heures `from` et `to` : au sol, un front froid passe à celle où ce changement commence, un
+     * front chaud à celle où il finit (voir EDGE). À l'altitude `levelZ` (m AMSL) du niveau lu sur
+     * la carte, s'il y en a un, il passe à l'heure `pass` : c'est elle que donne la carte. Plus
+     * haut, à l'heure où l'air libre change le plus vite : après les passages plus bas pour un
+     * front froid, avant pour un front chaud.
      */
     const place = (
         kind: 'cold' | 'warm',
         window: number,
-        [i, j, mid]: [number, number, number],
+        [i, j, mid, pass]: [number, number, number, number],
         [from, to]: [number, number],
         levelZ: number | null = null,
         motion?: { speed: number | null; bearing: number | null },
@@ -778,14 +836,16 @@ export const frontsOf = (cols: Column[], lat: number, map: MapFront[] | null = n
         const top = ground + FRONT_ALOFT;
         // Niveau de la carte au ras du sol : son heure est celle du sol
         const level = levelZ != null && levelZ >= ground + MAP_LEVEL_GAP ? levelZ : null;
-        const at =
-            levelZ != null && level == null
-                ? mid
-                : (steepest(low, from, to, sign, LOW_AIR_STEP) ?? mid);
+        const fastest =
+            levelZ != null && level == null ? null : steepest(low, from, to, sign, LOW_AIR_STEP);
+        const at = fastest == null ? pass : lowEdge(fastest, sign);
         const surface = [{ z: ground, ts: cols[at].ts }];
         let below = at;
         if (level != null) {
-            below = cold ? Math.max(at, mid) : Math.min(at, mid);
+            // Jamais à l'envers du sol, ni à plus de 6 h de lui
+            below = cold
+                ? Math.min(at + MAX_LEAN, Math.max(at, pass))
+                : Math.max(at - MAX_LEAN, Math.min(at, pass));
             surface.push({ z: level, ts: cols[below].ts });
         }
         // Niveau de la carte dans l'air libre : c'est lui qui donne le passage en altitude
@@ -816,11 +876,15 @@ export const frontsOf = (cols: Column[], lat: number, map: MapFront[] | null = n
             const i = indexOf.get(m.from);
             const j = indexOf.get(m.to);
             const mid = indexOf.get(m.ts);
-            if (i == null || j == null || mid == null) continue;
+            const pass = indexOf.get(m.passage);
+            if (i == null || j == null || mid == null || pass == null) continue;
             // Au sol, le front froid passe avant d'atteindre le niveau de la carte, le front chaud après
             const span: [number, number] =
                 m.kind === 'cold' ? [mid - MAP_GROUND, mid] : [mid, mid + MAP_GROUND];
-            place(m.kind, m.window, [i, j, mid], span, m.z, { speed: m.speed, bearing: m.bearing });
+            place(m.kind, m.window, [i, j, mid, pass], span, m.z, {
+                speed: m.speed,
+                bearing: m.bearing,
+            });
         }
     } else {
         // --- Sans la carte : l'air du lieu change en 6 h (front franc), sinon en 12 h (front lent)
@@ -849,7 +913,8 @@ export const frontsOf = (cols: Column[], lat: number, map: MapFront[] | null = n
                 // Au sol, le front froid passe avant d'atteindre l'air libre, le front chaud après
                 const span: [number, number] =
                     sign < 0 ? [i - GROUND_LEAD, w.j] : [i, w.j + GROUND_LAG];
-                place(kind, speed.window, [i, w.j, mid], span);
+                const pass = edgeOf(mass, mid, sign);
+                place(kind, speed.window, [i, w.j, mid, pass], span);
             });
         }
     }
@@ -895,34 +960,6 @@ export const frontsOf = (cols: Column[], lat: number, map: MapFront[] | null = n
     }
 
     return fronts.sort((a, b) => a.at.ts - b.at.ts).map(({ mid: _mid, ...front }) => front);
-};
-
-/** Un front froid passé dans les heures qui précèdent laisse sa traîne ; un front des heures qui suivent s'annonce */
-const FRONT_BEFORE = 12;
-const FRONT_AFTER = 6;
-
-export interface FrontsAround {
-    /** Fronts qui passent entre `start` et `end` */
-    during: Front[];
-    /** Dernier front froid des 12 h qui précèdent */
-    before: Front | null;
-    /** Premier front des 6 h qui suivent */
-    after: Front | null;
-}
-
-/**
- * Fronts (`fronts` : ceux de toute la prévision, dans l'ordre) rangés par rapport aux heures qui vont
- * de `start` à `end` (timestamps) : celles qu'affiche le graphique.
- */
-export const frontsAround = (fronts: Front[], start: number, end: number): FrontsAround => {
-    const before = fronts.filter(
-        f => f.kind === 'cold' && f.at.ts < start && f.at.ts >= start - FRONT_BEFORE * HOUR,
-    );
-    return {
-        during: fronts.filter(f => f.at.ts >= start && f.at.ts <= end),
-        before: before[before.length - 1] ?? null,
-        after: fronts.find(f => f.at.ts > end && f.at.ts <= end + FRONT_AFTER * HOUR) ?? null,
-    };
 };
 
 /**
