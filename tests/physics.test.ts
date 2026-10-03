@@ -54,6 +54,9 @@ import {
     varioAt,
     virgaOf,
     waveOf,
+    downdraftOf,
+    dustDevilsOf,
+    STRONG_DOWNDRAFT,
     wetBulb,
     withSurfaceLayer,
 } from '../src/physics';
@@ -183,7 +186,7 @@ describe('plafond exploitable', () => {
     });
 });
 
-describe('facilité d’exploitation des thermiques', () => {
+describe('qualité des thermiques', () => {
     const cols = columnsOf(saintAndre, 43.97, 6.5);
     // Une bonne heure de thermiques, sans vent, sans pluie ni risque d'orage
     const good = {
@@ -199,7 +202,7 @@ describe('facilité d’exploitation des thermiques', () => {
         for (const c of cols) expect(thermalEase(c) == null).toBe(c.ceiling == null);
     });
 
-    it('faciles quand ils montent bien, assez haut, sans vent fort', () => {
+    it('francs quand ils montent bien, assez haut, sans vent fort', () => {
         expect(thermalEase(good)).toBe('easy');
     });
 
@@ -226,7 +229,7 @@ describe('facilité d’exploitation des thermiques', () => {
         expect(thermalEase({ ...good, choppy: 1 }, good.ceiling + 300)).toBe('choppy');
     });
 
-    it('jamais « faciles » à une heure de pluie ou de risque d’orage', () => {
+    it('jamais « francs » à une heure de pluie ou de risque d’orage', () => {
         // Surdéveloppement, orage, ou au moins 0,5 mm de pluie dans l'heure
         expect(thermalEase({ ...good, stormRisk: 1 })).toBe('unsettled');
         expect(thermalEase({ ...good, stormRisk: 3 })).toBe('unsettled');
@@ -238,7 +241,7 @@ describe('facilité d’exploitation des thermiques', () => {
         expect(thermalEase({ ...good, precip: 2, choppy: 1 })).toBe('choppy');
     });
 
-    it('prévisions réelles : aucune heure « faciles » sous la pluie ou un risque d’orage', () => {
+    it('prévisions réelles : aucune heure « francs » sous la pluie ou un risque d’orage', () => {
         for (const { payload, lat, lon } of SITES) {
             for (const c of columnsOf(payload, lat, lon)) {
                 if (thermalEase(c) === 'easy')
@@ -1288,6 +1291,93 @@ describe('pluie : limite pluie-neige, virga, pas de temps, pression', () => {
         expect(virgaOf({ ...hour, cuBase: 2300, stormRisk: 1 })).toBe(2300);
         // Cumulus de beau temps, même hauts : pas de pluie à évaporer
         expect(virgaOf({ ...hour, cuBase: 2300 })).toBeNull();
+    });
+
+    it('rafale descendante d’une virga : d’autant plus forte que l’air est sec sous le nuage', () => {
+        // Air qui se refroidit de `lapse` K par m, écart au point de rosée donné, base du nuage à 3 000 m
+        const under = (spread: number, lapse = 0.008) => ({
+            ground: 500,
+            showerBase: 3000,
+            cuBase: null,
+            stormRisk: 0 as StormRisk,
+            profile: [500, 1500, 3000, 5500].map(z => ({
+                z,
+                t: 298 - lapse * (z - 500),
+                td: 298 - lapse * (z - 500) - spread,
+                u: 0,
+                v: 0,
+                cloud: 0,
+                p: 950 * Math.exp(-(z - 500) / 8000),
+            })),
+        });
+        const dry = downdraftOf(under(20))!;
+        // Air presque saturé, peu instable : la descente n'a presque pas d'énergie
+        const moist = downdraftOf(under(2, 0.0055))!;
+        expect(dry).toBeGreaterThan(moist);
+        expect(dry).toBeGreaterThan(STRONG_DOWNDRAFT);
+        expect(moist).toBeLessThan(STRONG_DOWNDRAFT);
+        // Sans virga, rien à estimer
+        expect(downdraftOf({ ...under(20), showerBase: 1200 })).toBeNull();
+    });
+
+    it('tourbillons de poussière : thermiques puissants et profonds, vent faible, air et sol secs, soleil', () => {
+        const hour = {
+            ground: 800,
+            ceiling: 2900,
+            thermalTop: 3000,
+            wStar: 2.8,
+            convRatio: 7,
+            t2m: 303,
+            td2m: 285,
+            recentRain: 0,
+            precip: 0,
+            sunCover: 0.1,
+        };
+        expect(dustDevilsOf(hour)).toBe(true);
+        expect(dustDevilsOf({ ...hour, wStar: 2.2 })).toBe(false);
+        expect(dustDevilsOf({ ...hour, thermalTop: 2000 })).toBe(false);
+        // Vent au sol trop fort devant les thermiques
+        expect(dustDevilsOf({ ...hour, convRatio: 3 })).toBe(false);
+        // Air humide, sol mouillé, ciel voilé, pas de thermique
+        expect(dustDevilsOf({ ...hour, td2m: 298 })).toBe(false);
+        expect(dustDevilsOf({ ...hour, recentRain: 4 })).toBe(false);
+        expect(dustDevilsOf({ ...hour, sunCover: 0.6 })).toBe(false);
+        expect(dustDevilsOf({ ...hour, ceiling: null })).toBe(false);
+    });
+
+    it('prévisions réelles : aucun tourbillon signalé sans thermique, sous la pluie ou la nuit', () => {
+        for (const { payload, lat, lon } of SITES) {
+            for (const c of columnsOf(payload, lat, lon)) {
+                if (dustDevilsOf(c))
+                    expect(c.ceiling != null && c.precip < 1 && c.sunElev > 0).toBe(true);
+            }
+        }
+    });
+
+    it('pas du modèle : aucun sur une prévision horaire, ceux qui encadrent l’heure sur une prévision tri-horaire', () => {
+        const hourly = columnsOf(saintAndre, 43.97, 6.5);
+        expect(hourly.every(c => c.step == null)).toBe(true);
+        // La même prévision, dont on ne garde qu'un pas sur trois
+        const coarse = structuredClone(saintAndre) as ForecastPayload;
+        for (const hash of [coarse.data, coarse.sounding, coarse.airgram, coarse.meteogram]) {
+            if (!hash || !Array.isArray(hash.ts)) continue;
+            const n = hash.ts.length;
+            for (const [key, serie] of Object.entries(hash)) {
+                if (Array.isArray(serie) && serie.length === n)
+                    (hash as Record<string, unknown>)[key] = serie.filter((_, i) => i % 3 === 0);
+            }
+        }
+        const cols = buildColumns(toHourly(coarse, 43.97, 6.5), 43.97, 6.5);
+        const HOUR = 3600e3;
+        expect(cols.length).toBeGreaterThan(24);
+        for (const c of cols) {
+            expect(c.step).not.toBeNull();
+            const [from, to] = c.step!;
+            expect(from).toBeLessThanOrEqual(c.ts);
+            expect(to).toBeGreaterThanOrEqual(c.ts);
+            expect([0, 3 * HOUR]).toContain(to - from);
+        }
+        expect(cols.some(c => c.step![1] > c.step![0])).toBe(true);
     });
 
     it('pression au sol en hPa, que Windy la donne en Pa ou en hPa ; null sans elle', () => {

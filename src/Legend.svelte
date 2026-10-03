@@ -120,6 +120,24 @@
                     <span>{tr("Virga : averses dont la base est à plus de 1 500 m du sol. La pluie s’évapore en tombant dans l’air sec et le refroidit : il descend en rafales, même sans pluie au sol", "Virga: showers whose base is more than 1,500 m above the ground. Rain evaporates as it falls through dry air and cools it: the air comes down in gusts, even with no rain at the ground")}</span>
                 </li>
                 <li>
+                    <svg width="26" height="16"
+                        ><path d="M9 2l4 4l4 -4M9 7l4 4l4 -4M9 12l4 4l4 -4" fill="none" stroke="#ef4444" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg
+                    >
+                    <span>{tr("Virga dans un air très sec : trois chevrons rouges. L’air refroidi par la pluie qui s’évapore a de quoi descendre vite (énergie de la descente d’environ 400 J/kg ou plus) : fortes rafales possibles sous le nuage et autour. Seuil non vérifié sur des observations", "Virga in very dry air: three red chevrons. The air cooled by the evaporating rain can come down fast (downdraft energy of about 400 J/kg or more): strong gusts possible under the cloud and around it. Threshold not checked against observations")}</span>
+                </li>
+                <li>
+                    <svg width="26" height="14"
+                        ><rect x="2" y="0" width="22" height="14" rx="2" fill="#1d3a5c" /><path
+                            d="M7 3q6,-4 12,0M9 8q4,-3 8,0M11 12q2,-2 4,0"
+                            fill="none"
+                            stroke="#f3d9a4"
+                            stroke-width="1.8"
+                            stroke-linecap="round"
+                        /></svg
+                    >
+                    <span>{tr("Tourbillons de poussière (« dusts ») possibles, au ras du sol : thermiques puissants (air qui monte à 2,5 m/s ou plus) dans une couche d’au moins 1 500 m, vent au sol faible devant eux, air sec (au moins 10 °C entre la température et le point de rosée), moins de 1 mm de pluie depuis 24 h et plein soleil. Ce sont leurs ingrédients, pas une prévision : aucune observation ne permet de vérifier ces seuils, et le modèle ne dit ni où ni quand ils se forment", "Dust devils possible, at ground level: strong thermals (air rising at 2.5 m/s or more) in a layer at least 1,500 m deep, surface wind light compared with them, dry air (at least 10 °C between temperature and dew point), less than 1 mm of rain in 24 h and full sun. These are their ingredients, not a forecast: no observations can check these thresholds, and the model says neither where nor when they form")}</span>
+                </li>
+                <li>
                     <svg width="26" height="14"
                         ><rect x="2" y="0" width="22" height="14" rx="2" fill="#1d3a5c" /><path
                             d="M5 9q4,-9 8,0t8,0"
@@ -190,20 +208,17 @@
                 </li>
                 <li>
                     <svg width="26" height="14"
-                        ><circle cx="5" cy="7" r="3.8" fill="#ffc94a" /><circle cx="13" cy="7" r="3.8" fill="#ffc94a" /><path
-                            d={halfSky}
-                            fill="#ced6e1"
-                        /><circle cx="21" cy="7" r="3.8" fill="#ced6e1" />{#each [5, 13, 21] as x}<circle
-                                cx={x}
-                                cy="7"
-                                r="3.8"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-opacity="0.55"
-                                stroke-width="0.8"
-                            />{/each}</svg
+                        ><rect x="1" y="3" width="7.5" height="9" rx="1.5" fill="#6b7280" fill-opacity="0.12" /><rect
+                            x="9.25"
+                            y="3"
+                            width="7.5"
+                            height="9"
+                            rx="1.5"
+                            fill="#6b7280"
+                            fill-opacity="0.5"
+                        /><rect x="17.5" y="3" width="7.5" height="9" rx="1.5" fill="#6b7280" /></svg
                     >
-                    <span>{tr("Bandeau « Ciel », au-dessus du graphique : un disque par heure, jaune le jour, bleu sombre la nuit, couvert de gris sur la part du ciel que prennent les nuages, tous étages confondus, y compris plus haut que le graphique. Gris plein : la part qui cache le soleil (les nuages à moins de 1 500 m du sol comptent en entier, ceux à plus de 2 500 m pour 70 %, un voile d’altitude pour 30 %) ; gris léger : celle qui ne fait que le voiler", "“Sky” strip, above the chart: one disc per hour, yellow by day, dark blue by night, covered in grey over the share of the sky taken by clouds at all levels, including higher than the chart. Solid grey: the share that hides the sun (clouds less than 1,500 m above the ground count in full, those more than 2,500 m above it for 70 %, a high veil for 30 %); light grey: the share that only veils it")}</span>
+                    <span>{tr("Bandeau « Ciel », au-dessus du graphique : une case par heure, où est écrite la part du ciel que prennent les nuages (%), tous étages confondus, y compris plus haut que le graphique. La case est d’autant plus grise que le ciel est couvert, de transparente (ciel dégagé) à grise (ciel couvert), de jour comme de nuit", "“Sky” strip, above the chart: one cell per hour, showing the share of the sky taken by clouds (%) at all levels, including higher than the chart. The more overcast the sky, the greyer the cell, from transparent (clear sky) to grey (overcast), by day and by night alike")}</span>
                 </li>
                 <li>
                     <svg width="26" height="14"><rect x="3" y="2" width="20" height="10" rx="3" fill="#06090f" opacity="0.6" /></svg>
@@ -231,7 +246,7 @@
                             fill={FRONT.warm.color}
                         /></svg
                     >
-                    <span>{tr("Passage d’un front chaud : le vent pousse sur le lieu une masse d’air plus chaude, de la même façon. Son trait penche vers l’arrière : le front passe en altitude avant d’arriver au sol. Un front froid passé dans les 12 h qui précèdent le graphique, ou un front attendu dans les 6 h qui suivent, est annoncé au bord avec son heure. La carte est lue en quatre points à 55 km du lieu, chargés après lui : les fronts apparaissent un instant après le graphique. Si ces points ne répondent pas, les fronts sont cherchés sur le lieu seul, et un front peu actif peut manquer", "Warm front passage: the wind pushes a warmer air mass over the place, in the same way. Its line leans backwards: the front passes aloft before reaching the ground. A cold front that passed in the 12 h before the chart, or a front expected in the 6 h after it, is announced at the edge with its hour. The map is read at four points 55 km from the place, loaded after it: fronts appear a moment after the chart. If these points do not answer, fronts are looked for on the place alone, and a weak front can be missed")}</span>
+                    <span>{tr("Passage d’un front chaud : le vent pousse sur le lieu une masse d’air plus chaude, de la même façon. Son trait penche vers l’arrière : le front passe en altitude avant d’arriver au sol. Un front froid passé dans les 12 h qui précèdent le graphique, ou un front attendu dans les 6 h qui suivent, est annoncé au bord avec son heure. La carte est lue en quatre points à 55 km du lieu, chargés après lui : les fronts apparaissent un instant après le graphique. Si ces points ne répondent pas, les fronts sont cherchés sur le lieu seul, et un front peu actif peut manquer. Vitesse : le retard du passage aux points voisins donne la vitesse et la direction du front (infobulle) ; à 50 km/h ou plus, il est dit « rapide ». L’étiquette ajoute les rafales au sol quand elles montent d’au moins 15 km/h au passage (« raf. 55 »). Quand Windy ne fournit le modèle que toutes les 3 heures, l’heure du passage n’est connue qu’à ce pas près : l’étiquette donne les deux heures (« 13h–16h »), et une barre les relie au pied du trait", "Warm front passage: the wind pushes a warmer air mass over the place, in the same way. Its line leans backwards: the front passes aloft before reaching the ground. A cold front that passed in the 12 h before the chart, or a front expected in the 6 h after it, is announced at the edge with its hour. The map is read at four points 55 km from the place, loaded after it: fronts appear a moment after the chart. If these points do not answer, fronts are looked for on the place alone, and a weak front can be missed. Speed: the delay of the passage at the surrounding points gives the speed and direction of the front (tooltip); at 50 km/h or more it is called “fast”. The label adds the surface gusts when they rise by at least 15 km/h at the passage (“gusts 55”). When Windy only provides the model every 3 hours, the hour of the passage is only known to within that step: the label gives both hours (“13h–16h”), and a bar joins them at the foot of the line")}</span>
                 </li>
                 <li>
                     <svg width="26" height="14"
@@ -241,6 +256,12 @@
                         /></svg
                     >
                     <span>{tr("Occlusion : une langue d’air chaud passe en altitude (l’air y gagne puis reperd au moins 1,5 °C), sous un ciel couvert et une pluie de nuages en couches, sans que l’air change près du sol", "Occluded front: a tongue of warm air passes aloft (the air there gains then loses at least 1.5 °C), under an overcast sky and rain from layered cloud, while the air near the ground does not change")}</span>
+                </li>
+                <li>
+                    <svg width="26" height="20"
+                        ><circle cx="13" cy="10" r="8.5" fill="none" stroke="#ef4444" stroke-width="1.3" stroke-dasharray="3 2.5" /><g opacity="0.75"><StormIcon level={2} size={12} x={7} y={4} /></g></svg
+                    >
+                    <span>{tr("Orage cerclé de tirets : le modèle en prévoit un à 55 km (au nord, au sud, à l’est ou à l’ouest), que le vent pousse vers le lieu, sans en prévoir sur le lieu à ces heures. L’icône est à l’heure où il peut arriver ; un bandeau le dit au-dessus des onglets", "Storm in a dashed circle: the model forecasts one 55 km away (north, south, east or west), pushed towards the place by the wind, with none over the place at these hours. The icon sits at the hour it may arrive; a banner says so above the tabs")}</span>
                 </li>
                 <li>
                     <span class="wpp-lg__icons"><StormIcon level={1} size={14} /></span>
@@ -315,7 +336,7 @@
                 </li>
             </ul>
             <div class="wpp-lg__subtitle">
-                {tr('Bandeau « Therm. » : facilité d’exploitation des thermiques', '“Therm.” strip: how easy thermals are to work')}
+                {tr('Bandeau « Therm. » : qualité des thermiques', '“Therm.” strip: thermal quality')}
             </div>
             <svg width="0" height="0" style="position:absolute" aria-hidden="true"
                 ><pattern id="wpp-lg-hatch" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"
@@ -562,7 +583,7 @@
     import { EASE, FRONT } from './Chart.svelte';
     import { STABILITY } from './Emagram.svelte';
     import { INSTABILITY_COLORS, thermalColor, windColor } from './physics';
-    import { arrowPath, cloudBand, cumulusPath, sectorPath } from './svg';
+    import { arrowPath, cloudBand, cumulusPath } from './svg';
     import { tr } from './i18n';
     import StormIcon from './StormIcon.svelte';
 
@@ -605,9 +626,8 @@
     const cu = cumulusPath(13, 13, 22, 12);
     const showerCu = cumulusPath(13, 9, 16, 8.5);
     const emaCloud = cloudBand(1, 25, 12, 3);
-    const halfSky = sectorPath(13, 7, 3.8, 0.5);
 
-    // Bandeau des thermiques, du plus facile au plus difficile à exploiter
+    // Bandeau des thermiques, des plus francs aux plus hachés
     const easeItems = [
         {
             ...EASE.easy,
@@ -619,8 +639,8 @@
         {
             ...EASE.unsettled,
             text: tr(
-                'au moins 0,5 mm de pluie dans l’heure, ou surdéveloppement ou orage signalé en haut de la colonne : la case ne dit rien de la facilité des thermiques',
-                'at least 0.5 mm of rain in the hour, or overdevelopment or a storm flagged at the top of the column: the cell says nothing about how easy thermals are',
+                'au moins 0,5 mm de pluie dans l’heure, ou surdéveloppement ou orage signalé en haut de la colonne : la case ne dit rien de la qualité des thermiques',
+                'at least 0.5 mm of rain in the hour, or overdevelopment or a storm flagged at the top of the column: the cell says nothing about thermal quality',
             ),
         },
         {

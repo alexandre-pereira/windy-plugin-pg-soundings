@@ -86,6 +86,12 @@ export interface Column {
     precipStep: number;
     /** Pression au sol (hPa) ; null si le modèle ne la fournit pas */
     pressure: number | null;
+    /**
+     * Pas de temps du modèle (timestamps) qui encadrent cette heure quand Windy ne fournit l'air en
+     * altitude que toutes les 3 heures (voir toHourly) : entre les deux, tout est interpolé. Les
+     * deux sont égaux à une heure que le modèle fournit ; null quand la prévision est horaire.
+     */
+    step: [number, number] | null;
     sunElev: number;
     /** Couverture nuageuse totale estimée 0-1 */
     cloudCover: number;
@@ -235,10 +241,10 @@ export const CIRCLING_SINK = 1.1;
 export const CORE_FACTOR = 1.25;
 /** Montée au vario minimale (m/s) pour parler de thermique exploitable */
 const MIN_CLIMB = 0.1;
-/** Montée au vario (m/s) et hauteur exploitable (m sol) à partir desquelles un thermique est facile à tenir */
+/** Montée au vario (m/s) et hauteur exploitable (m sol) à partir desquelles un thermique est dit franc */
 const EASY_CLIMB = 0.5;
 const EASY_DEPTH = 300;
-/** Pluie de l'heure (mm) à partir de laquelle un thermique n'est plus dit facile */
+/** Pluie de l'heure (mm) à partir de laquelle un thermique n'est plus dit franc */
 const EASY_RAIN = 0.5;
 const KAPPA = 0.2857;
 /** En dessous de cette hauteur de soleil (°), pas de thermique */
@@ -584,7 +590,7 @@ const smoothStep = (x: number, a: number, b: number) => {
 };
 
 /** Altitude (m) d'une pression (hPa) dans le profil, interpolée en log(p) ; null hors du profil */
-const heightOfPressure = (profile: ProfilePoint[], p: number): number | null => {
+export const heightOfPressure = (profile: ProfilePoint[], p: number): number | null => {
     for (let k = 1; k < profile.length; k++) {
         const a = profile[k - 1];
         const b = profile[k];
@@ -800,18 +806,18 @@ export const varioAt = (c: Column, z: number): number =>
 export const netClimb = (wAir: number) => Math.max(0, CORE_FACTOR * wAir - CIRCLING_SINK);
 
 /**
- * Facilité d'exploitation des thermiques, du plus facile au plus difficile ; `unsettled` : heure de
- * pluie ou de risque d'orage, où rien n'est dit de leur facilité
+ * Qualité des thermiques, des plus francs (`easy`) aux plus hachés ; `unsettled` : heure de pluie
+ * ou de risque d'orage, où rien n'en est dit
  */
 export type ThermalEase = 'easy' | 'unsettled' | 'weak' | 'low' | 'ridge' | 'choppy' | 'rough';
 
 /**
- * Facilité d'exploitation des thermiques d'une heure ; null sans thermique exploitable.
+ * Qualité des thermiques d'une heure ; null sans thermique exploitable.
  * Le vent prime (hachés, puis très hachés : voir `choppy`) ; sinon un thermique reste délicat à
  * tenir quand il monte peu ou que la hauteur exploitable est faible. En montagne, le sol du modèle
  * est l'altitude moyenne de sa maille : un plafond qui le dépasse de 300 m peut rester sous le
  * relief. `crest` : altitude des crêtes voisines (m AMSL, voir relief.ts), null en plaine ; un
- * plafond qui ne les atteint pas est « sous les crêtes ». Un thermique qui serait facile ne l'est
+ * plafond qui ne les atteint pas est « sous les crêtes ». Un thermique qui serait franc ne l'est
  * pas dit à une heure de pluie (au moins 0,5 mm) ou de risque d'orage (surdéveloppement compris) :
  * le bandeau ne doit pas passer au vert sous une averse ou un cumulonimbus.
  */
@@ -1594,6 +1600,82 @@ export const virgaOf = (
     return base != null && base - c.ground >= VIRGA_BASE ? base : null;
 };
 
+/**
+ * Rafale descendante (m/s) que peut donner une virga : l'air pris à la base du nuage, refroidi
+ * jusqu'à son thermomètre mouillé par la pluie qui s'y évapore, descend le long de la
+ * pseudo-adiabatique jusqu'au sol en restant plus froid, donc plus lourd, que l'air qui l'entoure.
+ * L'énergie de cette descente (DCAPE, J/kg) donne une vitesse, √(2 · DCAPE) : c'est un maximum, que
+ * le mélange avec l'air ambiant réduit (sur les prévisions d'essai, environ trois fois les rafales
+ * que le modèle prévoit à ces heures). Elle ne s'affiche donc pas comme une rafale prévue : à
+ * partir de STRONG_DOWNDRAFT (100 km/h, soit une DCAPE d'environ 400 J/kg), la virga est signalée
+ * comme pouvant donner de fortes rafales. null sans virga (voir virgaOf).
+ */
+export const STRONG_DOWNDRAFT = 100 / 3.6;
+
+export const downdraftOf = (
+    c: Pick<Column, 'ground' | 'showerBase' | 'cuBase' | 'stormRisk' | 'profile'>,
+): number | null => {
+    const base = virgaOf(c);
+    if (base == null) return null;
+    const t = interpProfile(c.profile, base, 't');
+    const td = interpProfile(c.profile, base, 'td');
+    if (t == null || td == null) return null;
+    const path = moistAdiabat(
+        c.profile,
+        wetBulb(t, td, pressureAt(c.profile, base)),
+        base,
+        c.ground,
+        50,
+    );
+    let dcape = 0;
+    for (let k = 1; k < path.length; k++) {
+        const z = (path[k - 1].z + path[k].z) / 2;
+        const tp = (path[k - 1].t + path[k].t) / 2;
+        const env = envVirtualTemp(c.profile, z);
+        if (env == null) continue;
+        const parcel = virtualTemp(tp, satMixingRatio(tp, pressureAt(c.profile, z)));
+        dcape += Math.max(0, (G * (env - parcel)) / env) * (path[k - 1].z - path[k].z);
+    }
+    return Math.sqrt(2 * dcape);
+};
+
+/**
+ * Tourbillons de poussière (« dusts ») possibles : les ingrédients que le modèle peut voir.
+ * Thermiques puissants (w* d'au moins 2,5 m/s) dans une couche convective d'au moins 1 500 m,
+ * convection libre (w* ÷ u* d'au moins 5, soit −zi/L ≥ 50 : le vent au sol reste faible devant les
+ * thermiques), air sec au sol (au moins 10 K entre la température et le point de rosée), sol sec
+ * (moins de 1 mm de pluie dans les 24 h qui précèdent et dans l'heure) et soleil (moins de 30 % du
+ * ciel le cache). Seuils tirés de la littérature, non calés : aucune observation de tourbillons ne
+ * permet de les vérifier. Un potentiel sur l'heure, pas un lieu.
+ */
+const DUST = { wStar: 2.5, ratio: 5, depth: 1500, spread: 10, rain: 1, sun: 0.3 };
+
+export const dustDevilsOf = (
+    c: Pick<
+        Column,
+        | 'ceiling'
+        | 'thermalTop'
+        | 'ground'
+        | 'wStar'
+        | 'convRatio'
+        | 't2m'
+        | 'td2m'
+        | 'recentRain'
+        | 'precip'
+        | 'sunCover'
+    >,
+): boolean =>
+    c.ceiling != null &&
+    c.thermalTop != null &&
+    c.wStar >= DUST.wStar &&
+    c.thermalTop - c.ground >= DUST.depth &&
+    c.convRatio != null &&
+    c.convRatio >= DUST.ratio &&
+    c.td2m != null &&
+    c.t2m - c.td2m >= DUST.spread &&
+    c.recentRain + c.precip < DUST.rain &&
+    c.sunCover <= DUST.sun;
+
 /** Vent (m/s) au niveau des crêtes à partir duquel le relief fait onduler l'air : 30 km/h */
 const WAVE_WIND = 30 / 3.6;
 /** Hauteurs (m au-dessus des crêtes) qui bornent les deux couches comparées */
@@ -2288,6 +2370,8 @@ export const buildColumns = (
         });
 
         const freezing = freezingLevelOf(profile);
+        const stepFrom = get('stepFrom', ts);
+        const stepTo = get('stepTo', ts);
 
         columns.push({
             ts,
@@ -2304,6 +2388,7 @@ export const buildColumns = (
             snow: snowPart(data, i, t2m),
             precipStep: Math.max(1, Math.round(num(data.precipStep, i, 1))),
             pressure: surfacePressure(data.pressure?.[i]),
+            step: stepFrom != null && stepTo != null ? [stepFrom, stepTo] : null,
             sunElev,
             cloudCover,
             sunCover,

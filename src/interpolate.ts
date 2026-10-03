@@ -13,6 +13,7 @@
  *   est réparti sur ses 3 heures (pas de triple compte), et la série `precipStep` garde la durée
  *   du pas d'où vient chaque heure ;
  * - autres valeurs (jour/nuit, pictogrammes…) : pas de temps le plus proche.
+ * Les séries `stepFrom` et `stepTo` gardent, pour chaque heure, les pas du modèle qui l'encadrent.
  */
 
 import { type ForecastPayload, snowPart } from './physics';
@@ -24,8 +25,20 @@ const HOUR = 3600e3;
 
 /** Cumuls sur le pas de temps : à répartir, pas à interpoler (noms des séries Windy) */
 const ACCUMULATED = new Set(['precipAmount', 'precipSnowAmount', 'precipConvectiveAmount', 'mm']);
-/** Codes (type de précipitation, pictogramme, phase de lune, jour/nuit) : pas le plus proche */
-const CODES = new Set(['precipType', 'icon', 'icon2', 'moonPhase', 'isDay', 'precipStep']);
+/**
+ * Codes (type de précipitation, pictogramme, phase de lune, jour/nuit) et repères du pas de temps
+ * du modèle : pas le plus proche
+ */
+const CODES = new Set([
+    'precipType',
+    'icon',
+    'icon2',
+    'moonPhase',
+    'isDay',
+    'precipStep',
+    'stepFrom',
+    'stepTo',
+]);
 /** Clés recalculées à partir de l'heure (heure locale) */
 const DERIVED = new Set(['ts', 'hour']);
 
@@ -138,6 +151,12 @@ const interpolateHash = (hash: Hash, offsetAt: (ts: number) => number): Hash => 
             return Math.max(1, Math.round((j > 0 ? src[j] - src[j - 1] : src[1] - src[0]) / HOUR));
         });
     }
+
+    // Pas de temps du modèle qui encadrent chaque heure (les deux sont égaux à une heure qu'il
+    // fournit) : entre les deux, tout est interpolé, et l'heure d'un changement brusque n'est connue
+    // qu'à la durée du pas près
+    out.stepFrom = where.map(({ i, f }) => (f >= 1 ? src[i + 1] : src[i]));
+    out.stepTo = where.map(({ i, f }) => (f <= 0 ? src[i] : src[i + 1]));
 
     out.ts = hours;
     if (Array.isArray(hash.hour)) out.hour = hours.map(t => localHour(t, offsetAt(t)));

@@ -64,6 +64,15 @@ describe('passage au pas horaire', () => {
         ]);
     });
 
+    it('garde les pas du modèle qui encadrent chaque heure', () => {
+        const steps = p.data as { stepFrom?: number[]; stepTo?: number[] };
+        const h = (k: number) => start + k * HOUR;
+        // À une heure que le modèle fournit, les deux pas sont cette heure ; entre deux, ceux qui l'encadrent
+        expect(steps.stepFrom?.slice(0, 5)).toEqual([h(0), h(0), h(0), h(3), h(3)]);
+        expect(steps.stepTo?.slice(0, 5)).toEqual([h(0), h(3), h(3), h(3), h(6)]);
+        expect([steps.stepFrom?.[9], steps.stepTo?.[9]]).toEqual([h(9), h(9)]);
+    });
+
     it('prévision déjà horaire : chaque heure reçoit la pluie de l’heure qui suit', () => {
         const ts = [0, 1, 2, 3].map(h => start + h * HOUR);
         const hourly = toHourly(
@@ -76,6 +85,8 @@ describe('passage au pas horaire', () => {
         );
         expect(hourly.data.temperature).toEqual([280, 281, 282, 283]);
         expect(hourly.data.precipAmount).toEqual([0, 1.5, 0.5, null]);
+        // Aucun pas à signaler : rien n'est interpolé
+        expect((hourly.data as { stepFrom?: number[] }).stepFrom).toBeUndefined();
     });
 });
 

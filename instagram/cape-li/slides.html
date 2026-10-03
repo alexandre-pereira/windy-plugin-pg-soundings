@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>PG Soundings : CAPE et LI</title>
+<!--
+  Visuel Instagram « CAPE et LI » de PG Soundings (une seule image) :
+    slides.html?f=post   → post 1080 × 1350
+  Le schéma est dessiné ici, à la manière de l'émagramme redressé du plugin (adiabatiques sèches
+  verticales) : la bulle monte droit jusqu'à sa condensation, puis penche vers le chaud. Les paliers
+  sont ceux du plugin (CAPE_LEVELS et liftedIndexColor dans src/physics.ts).
+-->
+<style>
+  :root { --bg1: #3b2a6b; --bg2: #16202c; --bg3: #0d141c; --fg: #eef2f7; --dim: #b5bfcc; --accent: #ffd24a; }
+  html, body { margin: 0; }
+  body { font-family: 'Segoe UI', Roboto, Arial, sans-serif; color: var(--fg); overflow: hidden;
+    background: radial-gradient(circle at 15% 0%, var(--bg1) 0%, var(--bg2) 48%, var(--bg3) 100%); }
+  .page { position: relative; width: 1080px; height: 1350px; box-sizing: border-box; padding: 64px 70px 0; }
+  .tag { display: inline-block; padding: 8px 18px; border-radius: 30px; background: var(--accent); color: #111;
+    font-weight: 800; font-size: 24px; letter-spacing: .5px; }
+  h2 { margin: 22px 0 0; font-size: 62px; line-height: 1.08; letter-spacing: -1px; }
+  h2 em, h3 em { font-style: normal; color: var(--accent); }
+  h3 { margin: 20px 0 0; font-size: 38px; line-height: 1.15; letter-spacing: -.5px; }
+  .row { display: flex; gap: 34px; margin-top: 24px; align-items: stretch; }
+  .card { flex: none; width: 400px; border-radius: 22px; overflow: hidden; box-shadow: 0 30px 70px rgba(0,0,0,.6);
+    border: 2px solid rgba(255,255,255,.12); background: #1d2732; }
+  .card svg { display: block; }
+  .defs { display: flex; flex-direction: column; justify-content: center; gap: 26px; font-size: 27px; line-height: 1.32;
+    color: var(--dim); }
+  .defs b { color: #fff; }
+  .defs .name { display: block; font-size: 34px; font-weight: 800; color: #fff; margin-bottom: 4px; }
+  .defs .name small { font-size: 23px; font-weight: 600; color: var(--dim); }
+  .cape { color: #f59e0b !important; }
+  .li { color: var(--accent) !important; }
+  .levels { margin-top: 18px; font-size: 26px; }
+  .levels > div { display: grid; grid-template-columns: 200px 150px 1fr; align-items: center; }
+  .levels .head { font-size: 21px; font-weight: 700; color: var(--dim); padding: 0 0 6px 30px; letter-spacing: .3px; }
+  .levels .lv { margin-top: 6px; padding: 8px 0 9px 18px; border-left: 12px solid; border-radius: 8px;
+    background: rgba(255,255,255,.07); }
+  .levels .lv b { font-weight: 800; color: #fff; }
+  .note { margin: 10px 0 0; font-size: 21px; color: #8f9bab; }
+  ul.points { list-style: none; padding: 0; margin: 14px 0 0; font-size: 26px; line-height: 1.33; color: var(--dim); }
+  ul.points li { margin: 0 0 8px; padding-left: 46px; position: relative; }
+  ul.points li span { position: absolute; left: 0; top: 0; }
+  ul.points b { color: #fff; }
+  .foot { position: absolute; bottom: 44px; left: 70px; right: 70px; display: flex; justify-content: space-between;
+    font-size: 25px; color: #8f9bab; }
+  .foot b { color: var(--accent); }
+  svg text { font-family: 'Segoe UI', Roboto, Arial, sans-serif; }
+</style>
+</head>
+<body>
+<script>
+  const COLORS = ['#4caf50', '#f5c542', '#f59e0b', '#ef4444'];
+  const LEVELS = [
+    ['&lt; 200', '&gt; 0', 'air stable, convection peu profonde'],
+    ['200 – 650', '0 à −3', 'cumulus bourgeonnants, averses possibles'],
+    ['650 – 1 600', '−3 à −6', 'orages si la convection se déclenche'],
+    ['&gt; 1 600', '&lt; −6', 'orages violents possibles'],
+  ];
+
+  // Altitude z (km) → y ; les courbes sont des points (x, km)
+  const Y = z => 318 - 31 * z;
+  const path = pts => pts.map(([x, z], k) => `${k ? 'L' : 'M'}${x},${Y(z).toFixed(1)}`).join('');
+  // Bulle : droite jusqu'à la condensation (1,5 km), puis de plus en plus chaude que l'adiabatique sèche
+  const parcel = [[112, 0], [112, 1.5], [144, 2.5], [174, 3.5], [202, 4.5], [226, 5.5], [246, 6.5], [264, 7.5], [274, 8.2]];
+  // Air ambiant : couche brassée, petite inversion, puis air qui se refroidit vite avec l'altitude
+  const air = [[112, 0], [112, 1.2], [134, 1.7], [144, 2.7], [154, 3.5], [165, 4.5], [178, 5.5], [198, 6.5], [237, 7.5], [274, 8.2], [312, 8.8]];
+  // Surface entre les deux courbes, de leur croisement (convection libre) au sommet
+  const area = path([[141, 2.4], ...parcel.slice(2), ...air.slice(3, 9).reverse()]) + 'Z';
+  const yLi = Y(5.5);
+
+  const sketch = `
+    <svg width="400" height="372" viewBox="0 0 400 372">
+      <rect x="0" y="${Y(0)}" width="400" height="${372 - Y(0)}" fill="#6b4f3a" opacity=".55"/>
+      <line x1="86" y1="24" x2="86" y2="${Y(0)}" stroke="#b5bfcc" stroke-opacity=".35" stroke-width="2"/>
+      <text x="14" y="${Y(0) - 8}" font-size="17" fill="#b5bfcc">sol</text>
+      <text x="14" y="34" font-size="17" fill="#b5bfcc">altitude</text>
+      <line x1="86" y1="${yLi}" x2="386" y2="${yLi}" stroke="#b5bfcc" stroke-opacity=".5" stroke-width="2" stroke-dasharray="5 6"/>
+      <text x="14" y="${yLi + 6}" font-size="17" fill="#b5bfcc">5 500 m</text>
+      <path d="${area}" fill="#f59e0b" fill-opacity=".6"/>
+      <path d="${path(air)}" fill="none" stroke="#eef2f7" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+      <path d="${path(parcel)}" fill="none" stroke="#ffd24a" stroke-width="4" stroke-dasharray="11 7" stroke-linejoin="round" stroke-linecap="round"/>
+      <circle cx="112" cy="${Y(0)}" r="7" fill="#ffd24a"/>
+      <line x1="178" y1="${yLi}" x2="226" y2="${yLi}" stroke="#fff" stroke-width="5"/>
+      <path d="M186,${yLi - 7}L177,${yLi}L186,${yLi + 7}M218,${yLi - 7}L227,${yLi}L218,${yLi + 7}" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="256" y="${yLi - 12}" font-size="27" font-weight="800" fill="#ffd24a">LI</text>
+      <text x="246" y="${yLi + 26}" font-size="17" fill="#b5bfcc">écart bulle – air</text>
+      <text x="236" y="${Y(3.5) + 8}" font-size="27" font-weight="800" fill="#f59e0b">CAPE</text>
+      <line x1="230" y1="${Y(3.5)}" x2="196" y2="${Y(4)}" stroke="#f59e0b" stroke-width="3" stroke-linecap="round"/>
+      <text x="236" y="${Y(3.5) + 32}" font-size="17" fill="#b5bfcc">cette surface</text>
+      <g font-size="18" fill="#eef2f7">
+        <line x1="150" y1="${Y(0) + 28}" x2="186" y2="${Y(0) + 28}" stroke="#ffd24a" stroke-width="4" stroke-dasharray="11 7"/>
+        <text x="194" y="${Y(0) + 34}">bulle</text>
+        <line x1="262" y1="${Y(0) + 28}" x2="298" y2="${Y(0) + 28}" stroke="#eef2f7" stroke-width="4"/>
+        <text x="306" y="${Y(0) + 34}">air</text>
+      </g>
+      <text x="386" y="${Y(0) - 8}" font-size="17" fill="#b5bfcc" text-anchor="end">plus chaud →</text>
+    </svg>`;
+
+  document.body.innerHTML = `<div class="page">
+    <div class="tag">MÉTÉO DU VOL LIBRE · ORAGES</div>
+    <h2>CAPE et LI : le <em>carburant<br>des orages</em>, en deux chiffres</h2>
+    <div class="row">
+      <div class="card">${sketch}</div>
+      <div class="defs">
+        <div><span class="name cape">CAPE <small>en J/kg</small></span>L'<b>énergie</b> qu'une bulle d'air gagne en montant dans un air instable. Plus elle est grande, plus le nuage monte haut et vite.</div>
+        <div><span class="name li">LI <small>en °C</small></span>L'air vers 5 500 m, comparé à la bulle arrivée là. <b>Négatif</b> : la bulle est plus chaude, elle monte encore.</div>
+      </div>
+    </div>
+    <div class="levels">
+      <div class="head"><span>CAPE</span><span>LI</span><span>Ce que le modèle annonce</span></div>
+      ${LEVELS.map(([cape, li, text], k) => `<div class="lv" style="border-color:${COLORS[k]}"><b>${cape}</b><b>${li}</b><span>${text}</span></div>`).join('')}
+    </div>
+    <p class="note">Paliers de PG Soundings (CAPE comptée jusqu'à 7 000 m). Un potentiel : il faut aussi un déclencheur.</p>
+    <h3>Pourquoi les regarder <em>plus qu'avant</em> ?</h3>
+    <ul class="points">
+      <li><span>⛈️</span><b>Grosse grêle, rafales brutales, pluies intenses</b> : sur une grande partie de l'Europe, les situations d'<b>orages violents</b> sont plus fréquentes qu'il y a 40 ans.</li>
+      <li><span>🌡️</span>Un air plus chaud peut porter <b>7 % de vapeur d'eau en plus par degré</b> : plus de carburant pour ces phénomènes.</li>
+    </ul>
+    <div class="foot"><span>Plugin gratuit pour <b>Windy.com</b></span><span>PG Soundings 🪂</span></div>
+  </div>`;
+</script>
+</body>
+</html>

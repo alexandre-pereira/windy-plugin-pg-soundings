@@ -21,10 +21,14 @@ estimation est calculée sont décrits dans [README.md](README.md).
 - `src/forecast.ts`, `src/interpolate.ts`, `src/time.ts` : chargement d'un point et de ses quatre
   points voisins (pour les fronts), passage au pas horaire, heure locale
 - `src/Chart.svelte`, `src/Emagram.svelte`, `src/Legend.svelte`, `src/StormBanner.svelte`,
-  `src/StormIcon.svelte`, `src/FrontIcon.svelte`, `src/ModelPicker.svelte`, `src/svg.ts` : affichage
+  `src/StormNearby.svelte`, `src/StormIcon.svelte`, `src/FrontIcon.svelte`, `src/ModelPicker.svelte`,
+  `src/svg.ts` : affichage
 - `src/fronts.ts` : passages de front, lus sur la carte autour du lieu (points voisins) sur toute la
   prévision et dessinés par le graphique
+- `src/nearby.ts` : orage d'un point voisin qui se dirige vers le lieu
 - `src/relief.ts` : altitude des crêtes voisines, lue auprès de Windy autour du lieu choisi
+- `src/level.ts` : altitude de la carte de Windy (niveau le plus proche d'une altitude du graphique,
+  et altitude d'un niveau), synchronisée avec le graphique
 - `src/scrub.ts` : lecture au doigt du graphique et de l'émagramme (appui maintenu, puis glissé)
 - `src/update.ts` : recherche d'une version plus récente sur windy-plugins.com
 - `src/pluginConfig.ts` : nom, version et description envoyés à Windy
@@ -41,8 +45,8 @@ estimation est calculée sont décrits dans [README.md](README.md).
   (`src/i18n.ts`).
 - Les modules `@windy/*` n'existent que dans Windy. Les calculs testés n'en dépendent pas, ou
   passent par un bouchon de `tests/stubs/` déclaré dans `vitest.config.ts`.
-- Un changement de calcul dans `physics.ts`, `interpolate.ts`, `time.ts` ou
-  `fronts.ts` va avec son test dans `tests/`, et avec la mise à jour de « Comment sont calculées les estimations » dans le
+- Un changement de calcul dans `physics.ts`, `interpolate.ts`, `time.ts`, `fronts.ts`,
+  `nearby.ts` ou `level.ts` va avec son test dans `tests/`, et avec la mise à jour de « Comment sont calculées les estimations » dans le
   README si une méthode ou un seuil change.
 - Classes CSS préfixées `wpp-`. Prettier : 4 espaces, guillemets simples, 100 colonnes.
 - Les textes publiés (interface, README, changelog, Instagram) décrivent le plugin dans ses propres

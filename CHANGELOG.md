@@ -8,6 +8,67 @@ Le dépôt git ne commence qu'après la 1.2.7 : les entrées plus anciennes ont 
 coup à partir des notes de publication. Chaque version reste installable depuis Windy à l'adresse
 `https://windy-plugins.com/2727410/<nom-du-plugin>/<version>/plugin.min.js`.
 
+## [1.8.0] - 2026-10-03
+
+Les valeurs affichées ne changent pas : plafonds, ascendances, seuils et heures des fronts restent
+ceux de la 1.7.0. Cette version ajoute des signaux sur les phénomènes forts (fronts rapides, sauts
+de vent, tourbillons de poussière, rafales descendantes, orages voisins) et relie le lieu et
+l'altitude du plugin à la carte de Windy.
+
+### Ajouté
+
+- Fronts : leur vitesse et la direction d'où ils viennent, lues sur le retard de leur passage aux
+  quatre points voisins. L'infobulle les donne (« ~45 km/h de O »), et un front d'au moins 50 km/h
+  est nommé « rapide » sur le graphique, au bord et dans l'infobulle.
+- Fronts : saut de vent au sol. Quand les rafales montent d'au moins 15 km/h au passage et
+  atteignent 30 km/h, l'étiquette du front les ajoute (« raf. 55 ») et l'infobulle donne les
+  rafales avant et après.
+- Fronts : passage brutal. Quand l'essentiel du changement d'air se fait en 2 heures, l'infobulle
+  donne la variation de température de ces 2 heures.
+- Fronts : avec un modèle que Windy ne fournit que toutes les 3 heures, le passage au sol est
+  donné entre deux heures (« 13h–16h ») au lieu d'une heure interpolée, et une barre relie ces
+  deux heures au pied du trait.
+- Tourbillons de poussière (« dusts ») : un entonnoir au ras du sol signale les heures qui en
+  réunissent les ingrédients (thermiques puissants et profonds, vent faible au sol, air et sol secs,
+  plein soleil). C'est un potentiel : aucune observation ne permet de vérifier ces seuils.
+- Virga : trois chevrons rouges, au lieu de deux orange, quand l'air très sec sous le nuage peut
+  donner de fortes rafales descendantes.
+- Orage voisin : quand le modèle prévoit un orage à 55 km que le vent pousse vers le lieu, sans en
+  prévoir sur le lieu à ces heures, un bandeau le dit au-dessus des onglets (distance, côté, heure,
+  vitesse, heure d'arrivée possible), et son icône cerclée de tirets est posée sur le graphique à
+  l'heure où il peut arriver.
+- L'altitude du plugin et celle de la carte Windy sont synchronisées, comme l'heure et le modèle.
+  Cliquer ou toucher le graphique « Vent & thermiques » à une altitude met la carte au niveau le
+  plus proche (sol, 100 m, niveaux de pression). Le niveau de la carte est repéré sur le graphique
+  par des tirets orange et un triangle sur l'axe des altitudes.
+- Le lieu du plugin suit le sélecteur de la carte Windy (le point qu'on déplace pour lire le
+  vent) : l'ouvrir ou le déplacer charge la prévision de sa position. Tant qu'il est ouvert, c'est
+  lui qui montre le lieu, sans le repère du plugin en plus ; un clic ailleurs sur la carte l'y
+  amène. Le lieu du plugin est ainsi toujours celui qui est mis en valeur sur la carte.
+- Barre de l'heure en haut du graphique « Vent & thermiques », alignée sur ses colonnes : le
+  bouton orange porte l'heure choisie, au sommet du trait orange. Il se déplace au doigt ou à la
+  souris, d'heure en heure, et la journée se lit d'heure en heure avec le bouton ▶. L'heure
+  choisie n'est plus répétée sur l'axe des heures, au pied du trait.
+
+### Modifié
+
+- Choix de l'heure de l'émagramme : le curseur tient sur une seule ligne, sur téléphone aussi.
+  L'heure choisie est écrite au-dessus de son bouton, à la place des heures repères qu'elle
+  recouvre ; les flèches et la lecture sont à ses bouts.
+- Bandeau « Ciel » : une case par heure remplace le disque. La couverture nuageuse y est écrite en
+  pourcentage, et la case va de transparente (ciel dégagé) à grise (ciel couvert), de jour comme
+  de nuit. La part qui cache le soleil et celle qui ne fait que le voiler n'y sont plus
+  distinguées.
+- Graphique « Vent & thermiques » : un clic à la souris choisit l'heure et l'altitude et n'ouvre
+  plus l'émagramme, qui reste à un onglet de là.
+- Barres de défilement de la liste des jours, du graphique et de l'émagramme : fines et sans
+  piste, les mêmes partout. Sous l'émagramme, la barre claire passait pour un second curseur de
+  l'heure.
+- Bandeau « Therm. » : les thermiques des cases vertes sont dits « francs », et non plus
+  « faciles », dans l'infobulle comme dans la légende. La légende nomme le bandeau « qualité des
+  thermiques », au lieu de « facilité d'exploitation des thermiques ». Les couleurs et les seuils
+  ne changent pas.
+
 ## [1.7.0] - 2026-10-03
 
 Cette version modifie le sommet affiché des cumulus des thermiques : il est plus bas qu'avant quand
