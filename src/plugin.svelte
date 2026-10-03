@@ -97,6 +97,10 @@
         {#if stormWatch}
             <StormBanner watch={stormWatch} />
         {/if}
+        <!-- Orage d'un point voisin qui se dirige vers le lieu, quand le modèle n'en prévoit pas ici -->
+        {#if nearbyStorm}
+            <StormNearby storm={nearbyStorm} note={!stormWatch} />
+        {/if}
 
         <!-- Onglets des deux fonctions, légende de l'onglet affiché à droite -->
         <div class="wpp__tabbar">
@@ -133,7 +137,8 @@
                         </button>
                     {/if}
                 </div>
-            {:else if tab === 'chart' && dayColumns.length}
+            {:else if dayColumns.length && selected}
+            {#if tab === 'chart'}
                 <Chart
                     light={lightTheme}
                     columns={dayColumns}
@@ -143,45 +148,55 @@
                     {yMin}
                     {yMax}
                     {nowTs}
-                    selectedTs={selected?.ts ?? null}
+                    selectedTs={selected.ts}
+                    {mapZ}
+                    nearby={nearbyStorm}
                     sunrise={days[dayIndex]?.sunrise ?? null}
                     sunset={days[dayIndex]?.sunset ?? null}
                     utcOffset={dayColumns[Math.floor(dayColumns.length / 2)].utcOffset}
-                    on:select={e => chooseTime(e.detail)}
-                    on:open={e => {
+                    {playing}
+                    on:select={e => {
+                        stopPlay();
                         chooseTime(e.detail);
-                        tab = 'emagram';
                     }}
+                    on:level={e => chooseAltitude(e.detail.ts, e.detail.z)}
+                    on:play={togglePlay}
                 />
-            {:else if tab === 'emagram' && selected}
-            <!-- Curseur de l'heure, à 5 min près ; flèches : heure pleine précédente / suivante -->
+            {:else}
+            <!-- Heure choisie, à 5 min près : curseur sur une seule ligne, l'heure écrite au-dessus de
+                 son bouton à la place des heures repères qu'elle recouvre, et à ses bouts les flèches
+                 (heure pleine précédente / suivante) et la lecture. Le graphique, lui, porte sa
+                 propre barre de l'heure, alignée sur ses colonnes -->
             {@const t0 = dayColumns[0].ts}
             {@const t1 = dayColumns[dayColumns.length - 1].ts}
             <div class="wpp__timebar">
-                <div class="wpp__timehead">
-                    <button
-                        class="wpp__step"
-                        title={tr('Heure précédente', 'Previous hour')}
-                        disabled={selected.ts <= t0}
-                        on:click={() => stepHour(-1)}>‹</button
-                    >
-                    <span class="wpp__time">{localClock(selected.ts)}</span>
-                    <button
-                        class="wpp__step"
-                        title={tr('Heure suivante', 'Next hour')}
-                        disabled={selected.ts >= t1}
-                        on:click={() => stepHour(1)}>›</button
-                    >
-                    <button
-                        class="wpp__step wpp__play"
-                        class:on={playing}
-                        title={playing ? tr('Pause', 'Pause') : tr('Faire défiler la journée', 'Play the day')}
-                        on:click={togglePlay}>{playing ? '❚❚' : '▶'}</button
-                    >
-                </div>
+                <button
+                    class="wpp__step"
+                    title={tr('Heure précédente', 'Previous hour')}
+                    disabled={selected.ts <= t0}
+                    on:click={() => stepHour(-1)}>‹</button
+                >
                 <!-- Piste colorée selon la force des thermiques (nuit assombrie) : les bonnes heures
-                     se voient d'un coup d'œil. Graduations cliquables. -->
+                     se voient d'un coup d'œil. Heures repères cliquables. -->
                 <div class="wpp__slider">
+                    <div class="wpp__ticklabels">
+                        {#each dayColumns.filter(c => c.hour % 3 === 0) as c}
+                            {#if (Math.abs(c.ts - selected.ts) / Math.max(1, t1 - t0)) * sliderPx > 38}
+                                <button
+                                    style="left:calc(10px + (100% - 20px) * {trackPos(c.ts, t0, t1)})"
+                                    on:click={() => {
+                                        stopPlay();
+                                        chooseTime(c.ts);
+                                    }}>{hourShort(c.hour)}</button
+                                >
+                            {/if}
+                        {/each}
+                    </div>
+                    <span
+                        class="wpp__time"
+                        style="left:clamp(24px, calc(10px + (100% - 20px) * {trackPos(selected.ts, t0, t1)}), calc(100% - 24px))"
+                        >{localClock(selected.ts)}</span
+                    >
                     <input
                         class="wpp__range"
                         type="range"
@@ -190,41 +205,33 @@
                         step={SLIDER_STEP}
                         value={selected.ts}
                         style="--wpp-track:{trackGradient}"
-                        aria-label={tr('Heure de l’émagramme', 'Sounding time')}
+                        aria-label={tr('Heure affichée', 'Time shown')}
                         aria-valuetext={localClock(selected.ts)}
                         on:input={e => {
                             stopPlay();
                             chooseTime(Number(e.currentTarget.value));
                         }}
                     />
-                    <div class="wpp__ticks">
-                        {#each dayColumns as c}
-                            <span
-                                class="wpp__tick"
-                                class:major={c.hour % 3 === 0}
-                                style="left:calc(10px + (100% - 20px) * {(c.ts - t0) / Math.max(1, t1 - t0)})"
-                            ></span>
-                        {/each}
-                        {#if nowTs >= t0 && nowTs <= t1}
-                            <span
-                                class="wpp__nowtick"
-                                title={tr('Maintenant', 'Now')}
-                                style="left:calc(10px + (100% - 20px) * {(nowTs - t0) / Math.max(1, t1 - t0)})"
-                            ></span>
-                        {/if}
-                    </div>
-                    <div class="wpp__ticklabels">
-                        {#each dayColumns.filter(c => c.hour % 3 === 0) as c}
-                            <button
-                                style="left:calc(10px + (100% - 20px) * {(c.ts - t0) / Math.max(1, t1 - t0)})"
-                                on:click={() => {
-                                    stopPlay();
-                                    chooseTime(c.ts);
-                                }}>{hourShort(c.hour)}</button
-                            >
-                        {/each}
-                    </div>
+                    {#if nowTs >= t0 && nowTs <= t1}
+                        <span
+                            class="wpp__nowtick"
+                            title={tr('Maintenant', 'Now')}
+                            style="left:calc(10px + (100% - 20px) * {trackPos(nowTs, t0, t1)})"
+                        ></span>
+                    {/if}
                 </div>
+                <button
+                    class="wpp__step"
+                    title={tr('Heure suivante', 'Next hour')}
+                    disabled={selected.ts >= t1}
+                    on:click={() => stepHour(1)}>›</button
+                >
+                <button
+                    class="wpp__step wpp__play"
+                    class:on={playing}
+                    title={playing ? tr('Pause', 'Pause') : tr('Faire défiler la journée', 'Play the day')}
+                    on:click={togglePlay}>{playing ? '❚❚' : '▶'}</button
+                >
             </div>
             <Emagram
                 column={selected}
@@ -318,6 +325,7 @@
                     >
                 </div>
             </div>
+            {/if}
             {:else if payload}
                 <div class="wpp__status">
                     {tr('Pas de données en altitude pour ce jour avec ce modèle.', 'No upper-air data for this day with this model.')}
@@ -399,10 +407,13 @@
 
 <script lang="ts">
     import bcast from '@windy/broadcast';
-    import { loadForecast, loadSurroundings } from './forecast';
+    import { loadForecast, loadSurroundings, type Surrounding } from './forecast';
+    import { nearbyStormOf } from './nearby';
+    import StormNearby from './StormNearby.svelte';
     import { crestOf, loadRelief } from './relief';
     import { map, markers } from '@windy/map';
     import { singleclick } from '@windy/singleclick';
+    import { emitter as picker } from '@windy/picker';
     import { setUrl } from '@windy/location';
     import { getGPSlocation } from '@windy/geolocation';
     import * as reverse from '@windy/reverseName';
@@ -418,6 +429,7 @@
     import Legend from './Legend.svelte';
     import ModelPicker from './ModelPicker.svelte';
     import FrontIcon from './FrontIcon.svelte';
+    import { altitudeOfLevel, levelOfAltitude } from './level';
     import StormBanner from './StormBanner.svelte';
     import StormIcon, { STORM_LABELS } from './StormIcon.svelte';
     import { checkForUpdate, installUrl } from './update';
@@ -697,7 +709,7 @@
      * Masse d'air des points voisins du lieu, pour lire sur la carte les fronts qui le traversent :
      * chargée après la prévision du lieu (`for`), qui s'affiche sans l'attendre
      */
-    let surroundings: { for: ForecastPayload; fields: AirMass[] } | null = null;
+    let surroundings: { for: ForecastPayload; fields: Surrounding[] } | null = null;
     const readSurroundings = (center: ForecastPayload, where: LatLon, forModel: ModelId) => {
         loadSurroundings(forModel, where.lat, where.lon, center.header.model).then(fields => {
             if (payload === center) surroundings = { for: center, fields };
@@ -715,7 +727,11 @@
         const { fields } = surroundings;
         const map =
             fields.length >= MAP_MIN_POINTS
-                ? mapFronts(airMassOf(payload, loc.lat, loc.lon), fields, groundModel)
+                ? mapFronts(
+                      airMassOf(payload, loc.lat, loc.lon),
+                      fields.map(f => f.air),
+                      groundModel,
+                  )
                 : null;
         return frontsOf(columns, loc.lat, map);
     })();
@@ -859,6 +875,31 @@
         }
     };
 
+    // Altitude synchronisée avec la carte, dans les deux sens : toucher le graphique à une altitude
+    // met la carte au niveau le plus proche, et le niveau de la carte est repéré sur le graphique
+    const asLevel = (l: unknown) => (typeof l === 'string' ? l : null);
+    let mapLevel: string | null = asLevel(store.get('level'));
+    const onMapLevel = (l: unknown) => (mapLevel = asLevel(l));
+    let levelListener: number | null = null;
+    $: mapZ = selected && mapLevel ? altitudeOfLevel(selected.profile, mapLevel) : null;
+
+    /** Altitude touchée sur le graphique à l'heure `ts` : la carte passe au niveau le plus proche */
+    const chooseAltitude = (ts: number, z: number) => {
+        const col = dayColumns.find(c => c.ts === ts) ?? selected;
+        if (!col) return;
+        // Niveaux que la carte propose pour la couche affichée (vent, nuages…) ; tous, à défaut
+        const offered = store.get('availLevels') as unknown;
+        const levels = Array.isArray(offered) && offered.length ? (offered as string[]) : undefined;
+        const level = levelOfAltitude(col.profile, z, levels);
+        if (!level || level === store.get('level')) return;
+        try {
+            store.set('level', level as ReturnType<typeof store.get<'level'>>);
+            mapLevel = level;
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
     /** Jour choisi dans le panneau : la carte passe à ce jour, à la même heure */
     const chooseDay = async (key: string) => {
         pinnedDay = key;
@@ -955,6 +996,11 @@
     // --- Orages : alerte du jour affiché (heures à venir), et orage attendu dans les 3 h qui
     // suivent l'heure de l'émagramme quand elle n'en a pas elle-même
     $: stormWatch = days[dayIndex] && !days[dayIndex].outOfRange ? stormWatchOf(days[dayIndex].columns, nowTs) : null;
+    // Orage d'un point voisin que le vent pousse vers le lieu, dès que les voisins sont chargés
+    $: nearbyStorm =
+        loc && payload && surroundings?.for === payload && days[dayIndex] && !days[dayIndex].outOfRange
+            ? nearbyStormOf(loc.lat, loc.lon, days[dayIndex].columns, surroundings.fields, nowTs)
+            : null;
     $: stormAhead = selected && selected.stormRisk < 2 ? nextStorm(columns, selected.ts) : null;
 
     const nextStorm = (cols: Column[], t: number) => {
@@ -977,6 +1023,11 @@
               )
             : '');
 
+    /** Position d'un instant sur la course du curseur (0 à 1) */
+    const trackPos = (t: number, t0: number, t1: number) => (t - t0) / Math.max(1, t1 - t0);
+    /** Largeur (px) approchée de la piste du curseur : celle du bloc, moins les trois boutons */
+    $: sliderPx = Math.max(60, chartWidth - 120);
+
     /**
      * Fond de la piste du curseur : couleur de la force des thermiques heure par heure, gris la nuit.
      * Aligné sur la course du bouton du curseur (demi-bouton de 10 px à chaque bout).
@@ -992,7 +1043,10 @@
         return `linear-gradient(to right, ${stops.join(', ')})`;
     })();
 
-    // Lecture automatique : la journée défile par pas de 10 min
+    // Lecture automatique : la journée défile d'heure en heure sur le graphique (ses colonnes sont
+    // des heures), par pas de 10 min sur l'émagramme
+    /** Durée (ms) d'un pas de la lecture : une heure du graphique, 10 min de l'émagramme */
+    const PLAY_MS = { chart: 700, emagram: 160 };
     let playing = false;
     let playTimer: ReturnType<typeof setInterval> | null = null;
     const stopPlay = () => {
@@ -1006,11 +1060,16 @@
         const end = dayColumns[dayColumns.length - 1].ts;
         if (selected.ts >= end) chooseTime(dayColumns[0].ts);
         playing = true;
+        const hourly = tab === 'chart';
         playTimer = setInterval(() => {
             const cur = selected?.ts ?? end;
             if (cur >= end) return stopPlay();
-            chooseTime(Math.min(end, cur + 2 * SLIDER_STEP));
-        }, 160);
+            // Heure pleine suivante, ou 10 min plus tard
+            const next = hourly
+                ? (Math.floor(cur / HOUR_MS + 1e-9) + 1) * HOUR_MS
+                : cur + 2 * SLIDER_STEP;
+            chooseTime(Math.min(end, next));
+        }, PLAY_MS[hourly ? 'chart' : 'emagram']);
     };
     // Changement d'onglet, de jour ou de lieu : on arrête la lecture (elle court jusqu'à la fin de
     // la journée où elle a été lancée)
@@ -1090,6 +1149,45 @@
         marker?.remove();
         marker = null;
     };
+    const showMarker = (lat: number, lon: number) => {
+        removeMarker();
+        marker = new L.Marker({ lat, lng: lon }, { icon: markers.pulsatingIcon }).addTo(map);
+    };
+
+    // --- Sélecteur de la carte (le point de Windy qu'on déplace pour lire le vent) : un seul lieu
+    // est mis en valeur sur la carte, celui du plugin. Quand le sélecteur s'ouvre ou se déplace, le
+    // lieu du plugin le rejoint, et c'est lui qui montre le lieu tant qu'il est ouvert ; quand le
+    // lieu change autrement (clic sur la carte), le sélecteur ouvert vient s'y placer. Sans
+    // sélecteur, le lieu est montré par le repère du plugin.
+    /** Position du sélecteur de la carte ; null quand il est fermé */
+    let pickerAt: LatLon | null = null;
+    /** Écart (°) sous lequel deux positions sont le même lieu : une cinquantaine de mètres */
+    const SAME_SPOT = 5e-4;
+    const sameSpot = (a: LatLon | null, b: LatLon | null) =>
+        !!a && !!b && Math.abs(a.lat - b.lat) < SAME_SPOT && Math.abs(a.lon - b.lon) < SAME_SPOT;
+    /** Délai (ms) après le dernier déplacement du sélecteur avant de charger son lieu */
+    const PICKER_DELAY = 400;
+    let pickerTimer: ReturnType<typeof setTimeout> | null = null;
+    let pickerListeners: number[] = [];
+
+    /** Le sélecteur s'ouvre ou se déplace : le lieu du plugin le rejoint une fois le geste fini */
+    const onPicker = (at: { lat?: number; lon?: number } | undefined) => {
+        const lat = Number(at?.lat);
+        const lon = Number(at?.lon);
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
+        pickerAt = { lat, lon };
+        removeMarker();
+        if (pickerTimer) clearTimeout(pickerTimer);
+        pickerTimer = setTimeout(() => {
+            if (pickerAt && !sameSpot(pickerAt, loc)) setLocation(pickerAt);
+        }, PICKER_DELAY);
+    };
+    /** Le sélecteur se ferme : le repère du plugin reprend sa place */
+    const onPickerClosed = () => {
+        pickerAt = null;
+        if (pickerTimer) clearTimeout(pickerTimer);
+        if (loc) showMarker(loc.lat, loc.lon);
+    };
 
     const setLocation = (latLon: LatLon) => {
         const lat = Number(latLon.lat);
@@ -1100,8 +1198,17 @@
         placeName = '';
         saveLastLocation(lat, lon);
 
-        removeMarker();
-        marker = new L.Marker({ lat, lng: lon }, { icon: markers.pulsatingIcon }).addTo(map);
+        if (!pickerAt) {
+            showMarker(lat, lon);
+        } else if (!sameSpot(pickerAt, loc)) {
+            // Sélecteur ouvert ailleurs : il vient sur le lieu choisi
+            pickerAt = { lat, lon };
+            try {
+                bcast.emit('rqstOpen', 'picker', { lat, lon });
+            } catch (e) {
+                console.error(e);
+            }
+        }
         setUrl(name, { lat, lon });
 
         reverse
@@ -1154,6 +1261,12 @@
         singleclick.on(name, setLocation);
         productListener = store.on('product', onMapProduct);
         timeListener = store.on('timestamp', onMapTime);
+        levelListener = store.on('level', onMapLevel);
+        pickerListeners = [
+            picker.on('pickerOpened', onPicker),
+            picker.on('pickerMoved', onPicker),
+            picker.on('pickerClosed', onPickerClosed),
+        ];
         nowTimer = setInterval(refreshNow, 60e3);
         document.addEventListener('visibilitychange', refreshNow);
     });
@@ -1165,6 +1278,9 @@
         singleclick.off(name, setLocation);
         if (productListener !== null) store.off(productListener);
         if (timeListener !== null) store.off(timeListener);
+        if (levelListener !== null) store.off(levelListener);
+        pickerListeners.forEach(id => picker.off(id));
+        if (pickerTimer) clearTimeout(pickerTimer);
         removeMarker();
     });
 </script>
@@ -1326,6 +1442,20 @@
             overflow-x: auto;
             margin-bottom: 10px;
             padding-bottom: 2px;
+            // Barre de défilement discrète, la même pour les jours, le graphique et l'émagramme : fine,
+            // sans piste, pour ne pas passer pour un second curseur de l'heure
+            scrollbar-width: thin;
+            scrollbar-color: var(--wpp-border-strong) transparent;
+            &::-webkit-scrollbar {
+                height: 5px;
+            }
+            &::-webkit-scrollbar-track {
+                background: transparent;
+            }
+            &::-webkit-scrollbar-thumb {
+                border-radius: 3px;
+                background: var(--wpp-border-strong);
+            }
         }
         &__day {
             flex: 0 0 auto;
@@ -1567,36 +1697,25 @@
             align-self: stretch;
             box-sizing: border-box;
         }
-        // Curseur de l'heure de l'émagramme
+        // Heure choisie : curseur commun au graphique et à l'émagramme, sur une seule ligne
         &__timebar {
             display: flex;
-            align-items: center;
-            gap: 12px;
-            margin: 2px 0 10px;
+            align-items: flex-end;
+            gap: 5px;
+            margin: 0 0 6px;
         }
-        &__timehead {
-            flex: none;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-        &__time {
-            min-width: 58px;
-            text-align: center;
-            font-size: 20px;
-            font-weight: 700;
-            font-variant-numeric: tabular-nums;
-            color: var(--wpp-fg);
-        }
+        // Flèches et lecture, à la hauteur de la piste
         &__step {
-            width: 30px;
-            height: 30px;
+            flex: none;
+            width: 26px;
+            height: 26px;
+            margin-bottom: -3px;
             padding: 0;
             border: 1px solid var(--wpp-border);
             border-radius: 8px;
             background: var(--wpp-surface);
             color: var(--wpp-fg);
-            font-size: 18px;
+            font-size: 17px;
             line-height: 1;
             cursor: pointer;
 
@@ -1609,8 +1728,53 @@
             }
         }
         &__slider {
+            position: relative;
             flex: 1;
             min-width: 0;
+            // Place des heures repères et de l'heure choisie, au-dessus de la piste
+            padding-top: 17px;
+        }
+        // Heures repères (toutes les 3 h), cliquables
+        &__ticklabels {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 17px;
+
+            button {
+                position: absolute;
+                top: 2px;
+                transform: translateX(-50%);
+                padding: 0 3px;
+                border: none;
+                background: none;
+                color: var(--wpp-fg-faint);
+                font-size: 10.5px;
+                line-height: 14px;
+                cursor: pointer;
+                white-space: nowrap;
+
+                &:hover {
+                    color: var(--wpp-fg);
+                }
+            }
+        }
+        // Heure choisie, au-dessus du bouton du curseur
+        &__time {
+            position: absolute;
+            top: 0;
+            transform: translateX(-50%);
+            padding: 0 7px;
+            border-radius: 8px;
+            background: #f5a623;
+            color: #111;
+            font-size: 12.5px;
+            font-weight: 700;
+            line-height: 16px;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+            pointer-events: none;
         }
         // Curseur : piste épaisse colorée, gros bouton blanc cerclé d'orange (bouton de 20 px)
         &__range {
@@ -1618,7 +1782,7 @@
             appearance: none;
             display: block;
             width: 100%;
-            height: 22px;
+            height: 20px;
             margin: 0;
             background: transparent;
             cursor: pointer;
@@ -1660,56 +1824,19 @@
                 }
             }
         }
-        // Graduations (toutes les heures, plus longues toutes les 3 h) et repère « maintenant »
-        &__ticks {
-            position: relative;
-            height: 6px;
-        }
-        &__tick {
-            position: absolute;
-            top: 0;
-            width: 1px;
-            height: 3px;
-            background: var(--wpp-fg-faint);
-            opacity: 0.6;
-
-            &.major {
-                height: 6px;
-                opacity: 1;
-            }
-        }
+        // Repère « maintenant », en travers de la piste
         &__nowtick {
             position: absolute;
-            top: -16px;
+            bottom: 0;
             width: 2px;
-            height: 22px;
+            height: 20px;
             margin-left: -1px;
             background: #ff5a5a;
             border-radius: 1px;
             pointer-events: none;
         }
-        &__ticklabels {
-            position: relative;
-            height: 16px;
-
-            button {
-                position: absolute;
-                transform: translateX(-50%);
-                padding: 0 3px;
-                border: none;
-                background: none;
-                color: var(--wpp-fg-faint);
-                font-size: 10.5px;
-                cursor: pointer;
-                white-space: nowrap;
-
-                &:hover {
-                    color: var(--wpp-fg);
-                }
-            }
-        }
         &__play {
-            font-size: 11px;
+            font-size: 10px;
 
             &.on {
                 background: #f5a623;
@@ -1805,14 +1932,6 @@
                     padding: 4px 6px;
                 }
             }
-            // Curseur de l'heure : heure et flèches sur une ligne, curseur pleine largeur dessous
-            &__timebar {
-                flex-wrap: wrap;
-                gap: 4px 10px;
-            }
-            &__slider {
-                flex-basis: 100%;
-            }
             // Valeurs sous l'émagramme : deux par ligne, la première à gauche, la seconde calée à
             // droite. Chaque ligne partage sa largeur à sa façon (le vario peut être long).
             &__summary {
@@ -1847,11 +1966,14 @@
             }
             // Au doigt : curseur et flèches plus faciles à attraper
             &__range {
-                height: 28px;
+                height: 26px;
+            }
+            &__nowtick {
+                height: 26px;
             }
             &__step {
-                width: 36px;
-                height: 36px;
+                width: 32px;
+                height: 32px;
             }
             &__check input {
                 width: 18px;

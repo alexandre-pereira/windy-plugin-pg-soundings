@@ -71,9 +71,18 @@ export const surroundingPoints = (lat: number, lon: number): { lat: number; lon:
     ];
 };
 
+/** Point voisin du lieu : sa masse d'air (fronts lus sur la carte) et ses heures (orages voisins) */
+export interface Surrounding {
+    lat: number;
+    lon: number;
+    air: AirMass;
+    columns: Column[];
+}
+
 /**
- * Masse d'air des points voisins du lieu : de quoi lire sur la carte les fronts qui le traversent
- * (voir mapFronts). Un voisin qui ne répond pas, ou que Windy sert avec un autre modèle que `served`
+ * Points voisins du lieu : leur masse d'air, de quoi lire sur la carte les fronts qui le traversent
+ * (voir mapFronts), et leurs heures, de quoi voir un orage qui se dirige vers lui (voir
+ * nearbyStormOf). Un voisin qui ne répond pas, ou que Windy sert avec un autre modèle que `served`
  * (bord du domaine d'un modèle local), manque dans la liste.
  */
 export const loadSurroundings = async (
@@ -82,15 +91,30 @@ export const loadSurroundings = async (
     lon: number,
     served: string,
     days = MAX_DAYS,
-): Promise<AirMass[]> => {
+): Promise<Surrounding[]> => {
     const fields = await Promise.all(
         surroundingPoints(lat, lon).map(p =>
             loadPayload(model, p.lat, p.lon, { header: true, sounding: true }, days)
                 .then(payload =>
-                    payload.header.model === served ? airMassOf(payload, p.lat, p.lon) : null,
+                    payload.header.model === served
+                        ? {
+                              ...p,
+                              air: airMassOf(payload, p.lat, p.lon),
+                              columns: columnsOrNone(payload, p.lat, p.lon),
+                          }
+                        : null,
                 )
                 .catch(() => null),
         ),
     );
-    return fields.filter((f): f is AirMass => f != null);
+    return fields.filter((f): f is Surrounding => f != null);
+};
+
+/** Heures d'un point voisin ; aucune si sa prévision ne suffit pas à les calculer */
+const columnsOrNone = (payload: ForecastPayload, lat: number, lon: number): Column[] => {
+    try {
+        return buildColumns(payload, lat, lon);
+    } catch {
+        return [];
+    }
 };

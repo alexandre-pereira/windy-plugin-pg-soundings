@@ -11,6 +11,7 @@ import {
     frontsOf,
     mapFronts,
     type MapFront,
+    FAST_FRONT,
     thermalAdvection,
 } from '../src/fronts';
 import { toHourly } from '../src/interpolate';
@@ -386,6 +387,10 @@ describe('passages de front', () => {
             expect(Math.abs(found[0].ts - ts[30])).toBeLessThanOrEqual(HOUR);
             expect(found[0].to - found[0].from).toBe(6 * HOUR);
             expect(found[0].z).toBe(1500);
+            // Il avance vers l'est à 40 km/h : sa vitesse et sa direction se lisent sur les voisins
+            expect(found[0].speed!).toBeGreaterThan(34);
+            expect(found[0].speed!).toBeLessThan(46);
+            expect(Math.abs(found[0].bearing! - 270)).toBeLessThan(10);
             // Le même front de l'autre sens : front chaud
             const warm = scene((x, h) => coldFront(x, h).map(v => -v) as [number, number]);
             expect(mapFronts(warm.center, warm.around, DOUSSARD_GROUND).map(f => f.kind)).toEqual([
@@ -420,6 +425,29 @@ describe('passages de front', () => {
             ).toEqual(['cold']);
             const line = scene(coldFront, undefined, [SPOTS[2], SPOTS[3]]);
             expect(mapFronts(line.center, line.around, DOUSSARD_GROUND)).toEqual([]);
+            // Avec deux voisins, le front est vu mais sa vitesse ne se lit pas : il en faut trois
+            expect(mapFronts(corner.center, corner.around, DOUSSARD_GROUND)[0].speed).toBeNull();
+        });
+
+        it('vitesse d’un front : lue sur le retard de son passage chez les voisins, rapide à partir de 50 km/h', () => {
+            /** Front qui avance vers l'est à `kmh` km/h et passe sur le lieu à la 30e heure */
+            const moving =
+                (kmh: number) =>
+                (x: number, hour: number): [number, number] => {
+                    const part = 1 / (1 + Math.exp(-(kmh * (hour - 30) - x) / 40));
+                    return [-16 * part, -7 * part];
+                };
+            const speedOf = (kmh: number) => {
+                const { center, around } = scene(moving(kmh), kmh / 3.6);
+                return mapFronts(center, around, DOUSSARD_GROUND)[0];
+            };
+            const slow = speedOf(25);
+            const fast = speedOf(60);
+            expect(Math.abs(slow.speed! - 25)).toBeLessThan(6);
+            expect(Math.abs(fast.speed! - 60)).toBeLessThan(12);
+            expect(fast.speed!).toBeGreaterThanOrEqual(FAST_FRONT);
+            expect(slow.speed!).toBeLessThan(FAST_FRONT);
+            for (const f of [slow, fast]) expect(Math.abs(f.bearing! - 270)).toBeLessThan(10);
         });
 
         it('masse d’air d’une prévision de Windy : température potentielle et potentielle équivalente par niveau', () => {
@@ -468,10 +496,16 @@ describe('passages de front', () => {
                 window: 6,
                 level: 850,
                 z: ground + 1500,
+                speed: 62,
+                bearing: 285,
             };
             const [f, ...none] = frontsOf(cols, DOUSSARD.lat, [front]);
             expect(none).toEqual([]);
             expect(f.kind).toBe('cold');
+            // La vitesse et la direction lues sur la carte accompagnent le front
+            expect([f.speed, f.bearing]).toEqual([62, 285]);
+            // Prévision horaire : l'heure du passage n'a pas de fourchette
+            expect(f.between).toBeNull();
             // Au sol dans les 3 h qui précèdent le passage de la carte, jamais après
             expect(f.at.ts).toBeGreaterThanOrEqual(cols[27].ts);
             expect(f.at.ts).toBeLessThanOrEqual(cols[29].ts);
@@ -498,6 +532,8 @@ describe('passages de front', () => {
                 window: 6,
                 level: 850,
                 z: null,
+                speed: null,
+                bearing: null,
             };
             expect(fronts(whole(5, undefined, VEERING))).toEqual([]);
             const [f] = frontsOf(whole(5, undefined, VEERING), DOUSSARD.lat, [warm]);
@@ -507,6 +543,53 @@ describe('passages de front', () => {
             // Sans niveau de carte entre l'air bas et l'air libre : sol et air libre seulement
             expect(f.surface.map(p => p.z)).toEqual([ground, ground + 2250]);
         });
+    });
+
+    it('sans la carte, ni vitesse ni direction', () => {
+        const [f] = fronts(whole(-5, wet(30, 36)));
+        expect([f.speed, f.bearing]).toEqual([null, null]);
+    });
+
+    it('passage brutal : l’essentiel du changement d’air en 2 h', () => {
+        // 6 K perdus en 2 h, ou étalés sur 6 h
+        const [sudden] = fronts(whole(-6, wet(30, 36), undefined, 2, 32));
+        expect(sudden.abrupt).toBe(true);
+        expect(sudden.tempStep).toBeCloseTo(-6, 0);
+        const [spread] = fronts(whole(-6, wet(30, 36)));
+        expect(spread.abrupt).toBe(false);
+        expect(Math.abs(spread.tempStep)).toBeLessThan(3);
+    });
+
+    it('saut de vent au sol : rafales des 3 h qui suivent le passage contre celles des 3 h qui précèdent', () => {
+        // Rafales de 20 km/h avant la 33e heure, de 55 km/h ensuite : le front passe pendant le refroidissement
+        const gusty = (after: number) =>
+            whole(-5, i => ({ ...wet(30, 36)(i), gust: (i < 33 ? 20 : after) * KMH }));
+        const [f] = fronts(gusty(55));
+        expect(f.gustJump).toBe(true);
+        expect(f.gustAfter!).toBeCloseTo(55 * KMH, 6);
+        expect(f.gustBefore!).toBeLessThanOrEqual(f.gustAfter!);
+        // Rafales qui montent trop peu, ou qui restent faibles : pas de saut
+        expect(fronts(gusty(28))[0].gustJump).toBe(false);
+        expect(fronts(whole(-5, wet(30, 36)))[0].gustJump).toBe(false);
+    });
+
+    it('modèle fourni toutes les 3 h : le passage au sol est donné entre deux pas du modèle', () => {
+        // Heures 30 à 33 interpolées entre deux pas : le changement d'air y est une rampe
+        const stepped = whole(
+            -6,
+            i => {
+                const from = doussard[Math.floor(i / 3) * 3].ts;
+                const to = doussard[Math.min(doussard.length - 1, Math.ceil(i / 3) * 3)].ts;
+                return { ...wet(30, 36)(i), step: [from, to] as [number, number] };
+            },
+            undefined,
+            3,
+            30,
+        );
+        const [f] = fronts(stepped);
+        expect(f.between).toEqual([doussard[30].ts, doussard[33].ts]);
+        expect(f.at.ts).toBeGreaterThanOrEqual(f.between![0]);
+        expect(f.at.ts).toBeLessThanOrEqual(f.between![1]);
     });
 });
 
@@ -528,6 +611,14 @@ describe('fronts autour des heures affichées', () => {
             rain: 2,
             dry: false,
             gust: null,
+            speed: null,
+            bearing: null,
+            tempStep: 0,
+            abrupt: false,
+            gustBefore: null,
+            gustAfter: null,
+            gustJump: false,
+            between: null,
             surface: [],
         });
         const start = cols[0].ts;

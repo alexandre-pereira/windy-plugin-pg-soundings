@@ -4,8 +4,8 @@ Plugin Windy.com qui affiche, pour un site de vol, un graphique **altitude × he
 
 - **Vent en altitude** : une flèche par tranche d'altitude et par heure (elle pointe dans le sens où va le vent), colorée selon la vitesse, avec la vitesse en km/h
 - **Thermiques** : zone colorée selon la **montée lue au vario** (ascendance au cœur des thermiques moins le taux de chute en spirale, m/s)
-- **Facilité d'exploitation des thermiques** : bandeau « Therm. » sous le graphique, une case par heure,
-  du vert (faciles) au rouge, hachurée quand le vent les hache, grise aux heures de pluie ou de
+- **Qualité des thermiques** : bandeau « Therm. » sous le graphique, une case par heure,
+  du vert (francs) au rouge, hachurée quand le vent les hache, grise aux heures de pluie ou de
   risque d'orage
 - **Plafond exploitable** (ligne blanche) et **cumulus des thermiques** (tours blanches
   bourgeonnantes, de la base au sommet, aux heures de thermiques exploitables, d'autant plus
@@ -21,21 +21,27 @@ Plugin Windy.com qui affiche, pour un site de vol, un graphique **altitude × he
   séparés par des trouées : couche de cumulus que nourrissent les thermiques, **altocumulus**
 - En montagne, tirets là où le **relief est pris dans les nuages**, du sol au niveau des crêtes
   voisines
-- **Ciel de chaque heure** : bandeau « Ciel » au-dessus du graphique, un disque par heure, jaune le
-  jour et bleu sombre la nuit, couvert de gris sur la part du ciel que prennent les nuages, tous
-  étages confondus ; gris plein pour la part qui cache le soleil, gris léger pour celle qui ne fait
-  que le voiler
+- **Ciel de chaque heure** : bandeau « Ciel » au-dessus du graphique, une case par heure où est
+  écrite la couverture nuageuse (%), tous étages confondus ; la case va de transparente (ciel
+  dégagé) à grise (ciel couvert), de jour comme de nuit
 - **Limite pluie-neige** (pointillé pâle) aux heures de précipitations, **virga** (chevrons orange
-  sous une averse à base haute) et **ondes de relief** possibles (vague en haut de la colonne)
+  sous une averse à base haute, trois chevrons rouges quand l'air très sec peut donner de fortes
+  rafales), **ondes de relief** possibles (vague en haut de la colonne) et **tourbillons de
+  poussière** possibles (entonnoir au ras du sol)
 - **Risque d'orage** heure par heure (surdéveloppement possible, orage probable, orage violent
-  possible) et **bandeau d'alerte** les jours d'orage : heure d'arrivée, vitesse de déplacement, rafales
+  possible) et **bandeau d'alerte** les jours d'orage : heure d'arrivée, vitesse de déplacement, rafales.
+  Un **orage voisin** (prévu à 55 km et poussé vers le lieu par le vent, quand le modèle n'en prévoit
+  pas sur le lieu) a son bandeau, et son icône cerclée de tirets à l'heure où il peut arriver
 - **Passages de front**, dessinés comme sur une coupe météo : trait bleu à triangles (front froid),
   rouge à demi-cercles (front chaud) ou violet aux deux symboles (occlusion), avec son étiquette
   (front froid, front froid sec, front chaud, occlusion). Les fronts sont lus sur la carte autour
   du lieu, pas sur le lieu seul. Le trait suit la surface du front : il part du sol à l'heure où le
   front y passe et rejoint l'heure où il passe plus haut ; un front de la nuit ou de la veille est
   annoncé au bord du graphique avec son heure. Le symbole du
-  front suit aussi le nom du jour où il passe, dans la liste des jours
+  front suit aussi le nom du jour où il passe, dans la liste des jours. Un front d'au moins 50 km/h
+  est dit **rapide** ; l'infobulle donne sa vitesse et sa direction, et l'étiquette les rafales au
+  sol quand elles sautent à son passage. Avec un modèle fourni toutes les 3 heures, l'étiquette
+  donne les deux heures entre lesquelles il passe
 - **Nébulosité du modèle** à chaque altitude (voile gris, d'autant plus opaque que le ciel y est
   couvert, halo clair en haut pour les nuages plus hauts que le graphique), **isotherme 0 °C**
   (tirets bleus), relief du modèle
@@ -43,21 +49,33 @@ Plugin Windy.com qui affiche, pour un site de vol, un graphique **altitude × he
   gauche et le LI à droite, chacun sur la couleur de son palier, du vert (stable) au rouge (très
   instable)
 - Infobulle au survol : vent, température, vario et nuages à l'altitude pointée, puis plafond,
-  facilité d'exploitation des thermiques, cumulus, vario max, vent et rafales au sol, T° au sol,
+  qualité des thermiques, cumulus, vario max, vent et rafales au sol, T° au sol,
   isotherme 0 °C, CAPE / LI, pluie ; aux heures que traverse le trait d'un front, le changement de
   température en altitude, la rotation du vent, la pluie autour du passage, les heures du passage
   au sol et en altitude et la remontée de la pression
 - Onglets par jour, choix du modèle (ECMWF, ICON, GFS, ICON-EU, ICON-D2, AROME FR, UKV), altitude max, vue 24 h
-- **Heure et modèle synchronisés avec la carte de Windy**, dans les deux sens : déplacer l'heure de
-  la carte change le jour et l'heure du plugin (trait orange sur le graphique, curseur de
-  l'émagramme), et choisir un jour ou une heure dans le plugin déplace la carte
+- **Heure, altitude et modèle synchronisés avec la carte de Windy**, dans les deux sens : déplacer
+  l'heure de la carte change le jour et l'heure du plugin (trait orange sur le graphique, curseur de
+  l'heure), et choisir un jour ou une heure dans le plugin déplace la carte. Cliquer ou toucher le
+  graphique à une altitude met la carte au niveau le plus proche (sol, 100 m, niveaux de pression),
+  repéré sur le graphique par des tirets orange et un triangle sur l'axe
+- **Lieu synchronisé avec le sélecteur de la carte** (le point de Windy qu'on déplace pour lire le
+  vent) : l'ouvrir ou le déplacer change le lieu du plugin, et cliquer ailleurs sur la carte l'y
+  amène. Un seul lieu est mis en valeur sur la carte : le sélecteur quand il est ouvert, sinon le
+  repère du plugin
+- **Barre de l'heure** en haut du graphique, alignée sur ses colonnes : le bouton orange porte
+  l'heure choisie, au sommet du trait orange qui traverse le graphique. Il se déplace au doigt ou à
+  la souris, d'heure en heure, et la lecture de la journée (▶, dans la marge de l'axe) défile
+  d'heure en heure aussi. Au-dessus de l'émagramme, un **curseur** au pas de 5 minutes, avec les
+  flèches d'heure en heure et la lecture à ses bouts
 - **Vent au sol** : écrit dans le relief brun du graphique, sous la ligne du sol, aux couleurs du
   vent en altitude ; pour chaque heure, le vent moyen (flèche et km/h, « Vent » sur l'axe), puis les
   **rafales** (« Raf. »). Quand le relief est trop mince pour eux, le bas du graphique descend un
   peu sous l'altitude du sol
 - Pluviométrie en bas du graphique principal (barres bleues, en mm) : sous chaque heure, la pluie de
   l'heure qui suit
-- Survolez une colonne pour voir le détail de l'heure, cliquez dessus pour afficher son **émagramme**.
+- Survolez une colonne pour voir le détail de l'heure, cliquez dessus pour choisir cette heure et
+  cette altitude : l'onglet « Émagramme » montre alors le sondage de l'heure choisie.
   Au doigt, touchez une heure pour la lire, ou gardez le doigt appuyé un instant puis glissez : la
   lecture suit le doigt, sur le graphique comme sur l'émagramme
 - **Niveaux du modèle** : des points sur l'axe des altitudes du graphique, et sur les courbes de
@@ -89,7 +107,7 @@ L'interface est en français ou en anglais, selon la langue de Windy.
 Sur <https://www.windy.com/plugins>, choisissez « Load plugin directly from URL » et collez :
 
 ```
-https://windy-plugins.com/2727410/windy-plugin-pg-soundings/1.7.0/plugin.min.js
+https://windy-plugins.com/2727410/windy-plugin-pg-soundings/1.8.0/plugin.min.js
 ```
 
 Le plugin signale ensuite lui-même les nouvelles versions. L'historique est dans
@@ -147,13 +165,13 @@ de pression (souvent 7 niveaux seulement pour ECMWF : rien entre 850 et 700 hPa,
   couche et casse les thermiques alors que le vent moyen reste modéré), ou rapport w\* / u\* sous
   2,3 (turbulence mécanique, u\* tiré du vent à 10 m) ; très hachés au-delà de 40 km/h de vent
   moyen, de 35 km/h de cisaillement, ou sous 1,5
-- classe la **facilité d'exploitation** de chaque heure : très hachés, hachés, sinon faibles (moins
+- classe la **qualité des thermiques** de chaque heure : très hachés, hachés, sinon faibles (moins
   de +0,5 m/s au vario), plafond bas (moins de 300 m au-dessus du sol) ou, en montagne, plafond
   **sous les crêtes** (il n'atteint pas le niveau des crêtes voisines, voir plus bas : le sol du
   modèle est l'altitude moyenne de sa maille, un plafond peut le dépasser de plusieurs centaines de
-  mètres et rester sous le relief), sinon faciles. Une heure de pluie (au moins 0,5 mm) ou de
-  risque d'orage (surdéveloppement compris) n'est jamais dite facile : sa case est grise, « pluie
-  ou orage »
+  mètres et rester sous le relief), sinon francs. Une heure de pluie (au moins 0,5 mm) ou de
+  risque d'orage (surdéveloppement compris) n'est jamais dite « francs » : sa case est grise,
+  « pluie ou orage »
 - affiche une **CAPE et un LI standard** (air mélangé des 100 hPa les plus bas, sans surchauffe), et
   calcule ceux de l'**air le plus instable** des 300 hPa les plus bas, qui nourrit un orage venu
   d'ailleurs même quand l'air près du sol est stable
@@ -237,12 +255,25 @@ de pression (souvent 7 niveaux seulement pour ECMWF : rien entre 850 et 700 hPa,
   le haut du profil, et vaut l'altitude du sol quand la neige l'atteint
 - signale une **virga** quand la base d'un nuage d'averses, ou des cumulus d'une heure de
   surdéveloppement ou d'orage, est à plus de 1 500 m du sol : l'air est alors sec dessous (au moins
-  12 °C entre température et point de rosée au sol), la pluie s'y évapore et le refroidit
+  12 °C entre température et point de rosée au sol), la pluie s'y évapore et le refroidit. Elle est
+  dite **forte** (trois chevrons rouges) quand la descente de cet air a beaucoup d'énergie : l'air
+  pris à la base du nuage, refroidi jusqu'à son thermomètre mouillé, descend le long de la
+  pseudo-adiabatique jusqu'au sol, et l'énergie de cette descente (DCAPE) atteint environ
+  400 J/kg, soit une vitesse théorique √(2 · DCAPE) de 100 km/h. Cette vitesse est un maximum,
+  environ trois fois les rafales que les modèles prévoient à ces heures sur les prévisions d'essai :
+  elle sert de seuil, pas de rafale annoncée, et ce seuil n'est pas vérifié sur des observations
+- signale des **tourbillons de poussière** possibles quand leurs ingrédients sont réunis :
+  w\* d'au moins 2,5 m/s, couche convective d'au moins 1 500 m, rapport w\* / u\* d'au moins 5
+  (convection libre, −zi/L ≥ 50 : le vent au sol reste faible devant les thermiques), au moins
+  10 °C entre la température et le point de rosée au sol, moins de 1 mm de pluie dans les 24 heures
+  et l'heure, et moins de 30 % du ciel qui cache le soleil. Sur un mois de prévisions de 16 sites
+  d'Europe (septembre-octobre), moins de 1 % des heures de thermiques les réunissent. Seuils tirés
+  de la littérature : aucune observation de tourbillons ne permet de les caler
 - montre le **ciel de chaque heure** dans le bandeau « Ciel » : la couverture nuageuse totale
-  (maximum de chaque étage, bas, moyen et haut, puis recouvrement aléatoire entre étages), et la
-  part qui cache le soleil, où les nuages bas comptent en entier, les nuages moyens pour 70 % et
-  les nuages hauts pour 30 %. C'est cette part qui atténue le rayonnement dans le calcul des
-  thermiques. Les **étages** se comptent depuis le sol : bas à moins de 2 000 m du sol, haut à
+  (maximum de chaque étage, bas, moyen et haut, puis recouvrement aléatoire entre étages). Le
+  calcul des thermiques, lui, compte la part qui cache le soleil, où les nuages bas comptent en
+  entier, les nuages moyens pour 70 % et les nuages hauts pour 30 % : c'est elle qui atténue le
+  rayonnement. Les **étages** se comptent depuis le sol : bas à moins de 2 000 m du sol, haut à
   partir de 450 hPa (nuages de glace), moyen entre les deux. L'opacité d'un niveau passe sans
   marche de 100 % à moins de 1 500 m du sol à 70 % à plus de 2 500 m. La hauteur d'un niveau est
   celle de sa pression dans l'atmosphère standard, la même à toute heure. Avec une limite fixe à
@@ -314,10 +345,35 @@ de pression (souvent 7 niveaux seulement pour ECMWF : rien entre 850 et 700 hPa,
   dit où est le front. Le graphique annonce à son bord le dernier front froid des 12 heures qui
   précèdent les heures affichées et le premier front des 6 heures qui suivent, et la liste des
   jours porte le symbole de chaque sorte de front qui passe au sol ce jour-là
+- donne la **vitesse d'un front** et la direction d'où il vient, lues sur la carte : la température
+  potentielle équivalente de chaque point voisin est décalée dans le temps (de −6 à +6 heures, par
+  quart d'heure) jusqu'à se superposer à celle du lieu sur la fenêtre du front, élargie de 3 heures
+  de chaque côté. Ce retard, positif du côté vers lequel le front va, donne avec ceux des autres
+  voisins (il en faut trois) sa lenteur en heures par kilomètre, donc sa vitesse. Elle n'est pas
+  donnée sous 8 km/h ni au-delà de 120 km/h, où les retards deviennent trop petits devant le pas
+  d'une heure. Sur les mêmes prévisions, 94 % des fronts ont une vitesse (médiane 28 km/h pour les
+  fronts froids, 34 pour les fronts chauds), et elle vaut en médiane 1,05 fois le vent du niveau
+  dans le sens du front : un front avance avec le vent qui le pousse. Un front est dit **rapide**
+  à partir de 50 km/h (14 % des fronts). Limite connue : le gradient exigé est une moyenne sur
+  6 heures, qu'un front rapide et étroit dilue ; il peut alors manquer
+- dit un passage **brutal** quand au moins 60 % du changement de masse d'air de la fenêtre se fait
+  en 2 heures (l'infobulle donne alors la variation de température de ces 2 heures), et signale un
+  **saut de vent** au sol quand les plus fortes rafales des 3 heures qui suivent le passage
+  dépassent d'au moins 15 km/h celles des 3 heures qui précèdent et atteignent 30 km/h
+- donne le passage au sol **entre deux heures** quand Windy ne fournit le modèle que toutes les
+  3 heures (compte sans Premium, échéances lointaines) : entre deux pas, tout est interpolé, et un
+  changement brusque devient une pente douce. La fourchette est le pas du modèle où tombe l'heure
+  du passage
+- signale un **orage voisin** : un des quatre points voisins porte un risque d'orage (orage
+  probable ou orage violent possible) entre 8 h et 22 h, le vent qui déplace l'orage (vent moyen du
+  sol à 6 km, au moins 10 km/h) pointe vers le lieu à 45° près, et le modèle ne prévoit pas d'orage
+  sur le lieu entre l'heure de cet orage et 2 heures après son arrivée. L'heure d'arrivée est la
+  distance divisée par la vitesse dans la direction du lieu
 
 Ce sont des **ordres de grandeur**, pas des mesures. Ils ne remplacent ni un vrai modèle
 aérologique ni l'observation sur le terrain.
 
 Le code est dans `src/` : `plugin.svelte` (interface, chargement), `Chart.svelte` (graphique),
 `Emagram.svelte`, `physics.ts` (calculs et couleurs), `interpolate.ts` (pas horaire), `time.ts`
-(heure locale), `fronts.ts` (passages de front), `relief.ts` (crêtes voisines), `scrub.ts` (lecture au doigt).
+(heure locale), `fronts.ts` (passages de front), `nearby.ts` (orages voisins), `relief.ts` (crêtes
+voisines), `level.ts` (altitude de la carte), `scrub.ts` (lecture au doigt).

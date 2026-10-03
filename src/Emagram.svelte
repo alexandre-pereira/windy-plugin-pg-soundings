@@ -1006,7 +1006,20 @@
         overflow-x: auto;
         overflow-y: hidden;
         -webkit-overflow-scrolling: touch;
+        // Barre de défilement discrète, la même pour les jours, le graphique et l'émagramme : fine,
+        // sans piste, pour ne pas passer pour un second curseur de l'heure
         scrollbar-width: thin;
+        scrollbar-color: var(--wpp-border-strong) transparent;
+        &::-webkit-scrollbar {
+            height: 5px;
+        }
+        &::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        &::-webkit-scrollbar-thumb {
+            border-radius: 3px;
+            background: var(--wpp-border-strong);
+        }
     }
 
     .wpp-ema {

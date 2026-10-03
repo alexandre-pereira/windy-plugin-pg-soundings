@@ -140,6 +140,33 @@ export interface Front {
     /** Plus fortes rafales du modèle autour du passage (m/s) ; null s'il n'en fournit pas */
     gust: number | null;
     /**
+     * Vitesse de déplacement du front (km/h) et direction d'où il vient (°), lues sur le retard de
+     * son passage aux points voisins (voir MOVE) ; null sans eux, ou pour une occlusion
+     */
+    speed: number | null;
+    bearing: number | null;
+    /**
+     * Variation de température de l'air (K) entre 750 et 2 000 m au-dessus du sol dans les 2 h qui
+     * encadrent l'heure où la masse d'air change le plus vite, et passage brutal : l'essentiel du
+     * changement de la fenêtre tient dans ces 2 h (voir ABRUPT)
+     */
+    tempStep: number;
+    abrupt: boolean;
+    /**
+     * Vent au sol de part et d'autre du passage : plus fortes rafales (vent moyen si le modèle n'en
+     * fournit pas) des 3 h qui le précèdent et des 3 h qui le suivent (m/s), et saut de vent quand
+     * les secondes dépassent nettement les premières (voir JUMP)
+     */
+    gustBefore: number | null;
+    gustAfter: number | null;
+    gustJump: boolean;
+    /**
+     * Heures (timestamps) entre lesquelles le front passe au sol, quand Windy ne fournit le modèle
+     * que toutes les 3 heures : l'heure du passage (`at`) est alors interpolée, et n'est connue
+     * qu'à ce pas près. null quand la prévision est horaire.
+     */
+    between: [number, number] | null;
+    /**
      * Surface du front, du sol vers le haut : à chaque altitude (m AMSL), l'heure (timestamp) où le
      * front y passe. Le sol à l'heure de `at`, le niveau lu sur la carte à l'heure qu'elle donne,
      * le milieu de la couche de l'air libre à l'heure de `aloft` (sauf si le niveau de la carte est
@@ -229,6 +256,31 @@ const MAP = {
     slow: { window: 12, thetaE: 7, theta: 2.8, advection: 0.15, thetaAdvection: 0.075 },
 };
 const KM_PER_DEG = 111.2;
+/**
+ * Déplacement d'un front, lu sur le retard de son passage aux points voisins : la température
+ * potentielle équivalente d'un voisin est décalée dans le temps (de −`maxLag` à +`maxLag` h, par pas
+ * de `step` h) jusqu'à se superposer à celle du lieu sur la fenêtre du front élargie de `margin` h.
+ * Le voisin ne compte que s'il voit bien le même changement d'air (l'écart qui reste ne dépasse pas
+ * `fit` de la variation du lieu) et que son retard n'est pas au bord de la plage. Les retards d'au
+ * moins `points` voisins donnent la lenteur du front (h/km), donc sa vitesse et sa direction. Hors
+ * de `speed` (km/h), la vitesse n'est pas donnée : front presque immobile, ou retards trop petits
+ * pour être mesurés au pas d'une heure.
+ */
+const MOVE = { margin: 3, maxLag: 6, step: 0.25, fit: 0.5, points: 3, speed: [8, 120] };
+/** Vitesse (km/h) à partir de laquelle un front est dit rapide : 10 km en 12 minutes */
+export const FAST_FRONT = 50;
+/**
+ * Passage brutal : au moins cette part du changement de masse d'air de la fenêtre se fait en 2 h,
+ * autour de l'heure où il est le plus rapide
+ */
+const ABRUPT = 0.6;
+/** Heures comptées avant et après le passage au sol pour le saut de vent */
+const JUMP_HOURS = 3;
+/**
+ * Saut de vent au sol : les plus fortes rafales des 3 h qui suivent le passage dépassent d'au moins
+ * 15 km/h celles des 3 h qui précèdent, et atteignent 30 km/h (m/s)
+ */
+const JUMP = { rise: 15 / 3.6, gust: 30 / 3.6 };
 
 /** Masse d'air d'un point, heure par heure, aux niveaux où la carte est lue */
 export interface AirMass {
@@ -284,6 +336,9 @@ export interface MapFront {
     /** Niveau de pression lu (hPa), et son altitude (m AMSL) à l'heure du passage */
     level: MapLevel;
     z: number | null;
+    /** Vitesse de déplacement du front (km/h) et direction d'où il vient (°) ; null si elles ne se lisent pas (voir MOVE) */
+    speed: number | null;
+    bearing: number | null;
 }
 
 /**
@@ -340,6 +395,75 @@ export const mapFronts = (center: AirMass, around: AirMass[], ground: number): M
         const cxv = sxv - (sx * sv) / m;
         const cyv = syv - (sy * sv) / m;
         return { x: (cxv * cyy - cyv * cxy) / det, y: (cyv * cxx - cxv * cxy) / det };
+    };
+
+    /**
+     * Retard (h) du passage du front au point `p` par rapport au lieu, entre les heures i et j du
+     * lieu (voir MOVE) ; null si le voisin ne voit pas le même changement d'air
+     */
+    const lagOf = (p: (typeof points)[number], level: MapLevel, i: number, j: number) => {
+        const ref = center.levels[level].thetaE;
+        const serie = p.air.levels[level].thetaE;
+        const value = (k: number) => {
+            const m = k < 0 || k >= n ? undefined : p.index?.get(center.ts[k]);
+            return m == null ? null : serie[m];
+        };
+        const from = Math.max(0, i - MOVE.margin);
+        const to = Math.min(n - 1, j + MOVE.margin);
+        /** Variance de `values` ; null s'il en manque */
+        const variance = (values: (number | null)[]) => {
+            if (values.some(v => v == null)) return null;
+            const m = (values as number[]).reduce((a, b) => a + b, 0) / values.length;
+            return (values as number[]).reduce((a, b) => a + (b - m) ** 2, 0) / values.length;
+        };
+        const spread = variance(ref.slice(from, to + 1));
+        if (!spread) return null;
+        let best: { lag: number; err: number } | null = null;
+        for (let lag = -MOVE.maxLag; lag <= MOVE.maxLag + 1e-9; lag += MOVE.step) {
+            const diff: (number | null)[] = [];
+            for (let k = from; k <= to; k++) {
+                // Valeur du voisin `lag` heures après l'heure k, entre deux heures pleines
+                const x = k + lag;
+                const k0 = Math.floor(x);
+                const a = value(k0);
+                const b = x === k0 ? a : value(k0 + 1);
+                const r = ref[k];
+                diff.push(a == null || b == null || r == null ? null : a + (b - a) * (x - k0) - r);
+            }
+            const err = variance(diff);
+            if (err != null && (!best || err < best.err)) best = { lag, err };
+        }
+        if (!best || best.err > MOVE.fit * spread || Math.abs(best.lag) >= MOVE.maxLag) return null;
+        return best.lag;
+    };
+    /** Vitesse (km/h) du front qui change l'air du lieu entre les heures i et j, et direction d'où il vient (°) */
+    const motionOf = (level: MapLevel, i: number, j: number) => {
+        const none = { speed: null, bearing: null };
+        let sxx = 0,
+            syy = 0,
+            sxy = 0,
+            sxt = 0,
+            syt = 0,
+            m = 0;
+        for (const p of points) {
+            const lag = p.index ? lagOf(p, level, i, j) : null;
+            if (lag == null) continue;
+            sxx += p.x * p.x;
+            syy += p.y * p.y;
+            sxy += p.x * p.y;
+            sxt += p.x * lag;
+            syt += p.y * lag;
+            m++;
+        }
+        const det = sxx * syy - sxy * sxy;
+        if (m < MOVE.points || det < 1e-6 * sxx * syy || det <= 0) return none;
+        // Lenteur (h/km) : le front arrive plus tard du côté vers lequel il va
+        const slowX = (sxt * syy - syt * sxy) / det;
+        const slowY = (syt * sxx - sxt * sxy) / det;
+        const slow = Math.hypot(slowX, slowY);
+        const speed = slow > 0 ? 1 / slow : Infinity;
+        if (speed < MOVE.speed[0] || speed > MOVE.speed[1]) return none;
+        return { speed, bearing: ((Math.atan2(-slowX, -slowY) * 180) / Math.PI + 360) % 360 };
     };
 
     const frontsAt = (level: MapLevel): MapFront[] => {
@@ -417,6 +541,7 @@ export const mapFronts = (center: AirMass, around: AirMass[], ground: number): M
                     window,
                     level,
                     z: here.z[at],
+                    ...motionOf(level, i, w.j),
                 });
             });
             return found;
@@ -537,6 +662,35 @@ export const frontsOf = (cols: Column[], lat: number, map: MapFront[] | null = n
 
     /** Fronts retenus, avec l'heure (indice) où la masse d'air change le plus vite */
     const fronts: (Front & { mid: number })[] = [];
+    /** Plus fortes rafales (vent moyen sans elles) entre les heures `from` et `to` ; null hors de la prévision */
+    const strongest10m = (from: number, to: number) => {
+        const hours = cols.slice(Math.max(0, from), Math.min(last, to) + 1);
+        return hours.length ? Math.max(...hours.map(c => c.gust ?? c.windSurf)) : null;
+    };
+    /**
+     * Pas du modèle (timestamps) dans lequel tombe le passage au sol de l'heure `at`, pour un front
+     * de sens `sign` ; null quand la prévision est horaire. À une heure que le modèle fournit, c'est
+     * celui de ses deux pas voisins où l'air bas change le plus.
+     */
+    const betweenOf = (at: number, sign: number): [number, number] | null => {
+        const step = cols[at].step;
+        if (!step) return null;
+        if (step[1] > step[0]) return step;
+        const before = cols[at - 1]?.step;
+        const after = cols[at + 1]?.step;
+        const moved = (s: [number, number] | null | undefined) => {
+            const a = s ? indexOf.get(s[0]) : undefined;
+            const b = s ? indexOf.get(s[1]) : undefined;
+            const va = a == null ? null : (low[a] ?? mass[a]);
+            const vb = b == null ? null : (low[b] ?? mass[b]);
+            return !s || s[1] <= s[0] || va == null || vb == null ? null : (vb - va) * sign;
+        };
+        const mb = moved(before);
+        const ma = moved(after);
+        if (mb == null && ma == null) return null;
+        return (mb ?? -Infinity) >= (ma ?? -Infinity) ? before! : after!;
+    };
+
     const add = (
         kind: Front['kind'],
         window: number,
@@ -546,11 +700,28 @@ export const frontsOf = (cols: Column[], lat: number, map: MapFront[] | null = n
         aloft: number,
         at: number,
         surface: Front['surface'],
+        motion: { speed: number | null; bearing: number | null } = { speed: null, bearing: null },
     ) => {
         // Deux fenêtres qui mènent au même passage au sol sont le même front ; la carte, elle, a déjà
         // fait le tri : seuls deux fronts de même sorte à la même heure se confondent
         const same = (map && kind !== 'occluded' ? 0 : FRONT_WINDOW) * HOUR;
         if (fronts.some(o => o.kind === kind && Math.abs(o.at.ts - cols[at].ts) <= same)) return;
+        // Ce que l'air change en 2 h autour de l'heure où il change le plus vite
+        const two = (serie: (number | null)[]) => {
+            const a = serie[mid - 1];
+            const b = serie[mid + 1];
+            return a == null || b == null ? 0 : b - a;
+        };
+        const start = indexOf.get(cols[mid].ts - (window / 2) * HOUR);
+        const whole = start == null ? null : change(mass, start, window);
+        const tempStep = two(massTemp);
+        const abrupt =
+            kind !== 'occluded' &&
+            !!whole &&
+            Math.abs(whole.d) > 0 &&
+            two(mass) / whole.d >= ABRUPT;
+        const gustBefore = strongest10m(at - JUMP_HOURS, at - 1);
+        const gustAfter = strongest10m(at, at + JUMP_HOURS - 1);
         fronts.push({
             kind,
             at: cols[at],
@@ -566,6 +737,17 @@ export const frontsOf = (cols: Column[], lat: number, map: MapFront[] | null = n
             rain: sig.rain,
             dry: kind === 'cold' && sig.rain < COLD.rain,
             gust: sig.gust,
+            ...motion,
+            tempStep,
+            abrupt,
+            gustBefore,
+            gustAfter,
+            gustJump:
+                gustBefore != null &&
+                gustAfter != null &&
+                gustAfter >= JUMP.gust &&
+                gustAfter - gustBefore >= JUMP.rise,
+            between: kind === 'occluded' ? null : betweenOf(at, kind === 'cold' ? -1 : 1),
             surface,
             mid,
         });
@@ -588,6 +770,7 @@ export const frontsOf = (cols: Column[], lat: number, map: MapFront[] | null = n
         [i, j, mid]: [number, number, number],
         [from, to]: [number, number],
         levelZ: number | null = null,
+        motion?: { speed: number | null; bearing: number | null },
     ) => {
         const cold = kind === 'cold';
         const sign = cold ? -1 : 1;
@@ -623,6 +806,7 @@ export const frontsOf = (cols: Column[], lat: number, map: MapFront[] | null = n
             aloft,
             at,
             surface,
+            motion,
         );
     };
 
@@ -636,7 +820,7 @@ export const frontsOf = (cols: Column[], lat: number, map: MapFront[] | null = n
             // Au sol, le front froid passe avant d'atteindre le niveau de la carte, le front chaud après
             const span: [number, number] =
                 m.kind === 'cold' ? [mid - MAP_GROUND, mid] : [mid, mid + MAP_GROUND];
-            place(m.kind, m.window, [i, j, mid], span, m.z);
+            place(m.kind, m.window, [i, j, mid], span, m.z, { speed: m.speed, bearing: m.bearing });
         }
     } else {
         // --- Sans la carte : l'air du lieu change en 6 h (front franc), sinon en 12 h (front lent)
