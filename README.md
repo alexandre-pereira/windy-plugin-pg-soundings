@@ -106,7 +106,7 @@ Plugin Windy.com qui affiche, pour un site de vol, un graphique **altitude × he
   plus chaude que l'air
 - Légendes accessibles par le bouton **ⓘ Légende** de chaque onglet
 - **Taille du panneau** au choix, dans les réglages en bas du panneau (bouton « Réglages et
-  infos ») : 30, 50 ou 60 % de l'écran (60 % au départ), en largeur sur ordinateur et tablette
+  infos ») : 30, 50, 60 ou 70 % de l'écran (60 % au départ), en largeur sur ordinateur et tablette
   (panneau à droite de la carte), en hauteur sur téléphone (panneau en bas, la carte reste visible
   au-dessus)
 
@@ -117,7 +117,7 @@ L'interface est en français ou en anglais, selon la langue de Windy.
 Sur <https://www.windy.com/plugins>, choisissez « Load plugin directly from URL » et collez :
 
 ```
-https://windy-plugins.com/2727410/windy-plugin-pg-soundings/1.11.0/plugin.min.js
+https://windy-plugins.com/2727410/windy-plugin-pg-soundings/1.12.0/plugin.min.js
 ```
 
 Le plugin signale ensuite lui-même les nouvelles versions. L'historique est dans

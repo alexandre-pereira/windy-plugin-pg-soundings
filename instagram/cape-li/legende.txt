@@ -13,7 +13,7 @@
 ⚠️ Un potentiel, pas une certitude : il faut un déclencheur, et rien ne remplace l'observation du ciel.
 
 📲 CAPE et LI heure par heure dans PG Soundings, le plugin gratuit pour Windy.com. Sur windy.com/plugins, « Load plugin directly from URL », et colle ce lien :
-https://windy-plugins.com/2727410/windy-plugin-pg-soundings/1.11.0/plugin.min.js
+https://windy-plugins.com/2727410/windy-plugin-pg-soundings/1.12.0/plugin.min.js
 
 —
 

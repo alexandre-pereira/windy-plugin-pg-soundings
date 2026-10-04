@@ -8,6 +8,12 @@ Le dépôt git ne commence qu'après la 1.2.7 : les entrées plus anciennes ont 
 coup à partir des notes de publication. Chaque version reste installable depuis Windy à l'adresse
 `https://windy-plugins.com/2727410/<nom-du-plugin>/<version>/plugin.min.js`.
 
+## [1.12.0] - 2026-10-04
+
+### Ajouté
+
+- Taille du panneau : choix de 70 % de l'écran, en plus de 30, 50 et 60 %.
+
 ## [1.11.0] - 2026-10-04
 
 ### Ajouté

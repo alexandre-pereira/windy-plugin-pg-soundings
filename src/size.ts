@@ -13,7 +13,7 @@
 import config from './pluginConfig';
 
 /** Parts de l'écran proposées (%) */
-export const SHARES = [30, 50, 60] as const;
+export const SHARES = [30, 50, 60, 70] as const;
 export type Share = (typeof SHARES)[number];
 /** Part de l'écran tant que l'utilisateur n'a rien choisi */
 const DEFAULT_SHARE: Share = 60;
