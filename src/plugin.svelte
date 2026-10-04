@@ -35,12 +35,17 @@
     {#if !loc}
         <p class="wpp__hint">{tr('Cliquez sur la carte pour choisir un site de vol.', 'Click on the map to choose a flying site.')}</p>
     {:else}
-        <!-- Lieu choisi et modèle, sur une même ligne -->
+        <!-- Modèle et lieu choisi, sur une même ligne ; le nom du lieu ouvre la liste des favoris -->
         <div class="wpp__head">
             <ModelPicker models={MODELS} bind:value={model} />
-            <div class="wpp__name" title={`${loc.lat.toFixed(4)}, ${loc.lon.toFixed(4)}`}>
-                {placeName || `${loc.lat.toFixed(3)}, ${loc.lon.toFixed(3)}`}
-            </div>
+            <PlacePicker
+                name={favHere?.title ?? (placeName || `${loc.lat.toFixed(3)}, ${loc.lon.toFixed(3)}`)}
+                coords={`${loc.lat.toFixed(4)}, ${loc.lon.toFixed(4)}`}
+                {favorites}
+                current={favHere}
+                on:choose={e => goToFavorite(e.detail)}
+                on:toggle={toggleFavorite}
+            />
         </div>
 
         {#if days.length}
@@ -251,23 +256,8 @@
             />
             <!-- Grille fixe : les valeurs changent sur place, rien ne bouge en faisant défiler l'heure -->
             <div class="wpp__summary">
-                <!-- Par paires : sur téléphone, deux valeurs par ligne -->
-                <div class="wpp__pair">
-                    <span
-                        title={tr(
-                            'Altitude où l’ascendance compense encore le taux de chute d’une aile en spirale',
-                            'Height where the climb still beats a glider’s circling sink rate',
-                        )}
-                        >{tr('Plafond', 'Ceiling')} <b>{selected.ceiling != null ? `${r50(selected.ceiling)} m` : '—'}</b></span
-                    >
-                    <span
-                        >Cumulus <b
-                            >{selected.cuBase != null
-                                ? `${r50(selected.cuBase)}–${r50(selected.cuTop ?? selected.cuBase)}${selected.cuTopCapped ? '+' : ''} m`
-                                : '—'}</b
-                        ></span
-                    >
-                </div>
+                <!-- Ce que l'émagramme n'écrit pas lui-même (le plafond, les cumulus et les valeurs au sol y
+                     sont écrits). Par paire : sur téléphone, deux valeurs par ligne -->
                 <div class="wpp__pair">
                     <span
                         title={tr(
@@ -286,16 +276,6 @@
                             >{/if}</span
                     >
                     <span>0 °C <b>{selected.freezing != null ? `${r50(selected.freezing)} m` : '—'}</b></span>
-                </div>
-                <div class="wpp__pair">
-                    <span
-                        >{tr('T° / rosée sol', 'Ground T° / dew')}
-                        <b
-                            >{(selected.t2m - 273.15).toFixed(0)}°{selected.td2m != null
-                                ? ` / ${(selected.td2m - 273.15).toFixed(0)}°`
-                                : ''}</b
-                        ></span
-                    >
                 </div>
                 <!-- Instabilité, sur toute la largeur : CAPE et LI standard avec la pastille de leur palier
                      (voir la légende ; « max » : particule la plus instable, quand de l'air d'altitude a
@@ -335,7 +315,30 @@
         </div>
         </div>
 
-        <!-- Réglages d'affichage secondaires, en bas de page -->
+        <!-- Réglages d'affichage secondaires et informations sur les données, en bas de page : repliés,
+             ouverts à la demande -->
+        <div class="wpp__settings">
+            <button
+                class="wpp__settings-btn"
+                class:wpp__settings-btn--open={settingsOpen}
+                aria-expanded={settingsOpen}
+                on:click={toggleSettings}
+            >
+                <svg class="wpp__settings-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"
+                    ><path d="M4 7h9M19 7h1M4 17h1M11 17h9" /><circle cx="16" cy="7" r="2.5" /><circle
+                        cx="8"
+                        cy="17"
+                        r="2.5"
+                    /></svg
+                >
+                {tr('Réglages et infos', 'Settings & info')}
+                <svg class="wpp__settings-caret" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"
+                    ><path d="M2 4l4 4 4-4" /></svg
+                >
+            </button>
+        </div>
+        {#if settingsOpen}
+        <div bind:this={settingsEl}>
         <div class="wpp__footer">
             <label>
                 {tr('Altitude max', 'Max altitude')}
@@ -381,9 +384,6 @@
                 <label>
                     {side === 'height' ? tr('Hauteur du panneau', 'Panel height') : tr('Largeur du panneau', 'Panel width')}
                     <select bind:value={size}>
-                        <option value="default"
-                            >{side === 'height' ? tr('Plein écran', 'Full screen') : tr('Par défaut', 'Default')}</option
-                        >
                         {#each SHARES as share}
                             <option value={share}>{tr(`${share} % de l’écran`, `${share}% of the screen`)}</option>
                         {/each}
@@ -392,7 +392,7 @@
             {/if}
         </div>
 
-        <!-- Informations sur les données, en bas de page -->
+        <!-- Informations sur les données -->
         {#if payload}
             <dl class="wpp__info">
                 <div>
@@ -417,6 +417,8 @@
                 {/if}
             </dl>
         {/if}
+        </div>
+        {/if}
     {/if}
 </section>
 
@@ -434,6 +436,7 @@
     import * as reverse from '@windy/reverseName';
     import store from '@windy/store';
     import products from '@windy/products';
+    import { isMobileOrTablet } from '@windy/rootScope';
 
     import { onDestroy, onMount, tick } from 'svelte';
 
@@ -448,7 +451,9 @@
     import StormBanner from './StormBanner.svelte';
     import StormIcon, { STORM_LABELS } from './StormIcon.svelte';
     import { checkForUpdate, installUrl } from './update';
-    import { applySize, panelSide, savedSize, saveSize, SHARES, type PanelSide, type PanelSize } from './size';
+    import { applySize, clearSize, panelSide, savedSize, saveSize, SHARES, type PanelSide, type Share } from './size';
+    import { addFavorite, favoriteAt, loadFavorites, removeFavorite, type Favorite } from './favorites';
+    import PlacePicker from './PlacePicker.svelte';
     import { airMassOf, frontDays, frontsOf, mapFronts } from './fronts';
     import { payloadAt } from './interpolate';
     import {
@@ -697,10 +702,21 @@
     let panel: HTMLElement | null = null;
     let root: HTMLElement | null = null;
     let side: PanelSide | null = null;
-    let size: PanelSize = savedSize();
+    let size: Share = savedSize();
     $: saveSize(size);
     $: applySize(root, size);
     let altChoice: 'auto' | number = 'auto';
+
+    // Réglages et informations du bas de page : repliés à l'ouverture du plugin, amenés à l'écran
+    // quand on les ouvre
+    let settingsOpen = false;
+    let settingsEl: HTMLElement | null = null;
+    const toggleSettings = async () => {
+        settingsOpen = !settingsOpen;
+        if (!settingsOpen) return;
+        await tick();
+        settingsEl?.scrollIntoView({ block: 'nearest' });
+    };
     let chartWidth = 760;
     let marker: L.Marker | null = null;
     let requestId = 0;
@@ -1215,6 +1231,8 @@
     // --- Sélecteur de la carte (le point de Windy qu'on déplace pour lire le vent). Quand il
     // s'ouvre ou se déplace, le lieu du plugin le rejoint ; quand le lieu change autrement (clic sur
     // la carte), le sélecteur ouvert vient s'y placer. Le repère du plugin reste affiché avec lui.
+    // Sur téléphone et tablette, le sélecteur est le centre de la carte et s'ouvre dès qu'on la fait
+    // glisser : il n'est pas suivi, sinon déplacer la carte changerait le lieu.
     /** Position du sélecteur de la carte ; null quand il est fermé */
     let pickerAt: LatLon | null = null;
     /** Écart (°) sous lequel deux positions sont le même lieu : une cinquantaine de mètres */
@@ -1270,6 +1288,40 @@
             .catch(() => {});
     };
 
+    // --- Lieux favoris : ceux du compte Windy, relus quand ils changent (ici ou dans Windy). Le lieu
+    // affiché prend le nom du favori sur lequel il est posé.
+    let favorites: Favorite[] = [];
+    let favListener: number | null = null;
+    const refreshFavorites = () => {
+        loadFavorites()
+            .then(f => (favorites = f))
+            .catch(e => console.error(e));
+    };
+    refreshFavorites();
+    $: favHere = favoriteAt(favorites, loc);
+
+    /** Le cœur : ajoute le lieu affiché aux favoris, ou retire le favori sur lequel il est posé */
+    const toggleFavorite = async () => {
+        if (!loc) return;
+        try {
+            if (favHere) await removeFavorite(favHere.id);
+            else await addFavorite(placeName || `${loc.lat.toFixed(3)}, ${loc.lon.toFixed(3)}`, loc);
+        } catch (e) {
+            console.error(e);
+        }
+        refreshFavorites();
+    };
+
+    /** Un favori choisi dans la liste : le lieu y va, et la carte avec lui */
+    const goToFavorite = (f: Favorite) => {
+        setLocation({ lat: f.lat, lon: f.lon });
+        try {
+            map.panTo({ lat: f.lat, lng: f.lon });
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
     // Dernier point choisi, mémorisé dans le navigateur : rouvert quand le plugin s'ouvre sans point
     const LAST_LOC_KEY = 'wpp-last-location';
 
@@ -1315,11 +1367,14 @@
         productListener = store.on('product', onMapProduct);
         timeListener = store.on('timestamp', onMapTime);
         levelListener = store.on('level', onMapLevel);
-        pickerListeners = [
-            picker.on('pickerOpened', onPicker),
-            picker.on('pickerMoved', onPicker),
-            picker.on('pickerClosed', onPickerClosed),
-        ];
+        if (!isMobileOrTablet) {
+            pickerListeners = [
+                picker.on('pickerOpened', onPicker),
+                picker.on('pickerMoved', onPicker),
+                picker.on('pickerClosed', onPickerClosed),
+            ];
+        }
+        favListener = bcast.on('favChanged', refreshFavorites);
         nowTimer = setInterval(refreshNow, 60e3);
         document.addEventListener('visibilitychange', refreshNow);
     });
@@ -1333,9 +1388,10 @@
         if (timeListener !== null) store.off(timeListener);
         if (levelListener !== null) store.off(levelListener);
         pickerListeners.forEach(id => picker.off(id));
+        if (favListener !== null) bcast.off(favListener);
         if (pickerTimer) clearTimeout(pickerTimer);
         removeMarker();
-        applySize(null, 'default');
+        clearSize();
     });
 </script>
 
@@ -1425,20 +1481,13 @@
             font-size: 14px;
         }
         &__head {
+            // Repère de la liste des favoris, qui prend la largeur de la ligne
+            position: relative;
             display: flex;
             align-items: center;
             justify-content: flex-start;
-            gap: 10px;
+            gap: 6px;
             margin: 6px 0 12px;
-        }
-        &__name {
-            flex: 1;
-            min-width: 0;
-            font-size: 17px;
-            font-weight: bold;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
         }
         &__info {
             margin: 14px auto 4px;
@@ -1463,15 +1512,53 @@
                 white-space: nowrap;
             }
         }
+        // Bouton qui ouvre les réglages, repliés pour laisser la place aux graphiques
+        &__settings {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0 8px;
+            padding-top: 10px;
+            border-top: 1px solid var(--wpp-border);
+        }
+        &__settings-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border: 1px solid var(--wpp-border);
+            border-radius: 7px;
+            background: var(--wpp-surface);
+            color: var(--wpp-fg-dim);
+            font: inherit;
+            font-size: 12px;
+            cursor: pointer;
+
+            svg {
+                fill: none;
+                stroke: currentColor;
+                stroke-width: 1.8;
+                stroke-linecap: round;
+            }
+            &:hover,
+            &--open {
+                background: var(--wpp-surface-hover);
+                border-color: var(--wpp-border-strong);
+                color: var(--wpp-fg);
+            }
+        }
+        &__settings-caret {
+            transition: transform 0.15s;
+        }
+        &__settings-btn--open &__settings-caret {
+            transform: rotate(180deg);
+        }
         &__footer {
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
             gap: 8px 20px;
             align-items: center;
-            margin: 24px 0 8px;
-            padding-top: 12px;
-            border-top: 1px solid var(--wpp-border);
+            margin: 10px 0 8px;
             font-size: 12px;
             opacity: 0.85;
 
@@ -1581,11 +1668,8 @@
                 display: inline;
             }
             &__head {
-                gap: 8px;
+                gap: 4px;
                 margin: 4px 0 8px;
-            }
-            &__name {
-                font-size: 15px;
             }
         }
         &__w {
@@ -2081,6 +2165,27 @@
     // tire : elle est masquée, la taille du panneau ne se change que par le réglage du bas de page
     .wpp ~ :global(.sliding-x) {
         display: none;
+    }
+    // Windy donne 25 px de marge à gauche et à droite du contenu : une partie est rendue au graphique
+    .wpp {
+        padding-left: 14px !important;
+        padding-right: 14px !important;
+    }
+    // Sur téléphone, le panneau n'a qu'une part de l'écran : marges plus fines encore, titre du
+    // plugin masqué, et le contenu remonte dans la bande que Windy réserve à sa barre de titre et à
+    // sa poignée. La première ligne laisse à droite la place du bouton de fermeture de Windy.
+    :global(#device-mobile) .wpp {
+        top: 8px;
+        padding-left: 10px !important;
+        padding-right: 10px !important;
+
+        .plugin__title.wpp-title {
+            display: none;
+        }
+        .plugin__title + .wpp__update,
+        .plugin__title + .wpp__head {
+            margin-right: 20px;
+        }
     }
 
     // Titre du plugin discret (les styles Windy l'affichent en très grand, et avec leur propre

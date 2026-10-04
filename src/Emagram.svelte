@@ -186,6 +186,11 @@
                 <circle cx={d.x} cy={d.y} r="2.6" class="wpp-level" class:wpp-level--dew={d.dew} />
             {/each}
 
+            <!-- Isotherme 0 °C : point plein là où la courbe d'état croise l'isotherme bleue -->
+            {#if freezingDot}
+                <circle cx={freezingDot.x} cy={freezingDot.y} r="3.6" class="wpp-freezing-dot" />
+            {/if}
+
             <!-- Ascension de la particule : son point de rosée, puis son trajet du sol à son sommet -->
             {#if ascent}
                 <path d={toPath(ascent.dew)} class="wpp-halo wpp-halo--thin" />
@@ -223,6 +228,12 @@
                 <!-- Étiquette à côté de la courbe d'état, pour rester visible quand on fait défiler -->
                 <text x={markX(m.z)} y={Math.min(y(m.z) - 5, y(column.ground) - 22)} class="wpp-mark" style="fill: {m.color}"
                     >{`${m.label} ${r50(m.z)} m`}</text
+                >
+            {/each}
+            <!-- Niveaux plus hauts que le cadre : écrits en haut, sous les isothermes, sans trait -->
+            {#each marksAbove as m, i}
+                <text x={markX(yMax)} y={top + 25 + i * 13} class="wpp-mark" style="fill: {m.color}"
+                    >{`↑ ${m.label} ${r50(m.z)} m`}</text
                 >
             {/each}
 
@@ -648,6 +659,16 @@
         .filter((d): d is { v: number; z: number; dew: boolean } => d.v != null)
         .map(d => ({ x: px(xOf(d.v, d.z)), y: y(d.z), dew: d.dew }));
 
+    /**
+     * Point de l'isotherme 0 °C sur la courbe d'état, dans le cadre. Aucun quand il gèle dès le sol
+     * (l'altitude vaut alors celle du sol, où la courbe est déjà sous 0 °C) ou quand il fait plus de
+     * 0 °C sur tout le profil.
+     */
+    $: freezingDot =
+        column.freezing != null && column.freezing > column.ground && column.freezing >= yMin && column.freezing <= yMax
+            ? { x: px(xOf(K, column.freezing)), y: y(column.freezing) }
+            : null;
+
     // --- Bande des nuages du modèle : opacité à chaque altitude, du haut au bas du cadre (même
     // courbe que le voile du graphique « Vent & thermiques »)
     const CLOUD_ROWS = 92;
@@ -839,7 +860,9 @@
 
     // --- Niveaux remarquables
     type Mark = { z: number; label: string; color: string; dash: string };
-    $: marks = [
+    /** Écart (m) sous lequel le plafond se confond avec la base des cumulus : seule la base est écrite */
+    const CEILING_GAP = 100;
+    $: allMarks = [
         column.cuTop != null
             ? {
                   z: column.cuTop,
@@ -850,11 +873,15 @@
               }
             : null,
         column.cuBase != null ? { z: column.cuBase, label: tr('Base Cu', 'Cu base'), color: 'var(--wpp-fg)', dash: '6 3' } : null,
-        column.cuBase == null && column.ceiling != null
+        // Plafond exploitable : sous des cumulus, seulement quand il est nettement plus bas que leur base
+        column.ceiling != null && (column.cuBase == null || column.cuBase - column.ceiling >= CEILING_GAP)
             ? { z: column.ceiling, label: tr('Plafond', 'Ceiling'), color: 'var(--wpp-fg)', dash: '' }
             : null,
         // Un niveau collé au sol (moins de 100 m) n'apporte rien et masquerait les valeurs au sol
-    ].filter((m): m is Mark => !!m && m.z <= yMax && m.z - column.ground >= 100);
+    ].filter((m): m is Mark => !!m && m.z - column.ground >= 100);
+    $: marks = allMarks.filter(m => m.z <= yMax);
+    /** Niveaux qui dépassent le cadre (altitude max choisie plus basse, cumulus élevé), du plus haut au plus bas */
+    $: marksAbove = allMarks.filter(m => m.z > yMax).sort((a, b) => b.z - a.z);
 
     // --- Colonne de vent : flèches dimensionnées par la force, couche convective en jaune
     $: blTop = column.thermalTop != null ? Math.min(column.thermalTop, yMax) : null;
@@ -1093,6 +1120,12 @@
             &--dew {
                 stroke: #4ea3ff;
             }
+        }
+        // Isotherme 0 °C sur la courbe d'état : point plein, à la couleur de l'isotherme
+        .wpp-freezing-dot {
+            fill: var(--wpp-freezing);
+            stroke: var(--wpp-halo);
+            stroke-width: 1.5;
         }
         // Base du plafond nuageux de l'heure, dans la bande des nuages
         .wpp-deck {

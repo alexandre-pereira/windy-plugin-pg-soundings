@@ -1,6 +1,7 @@
 /**
  * Taille du panneau : part de l'écran choisie par l'utilisateur, à la place de celle que Windy donne
- * au plugin (820 px de large sur ordinateur et tablette, plein écran sur téléphone).
+ * au plugin (820 px de large sur ordinateur et tablette, plein écran sur téléphone). Le panneau ne
+ * prend jamais tout l'écran : la carte reste visible à côté.
  *
  * Sur ordinateur et tablette, le panneau est à droite de la carte et le choix règle sa largeur ; sur
  * téléphone, il est en bas et le choix règle sa hauteur, la carte restant visible au-dessus. À
@@ -12,10 +13,10 @@
 import config from './pluginConfig';
 
 /** Parts de l'écran proposées (%) */
-export const SHARES = [25, 50, 75] as const;
+export const SHARES = [30, 50, 60] as const;
 export type Share = (typeof SHARES)[number];
-/** 'default' : la taille que Windy donne au plugin */
-export type PanelSize = 'default' | Share;
+/** Part de l'écran tant que l'utilisateur n'a rien choisi */
+const DEFAULT_SHARE: Share = 60;
 /** Côté réglé : largeur (panneau à droite) ou hauteur (panneau en bas, sur téléphone) */
 export type PanelSide = 'width' | 'height';
 
@@ -24,16 +25,16 @@ const STYLE_ID = 'wpp-size';
 /** Largeur minimale (px) du panneau à droite, dans une petite fenêtre */
 const MIN_WIDTH = 320;
 
-export const savedSize = (): PanelSize => {
+export const savedSize = (): Share => {
     try {
         const saved = Number(localStorage.getItem(SIZE_KEY));
-        return SHARES.find(s => s === saved) ?? 'default';
+        return SHARES.find(s => s === saved) ?? DEFAULT_SHARE;
     } catch {
-        return 'default';
+        return DEFAULT_SHARE;
     }
 };
 
-export const saveSize = (size: PanelSize) => {
+export const saveSize = (size: Share) => {
     try {
         localStorage.setItem(SIZE_KEY, String(size));
     } catch {
@@ -74,11 +75,14 @@ body ${panel} { top: calc(${100 - share} * ${vh}); margin-top: 0; }
 ${open} #map-container { transform: translateY(calc(${-share / 2} * ${vh})); border-radius: 0; }`;
 };
 
-/** Donne au panneau `root` la taille choisie ; 'default' (ou `root` absent) rend la main à Windy */
-export const applySize = (root: Element | null, size: PanelSize) => {
-    document.getElementById(STYLE_ID)?.remove();
+/** Retire la taille choisie : les règles de Windy s'appliquent de nouveau (fermeture du plugin) */
+export const clearSize = () => document.getElementById(STYLE_ID)?.remove();
+
+/** Donne au panneau `root` la taille choisie ; sans effet si sa mise en page n'est pas connue */
+export const applySize = (root: Element | null, size: Share) => {
+    clearSize();
     const side = panelSide(root);
-    if (!root || !side || size === 'default') return;
+    if (!root || !side) return;
     const style = document.createElement('style');
     style.id = STYLE_ID;
     style.textContent = sizeCss(side, size, `#${root.id}`);

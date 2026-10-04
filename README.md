@@ -4,9 +4,9 @@ Plugin Windy.com qui affiche, pour un site de vol, un graphique **altitude × he
 
 - **Vent en altitude** : une flèche par tranche d'altitude et par heure (elle pointe dans le sens où va le vent), colorée selon la vitesse, avec la vitesse en km/h
 - **Thermiques** : zone colorée selon la **montée lue au vario** (ascendance au cœur des thermiques moins le taux de chute en spirale, m/s)
-- **Qualité des thermiques** : bandeau « Therm. » sous le graphique, une case par heure,
-  du vert (francs) au rouge, hachurée quand le vent les hache, grise aux heures de pluie ou de
-  risque d'orage
+- **Qualité des thermiques** de chaque heure, dans l'infobulle : francs, faibles, plafond bas,
+  hachés ou très hachés par le vent ; elle n'est pas donnée aux heures de pluie ou de risque
+  d'orage
 - **Plafond exploitable** (ligne blanche) et **cumulus des thermiques** (tours blanches
   bourgeonnantes, de la base au sommet, aux heures de thermiques exploitables, d'autant plus
   larges que le modèle prévoit de nuages dans leur couche)
@@ -59,9 +59,14 @@ Plugin Windy.com qui affiche, pour un site de vol, un graphique **altitude × he
   graphique à une altitude met la carte au niveau le plus proche (sol, 100 m, niveaux de pression),
   repéré sur le graphique par des tirets orange, avec son altitude écrite sur l'axe
 - **Lieu synchronisé avec le sélecteur de la carte** (le point de Windy qu'on déplace pour lire le
-  vent) : l'ouvrir ou le déplacer change le lieu du plugin, et cliquer ailleurs sur la carte l'y
-  amène. Le lieu dont le panneau affiche la prévision est toujours marqué sur la carte par le
-  repère du plugin, un viseur orange, que le sélecteur soit ouvert ou non
+  vent), sur ordinateur : l'ouvrir ou le déplacer change le lieu du plugin, et cliquer ailleurs sur
+  la carte l'y amène. Sur téléphone et tablette, où le sélecteur suit le centre de la carte, le
+  lieu ne change qu'en touchant la carte : la déplacer ne le change pas. Le lieu dont le panneau
+  affiche la prévision est toujours marqué sur la carte par le repère du plugin, un viseur orange,
+  que le sélecteur soit ouvert ou non
+- **Lieux favoris** : le nom du lieu, en haut du panneau, ouvre la liste des favoris du compte
+  Windy, pour y aller d'un geste ; le cœur à côté du nom ajoute le lieu affiché aux favoris de
+  Windy, ou l'en retire
 - **Barre de l'heure** en haut du graphique : c'est l'axe des heures, et le bouton orange y porte
   l'heure choisie, au sommet du trait orange qui descend jusqu'au bas du graphique, à travers les
   bandeaux. Il se déplace au doigt ou à
@@ -83,8 +88,8 @@ Plugin Windy.com qui affiche, pour un site de vol, un graphique **altitude × he
   interpolé
 - **Émagramme redressé** : altitude en mètres, adiabatiques sèches verticales
   et isothermes obliques, courbe d'état colorée selon la stabilité (rouge : instabilité absolue,
-  vert : conditionnelle, clair : stable), point de rosée, chemin de la particule, adiabatiques
-  saturées et rapport de mélange en fond, zone de formation du nuage (couche claire à sommet
+  vert : conditionnelle, clair : stable), avec un point bleu à l'isotherme 0 °C, point de rosée,
+  chemin de la particule, adiabatiques saturées et rapport de mélange en fond, zone de formation du nuage (couche claire à sommet
   bourgeonnant, de la base au sommet des cumulus), et à droite la bande des **nuages du modèle** à
   chaque altitude (voile d'autant plus opaque que le ciel y est couvert, trait à la base du plafond
   nuageux de l'heure) puis le vent (flèches dimensionnées par la force) avec la couche convective
@@ -100,9 +105,10 @@ Plugin Windy.com qui affiche, pour un site de vol, un graphique **altitude × he
   l'adiabatique sèche (jaune) à la saturée (jaune et bleu) à ce niveau, et les zones où elle est
   plus chaude que l'air
 - Légendes accessibles par le bouton **ⓘ Légende** de chaque onglet
-- **Taille du panneau** au choix, dans les réglages en bas du panneau : 25, 50 ou 75 % de l'écran,
-  en largeur sur ordinateur et tablette (panneau à droite de la carte), en hauteur sur téléphone
-  (panneau en bas, la carte reste visible au-dessus)
+- **Taille du panneau** au choix, dans les réglages en bas du panneau (bouton « Réglages et
+  infos ») : 30, 50 ou 60 % de l'écran (60 % au départ), en largeur sur ordinateur et tablette
+  (panneau à droite de la carte), en hauteur sur téléphone (panneau en bas, la carte reste visible
+  au-dessus)
 
 L'interface est en français ou en anglais, selon la langue de Windy.
 
@@ -111,7 +117,7 @@ L'interface est en français ou en anglais, selon la langue de Windy.
 Sur <https://www.windy.com/plugins>, choisissez « Load plugin directly from URL » et collez :
 
 ```
-https://windy-plugins.com/2727410/windy-plugin-pg-soundings/1.10.0/plugin.min.js
+https://windy-plugins.com/2727410/windy-plugin-pg-soundings/1.11.0/plugin.min.js
 ```
 
 Le plugin signale ensuite lui-même les nouvelles versions. L'historique est dans
