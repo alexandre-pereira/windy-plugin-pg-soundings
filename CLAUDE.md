@@ -22,7 +22,7 @@ estimation est calculée sont décrits dans [README.md](README.md).
   points voisins (pour les fronts), passage au pas horaire, heure locale
 - `src/Chart.svelte`, `src/Emagram.svelte`, `src/Legend.svelte`, `src/StormBanner.svelte`,
   `src/StormNearby.svelte`, `src/StormIcon.svelte`, `src/FrontIcon.svelte`, `src/ModelPicker.svelte`,
-  `src/svg.ts` : affichage
+  `src/PlacePicker.svelte`, `src/svg.ts` : affichage
 - `src/fronts.ts` : passages de front, lus sur la carte autour du lieu (points voisins) sur toute la
   prévision et dessinés par le graphique
 - `src/nearby.ts` : orage d'un point voisin qui se dirige vers le lieu
@@ -33,6 +33,8 @@ estimation est calculée sont décrits dans [README.md](README.md).
 - `src/update.ts` : recherche d'une version plus récente sur windy-plugins.com
 - `src/size.ts` : taille du panneau choisie par l'utilisateur (part de l'écran, en largeur ou en
   hauteur sur téléphone), posée par-dessus les règles CSS de Windy
+- `src/favorites.ts` : lieux favoris, ceux du compte Windy (`@windy/userFavs`), listés et modifiés
+  depuis l'en-tête du panneau (`src/PlacePicker.svelte`)
 - `src/pluginConfig.ts` : nom, version et description envoyés à Windy
 - `scripts/publish.mjs` : envoi à Windy
 - `.tmp/` (ignoré par git) : bancs d'essai et brouillons, jamais publiés. `.tmp/cross-supprime/`

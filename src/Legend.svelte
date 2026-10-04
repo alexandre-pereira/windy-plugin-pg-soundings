@@ -336,7 +336,7 @@
                 </li>
             </ul>
             <div class="wpp-lg__subtitle">
-                {tr('Bandeau « Therm. » : qualité des thermiques', '“Therm.” strip: thermal quality')}
+                {tr('Infobulle, ligne « Thermiques » : leur qualité', 'Tooltip, “Thermals” line: their quality')}
             </div>
             <svg width="0" height="0" style="position:absolute" aria-hidden="true"
                 ><pattern id="wpp-lg-hatch" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"
@@ -498,6 +498,18 @@
                 </li>
                 <li>
                     <svg width="26" height="14"
+                        ><line x1="4" y1="14" x2="22" y2="0" style="stroke: var(--wpp-freezing)" stroke-opacity="0.75" stroke-width="1.4" /><circle
+                            cx="13"
+                            cy="7"
+                            r="3.6"
+                            style="fill: var(--wpp-freezing); stroke: var(--wpp-halo)"
+                            stroke-width="1.5"
+                        /></svg
+                    >
+                    <span>{tr("Point bleu : isotherme 0 °C, là où la courbe d'état croise l'isotherme bleue", "Blue dot: freezing level, where the temperature curve crosses the blue isotherm")}</span>
+                </li>
+                <li>
+                    <svg width="26" height="14"
                         ><line x1="9" y1="14" x2="17" y2="0" stroke="#f0b13a" stroke-dasharray="1.5 3" /></svg
                     >
                     <span>{tr("Rapport de mélange (g/kg) : quantité de vapeur d'eau", "Mixing ratio (g/kg): amount of water vapour")}</span>
@@ -627,7 +639,7 @@
     const showerCu = cumulusPath(13, 9, 16, 8.5);
     const emaCloud = cloudBand(1, 25, 12, 3);
 
-    // Bandeau des thermiques, des plus francs aux plus hachés
+    // Qualité des thermiques donnée par l'infobulle, des plus francs aux plus hachés
     const easeItems = [
         {
             ...EASE.easy,
@@ -639,8 +651,8 @@
         {
             ...EASE.unsettled,
             text: tr(
-                'au moins 0,5 mm de pluie dans l’heure, ou surdéveloppement ou orage signalé en haut de la colonne : la case ne dit rien de la qualité des thermiques',
-                'at least 0.5 mm of rain in the hour, or overdevelopment or a storm flagged at the top of the column: the cell says nothing about thermal quality',
+                'au moins 0,5 mm de pluie dans l’heure, ou surdéveloppement ou orage signalé en haut de la colonne : la qualité des thermiques n’est pas donnée',
+                'at least 0.5 mm of rain in the hour, or overdevelopment or a storm flagged at the top of the column: thermal quality is not given',
             ),
         },
         {

@@ -40,10 +40,6 @@
                     <stop offset="0" stop-color="#7a5f45" />
                     <stop offset="1" stop-color="#3f3025" />
                 </linearGradient>
-                <!-- Hachures du bandeau des thermiques, quand le vent les hache -->
-                <pattern id="wpp-ease-hatch" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-                    <rect width="1.6" height="4" fill="#111" fill-opacity="0.5" />
-                </pattern>
                 <!-- Voile hachuré de la zone située au-dessus du dernier niveau fourni par le modèle -->
                 <pattern
                     id="wpp-nodata-hatch"
@@ -421,25 +417,6 @@
                 stroke-opacity="0.25"
             />
 
-            <!-- Qualité des thermiques de chaque heure : du vert (francs) au rouge,
-                 hachuré quand le vent les hache, gris aux heures de pluie ou de risque d'orage -->
-            <rect x={left} y={easeTop} width={plotW} height={EASE_H} rx="3" fill="currentColor" opacity="0.05" />
-            {#each cols as col, i}
-                {#if col.ease}
-                    <rect x={left + i * colW + 1} y={easeTop} width={colW - 2} height={EASE_H} rx="2" fill={col.ease.color} />
-                    {#if col.ease.hatch}
-                        <rect
-                            x={left + i * colW + 1}
-                            y={easeTop}
-                            width={colW - 2}
-                            height={EASE_H}
-                            rx="2"
-                            fill="url(#wpp-ease-hatch)"
-                        />
-                    {/if}
-                {/if}
-            {/each}
-
             <!-- Pluviométrie de chaque heure (mm) -->
             <rect x={left} y={rainTop} width={plotW} height={RAIN_H} rx="3" fill="currentColor" opacity="0.05" />
             {#each cols as col, i}
@@ -511,7 +488,7 @@
             {/each}
 
             <!-- Heure choisie, celle de la carte : trait orange de la barre de l'heure jusqu'au bas du
-                 graphique, à travers les bandeaux (nuages, thermiques, pluie, CAPE et LI) -->
+                 graphique, à travers les bandeaux (nuages, pluie, CAPE et LI) -->
             {#if selX != null}
                 <line
                     x1={selX}
@@ -1058,9 +1035,6 @@
             <text x={left - 6} y={skyY + 3.5} class="wpp-axis wpp-axis--ease" text-anchor="end"
                 >{tr('Nuages', 'Clouds')}</text
             >
-            <text x={left - 6} y={easeTop + EASE_H - 1} class="wpp-axis wpp-axis--ease" text-anchor="end"
-                >Therm.</text
-            >
             <text x={left - 6} y={rainTop + 13} class="wpp-axis wpp-axis--rain" text-anchor="end"
                 >{tr('Pluie', 'Rain')}</text
             >
@@ -1110,8 +1084,8 @@
     };
 
     /**
-     * Qualité des thermiques : couleur et libellé, hachures quand le vent les hache,
-     * gris aux heures de pluie ou de risque d'orage
+     * Qualité des thermiques, donnée par l'infobulle : couleur et libellé, hachures (dans la légende)
+     * quand le vent les hache, gris aux heures de pluie ou de risque d'orage
      */
     export const EASE: Record<ThermalEase, { color: string; label: string; hatch: boolean }> = {
         easy: { color: '#4caf50', label: tr('francs', 'well-formed'), hatch: false },
@@ -1323,13 +1297,9 @@
     $: n = shown.length;
     $: plotW = Math.max(100, W - left - right);
     $: colW = n ? plotW / n : 0;
-    /** Bandeau de qualité des thermiques, entre le graphique et les heures */
-    const EASE_H = 9;
-    const easeTop = top + mainH + 6;
-
-    /** Bandeau de pluviométrie, sous celui des thermiques */
+    /** Bandeau de pluviométrie, sous le graphique */
     const RAIN_H = 30;
-    const rainTop = easeTop + EASE_H + 5;
+    const rainTop = top + mainH + 6;
     /** Bandeau de la CAPE et du LI sous la pluie : une case par heure, CAPE à gauche et LI à droite */
     const IX_H = 14;
     const ixTop = rainTop + RAIN_H + 5;
@@ -1489,8 +1459,7 @@
             textX: x0 + (withArrow ? 13 : 0),
         };
 
-        const ease = thermalEase(src, crest);
-        return { src, winds, cloud, streaks, virga, surf, wave, dust, ease: ease && EASE[ease] };
+        return { src, winds, cloud, streaks, virga, surf, wave, dust };
     });
 
     // --- Plafond nuageux de chaque heure (cloudDecksOf), dessiné en nappe par le fond : couche de
@@ -2275,7 +2244,7 @@
         user-select: none;
 
         // Le graphique lui-même (ciel, vent, plafond, nuages) a les mêmes couleurs dans les deux
-        // thèmes. Seuls les axes et les bandeaux du bas (« Therm. », pluie), posés sur le fond du
+        // thèmes. Seuls les axes et les bandeaux du bas (pluie, CAPE et LI), posés sur le fond du
         // panneau, suivent le thème.
         .wpp-plot {
             color: #ffffff;

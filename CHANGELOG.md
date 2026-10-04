@@ -8,6 +8,41 @@ Le dépôt git ne commence qu'après la 1.2.7 : les entrées plus anciennes ont 
 coup à partir des notes de publication. Chaque version reste installable depuis Windy à l'adresse
 `https://windy-plugins.com/2727410/<nom-du-plugin>/<version>/plugin.min.js`.
 
+## [1.11.0] - 2026-10-04
+
+### Ajouté
+
+- Lieux favoris : le nom du lieu, en haut du panneau, ouvre la liste des favoris du compte Windy ;
+  en choisir un y amène le plugin et la carte. Le cœur à côté du nom ajoute le lieu affiché aux
+  favoris de Windy, ou l'en retire. Le lieu affiché prend le nom du favori sur lequel il est posé.
+- Émagramme : un point bleu marque l'isotherme 0 °C sur la courbe d'état, là où elle croise
+  l'isotherme bleue.
+
+### Modifié
+
+- Taille du panneau : le choix est 30, 50 ou 60 % de l'écran, et 60 % tant que rien n'est choisi.
+  Le panneau ne prend plus tout l'écran sur téléphone, ni sa largeur fixe sur ordinateur : les
+  choix « Plein écran » et « Par défaut » sont retirés.
+- Sur téléphone et tablette, déplacer la carte ne change plus le lieu : il change quand on touche
+  la carte ou qu'on choisit un favori.
+- Sur téléphone, le titre « PG Soundings » est masqué et le contenu commence tout en haut du
+  panneau.
+- Les marges à gauche et à droite du panneau sont plus fines : le graphique et l'émagramme sont
+  plus larges, d'une trentaine de pixels sur téléphone.
+- Les réglages du bas du panneau (altitude max, 24 h, thème, taille du panneau, options de
+  l'émagramme) et les informations sur les données (altitude du site et du sol dans le modèle,
+  crêtes voisines, heure de calcul de la prévision) sont repliés sous un bouton « Réglages et
+  infos », qui les ouvre à la demande.
+- Émagramme : le plafond, les cumulus et la température et le point de rosée au sol ne sont plus
+  répétés sous l'émagramme, où ils sont déjà écrits. Restent dessous le vario, l'isotherme 0 °C,
+  la CAPE, le LI et le risque d'orage. Sur l'émagramme, le plafond est écrit aussi quand il est
+  nettement sous la base des cumulus, et un niveau plus haut que le cadre est écrit en haut.
+
+### Supprimé
+
+- Graphique « Vent & thermiques » : le bandeau « Therm. » sous le graphique est retiré. La qualité
+  des thermiques de chaque heure reste donnée par l'infobulle (ligne « Thermiques »).
+
 ## [1.10.0] - 2026-10-04
 
 ### Ajouté
