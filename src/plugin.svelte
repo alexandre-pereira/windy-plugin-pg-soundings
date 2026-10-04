@@ -1,7 +1,7 @@
 <div class="plugin__mobile-header wpp-title">
     {title}
 </div>
-<section class="plugin__content wpp" class:wpp--light={lightTheme}>
+<section class="plugin__content wpp" class:wpp--light={lightTheme} bind:this={panel}>
     <div
         class="plugin__title plugin__title--chevron-back wpp-title"
         on:click={() => bcast.emit('rqstOpen', 'menu')}
@@ -376,6 +376,20 @@
                 <input type="checkbox" bind:checked={lightTheme} />
                 {tr('Thème clair', 'Light theme')}
             </label>
+            <!-- Taille du panneau : largeur à droite de la carte, hauteur sur téléphone -->
+            {#if side}
+                <label>
+                    {side === 'height' ? tr('Hauteur du panneau', 'Panel height') : tr('Largeur du panneau', 'Panel width')}
+                    <select bind:value={size}>
+                        <option value="default"
+                            >{side === 'height' ? tr('Plein écran', 'Full screen') : tr('Par défaut', 'Default')}</option
+                        >
+                        {#each SHARES as share}
+                            <option value={share}>{tr(`${share} % de l’écran`, `${share}% of the screen`)}</option>
+                        {/each}
+                    </select>
+                </label>
+            {/if}
         </div>
 
         <!-- Informations sur les données, en bas de page -->
@@ -434,6 +448,7 @@
     import StormBanner from './StormBanner.svelte';
     import StormIcon, { STORM_LABELS } from './StormIcon.svelte';
     import { checkForUpdate, installUrl } from './update';
+    import { applySize, panelSide, savedSize, saveSize, SHARES, type PanelSide, type PanelSize } from './size';
     import { airMassOf, frontDays, frontsOf, mapFronts } from './fronts';
     import { payloadAt } from './interpolate';
     import {
@@ -676,6 +691,15 @@
         }
     };
     $: saveDawn(showDawn);
+
+    // Taille du panneau (part de l'écran), mémorisée dans le navigateur. `root` est l'élément dans
+    // lequel Windy place le plugin, connu une fois le panneau affiché.
+    let panel: HTMLElement | null = null;
+    let root: HTMLElement | null = null;
+    let side: PanelSide | null = null;
+    let size: PanelSize = savedSize();
+    $: saveSize(size);
+    $: applySize(root, size);
     let altChoice: 'auto' | number = 'auto';
     let chartWidth = 760;
     let marker: L.Marker | null = null;
@@ -1285,6 +1309,8 @@
     };
 
     onMount(() => {
+        root = panel?.parentElement ?? null;
+        side = panelSide(root);
         singleclick.on(name, setLocation);
         productListener = store.on('product', onMapProduct);
         timeListener = store.on('timestamp', onMapTime);
@@ -1309,6 +1335,7 @@
         pickerListeners.forEach(id => picker.off(id));
         if (pickerTimer) clearTimeout(pickerTimer);
         removeMarker();
+        applySize(null, 'default');
     });
 </script>
 
@@ -1354,6 +1381,9 @@
 
         // Le panneau occupe toute la largeur disponible, quelle que soit la mise en page de Windy
         width: 100%;
+        // La mise en page étroite suit la largeur du panneau, pas celle de l'écran : un téléphone,
+        // ou un panneau réduit à une part de l'écran sur ordinateur
+        container: wpp / inline-size;
         align-self: stretch;
         box-sizing: border-box;
         color: var(--wpp-fg);
@@ -1530,7 +1560,7 @@
         }
         // Sur téléphone, chaque jour tient sur une ligne : nom, plafond et vario à la suite, sans
         // leurs mots (« Plafond », « m/s »)
-        @media (max-width: 560px) {
+        @container wpp (max-width: 560px) {
             &__days {
                 margin-bottom: 6px;
             }
@@ -1706,7 +1736,7 @@
             }
             // Sur téléphone : pictogramme et nom court sur une seule ligne, jamais coupés. La largeur
             // de chaque onglet suit son texte, le reste de la place est partagé.
-            @media (max-width: 560px) {
+            @container wpp (max-width: 560px) {
                 flex: 1 1 auto;
                 gap: 5px;
                 padding: 4px 6px;
@@ -1721,7 +1751,7 @@
         &__tab-short {
             display: none;
         }
-        @media (max-width: 560px) {
+        @container wpp (max-width: 560px) {
             &__tab-long {
                 display: none;
             }
@@ -1982,14 +2012,17 @@
 
     // --- Smartphone / écrans tactiles
     @media (max-width: 600px) {
+        .wpp__footer select {
+            // < 16 px, iOS zoome sur la page au moment de choisir
+            font-size: 16px;
+            padding: 4px 6px;
+        }
+    }
+    // Panneau étroit : téléphone, ou part réduite de l'écran sur ordinateur
+    @container wpp (max-width: 600px) {
         .wpp {
             &__footer {
                 gap: 8px 16px;
-                select {
-                    // < 16 px, iOS zoome sur la page au moment de choisir
-                    font-size: 16px;
-                    padding: 4px 6px;
-                }
             }
             // Valeurs sous l'émagramme : deux par ligne, la première à gauche, la seconde calée à
             // droite. Chaque ligne partage sa largeur à sa façon (le vario peut être long).
@@ -2043,6 +2076,11 @@
     // Sur téléphone, la barre de titre de Windy prend trop de place : on la masque
     .plugin__mobile-header.wpp-title {
         display: none !important;
+    }
+    // Sur téléphone, Windy pose une poignée en haut du panneau, qui le baisse à demi quand on la
+    // tire : elle est masquée, la taille du panneau ne se change que par le réglage du bas de page
+    .wpp ~ :global(.sliding-x) {
+        display: none;
     }
 
     // Titre du plugin discret (les styles Windy l'affichent en très grand, et avec leur propre

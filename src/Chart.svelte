@@ -1,6 +1,6 @@
 <svelte:window on:pointerdown={onWindowPointer} />
 
-<div class="wpp-chart-outer" bind:this={wrapEl} style="width:{width}px;height:{height}px">
+<div class="wpp-chart-outer" bind:this={wrapEl} style="width:{width}px">
 <!-- Lecture de la journée, d'heure en heure : dans la marge de l'axe, au bout de la barre de l'heure -->
 {#if n > 0}
     <button
@@ -11,10 +11,11 @@
         on:click={() => dispatch('play')}>{playing ? '❚❚' : '▶'}</button
     >
 {/if}
-<!-- Zone du graphique : commence après l'axe des altitudes et défile si l'écran est étroit -->
+<!-- Zone du graphique : commence après l'axe des altitudes et défile si l'écran est étroit. Sa
+     hauteur n'est pas fixée : la barre de défilement d'un ordinateur s'ajoute sous le graphique -->
 <div
     class="wpp-chart-scroll"
-    style="left:{left}px;width:{width - left}px;height:{height}px"
+    style="margin-left:{left}px;width:{width - left}px"
     bind:this={scrollEl}
     on:scroll={() => (savedScroll = scrollX = scrollEl.scrollLeft)}
 >
@@ -2196,8 +2197,6 @@
     }
 
     .wpp-chart-scroll {
-        position: absolute;
-        top: 0;
         overflow-x: auto;
         overflow-y: hidden;
         -webkit-overflow-scrolling: touch;

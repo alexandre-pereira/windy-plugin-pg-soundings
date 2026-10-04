@@ -742,7 +742,7 @@
             background 0.15s,
             color 0.15s;
         // Sur téléphone, à la hauteur des onglets, qui tiennent sur une ligne
-        @media (max-width: 560px) {
+        @container wpp (max-width: 560px) {
             width: 32px;
             min-height: 28px;
             border-radius: 8px;
