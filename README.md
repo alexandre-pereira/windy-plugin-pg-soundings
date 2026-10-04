@@ -100,6 +100,9 @@ Plugin Windy.com qui affiche, pour un site de vol, un graphique **altitude × he
   l'adiabatique sèche (jaune) à la saturée (jaune et bleu) à ce niveau, et les zones où elle est
   plus chaude que l'air
 - Légendes accessibles par le bouton **ⓘ Légende** de chaque onglet
+- **Taille du panneau** au choix, dans les réglages en bas du panneau : 25, 50 ou 75 % de l'écran,
+  en largeur sur ordinateur et tablette (panneau à droite de la carte), en hauteur sur téléphone
+  (panneau en bas, la carte reste visible au-dessus)
 
 L'interface est en français ou en anglais, selon la langue de Windy.
 
@@ -108,7 +111,7 @@ L'interface est en français ou en anglais, selon la langue de Windy.
 Sur <https://www.windy.com/plugins>, choisissez « Load plugin directly from URL » et collez :
 
 ```
-https://windy-plugins.com/2727410/windy-plugin-pg-soundings/1.9.0/plugin.min.js
+https://windy-plugins.com/2727410/windy-plugin-pg-soundings/1.10.0/plugin.min.js
 ```
 
 Le plugin signale ensuite lui-même les nouvelles versions. L'historique est dans

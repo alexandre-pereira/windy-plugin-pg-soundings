@@ -17,7 +17,7 @@
 -->
 <svelte:window on:pointerdown={onWindowPointer} />
 
-<div class="wpp-ema-wrap" bind:this={wrapEl} style="width:{width}px;height:{height}px">
+<div class="wpp-ema-wrap" bind:this={wrapEl} style="width:{width}px">
     <!-- Axe des altitudes (fixe) -->
     <svg class="wpp-ema wpp-ema-side" style="left:0" width={left} {height} viewBox="0 0 {left} {height}">
         {#each altLabels as z}
@@ -36,10 +36,11 @@
         {/if}
     </svg>
 
-    <!-- Courbes (défilent horizontalement si l'écran est étroit) -->
+    <!-- Courbes (défilent horizontalement si l'écran est étroit). La hauteur n'est pas fixée : la
+         barre de défilement d'un ordinateur s'ajoute sous l'axe des températures -->
     <div
         class="wpp-ema-scroll"
-        style="left:{left}px;width:{viewW}px;height:{height}px"
+        style="margin-left:{left}px;width:{viewW}px"
         bind:this={scrollEl}
         on:scroll={() => (savedScroll = scrollEl.scrollLeft)}
     >
@@ -950,8 +951,6 @@
     }
 
     .wpp-ema-scroll {
-        position: absolute;
-        top: 0;
         overflow-x: auto;
         overflow-y: hidden;
         -webkit-overflow-scrolling: touch;

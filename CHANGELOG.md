@@ -8,6 +8,30 @@ Le dépôt git ne commence qu'après la 1.2.7 : les entrées plus anciennes ont 
 coup à partir des notes de publication. Chaque version reste installable depuis Windy à l'adresse
 `https://windy-plugins.com/2727410/<nom-du-plugin>/<version>/plugin.min.js`.
 
+## [1.10.0] - 2026-10-04
+
+### Ajouté
+
+- Taille du panneau au choix, dans les réglages en bas du panneau : 25, 50 ou 75 % de l'écran. Sur
+  ordinateur et tablette, c'est la largeur du panneau, à droite de la carte ; sur téléphone, sa
+  hauteur : le panneau reste en bas et la carte se voit au-dessus. La carte se décale pour que le
+  lieu reste au milieu de sa partie visible. Le choix est mémorisé ; « Par défaut » (ordinateur)
+  et « Plein écran » (téléphone) gardent la taille d'avant.
+
+### Modifié
+
+- Sur téléphone, la poignée en haut du panneau, qui le baissait à demi quand on la tirait, est
+  retirée : la taille du panneau ne se change que par le réglage du bas du panneau.
+- La mise en page étroite (onglets courts, jours sur une ligne, valeurs de l'émagramme deux par
+  ligne) suit la largeur du panneau, et non plus celle de l'écran : un panneau réduit à 25 % de
+  l'écran sur ordinateur l'utilise aussi.
+
+### Corrigé
+
+- Sur ordinateur, quand le graphique ou l'émagramme défile (panneau étroit), la barre de
+  défilement se place sous le graphique au lieu de le recouvrir : le bandeau « CAPE LI » et l'axe
+  des températures de l'émagramme restent lisibles.
+
 ## [1.9.0] - 2026-10-04
 
 Les heures des fronts changent. Les fronts froids sont affichés de 1 à 6 heures plus tôt

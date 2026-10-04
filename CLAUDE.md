@@ -31,6 +31,8 @@ estimation est calculée sont décrits dans [README.md](README.md).
   et altitude d'un niveau), synchronisée avec le graphique
 - `src/scrub.ts` : lecture au doigt du graphique et de l'émagramme (appui maintenu, puis glissé)
 - `src/update.ts` : recherche d'une version plus récente sur windy-plugins.com
+- `src/size.ts` : taille du panneau choisie par l'utilisateur (part de l'écran, en largeur ou en
+  hauteur sur téléphone), posée par-dessus les règles CSS de Windy
 - `src/pluginConfig.ts` : nom, version et description envoyés à Windy
 - `scripts/publish.mjs` : envoi à Windy
 - `.tmp/` (ignoré par git) : bancs d'essai et brouillons, jamais publiés. `.tmp/cross-supprime/`
