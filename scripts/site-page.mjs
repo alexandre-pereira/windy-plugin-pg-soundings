@@ -40,6 +40,14 @@ const LANG_KEY = 'wf-lang';
 /** Les autres outils WeSoar, cités au pied de la page */
 const OTHER_TOOLS = [
     {
+        // L'application n'existe qu'en français : une seule adresse
+        url: { en: 'https://trim.wesoar.fr/', fr: 'https://trim.wesoar.fr/' },
+        name: {
+            en: 'Wing Trim, the app to measure and trim your lines',
+            fr: 'Wing Trim, l’application de mesure et de calage des suspentes',
+        },
+    },
+    {
         url: {
             en: 'https://trimming-tools.wesoar.fr/',
             fr: 'https://trimming-tools.wesoar.fr/fr/',
