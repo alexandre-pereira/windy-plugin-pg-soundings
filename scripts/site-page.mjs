@@ -22,7 +22,7 @@ const AUTHOR_ID = '2727410';
 const installUrl = `https://windy-plugins.com/${AUTHOR_ID}/${name}/${version}/plugin.min.js`;
 const REPO = 'https://github.com/alexandre-pereira/windy-plugin-pg-soundings';
 /** Capture du plugin en largeur de téléphone, copiée à côté de la page */
-const SHOT_SOURCE = 'instagram/v1.12.0/assets/front-clecy.png';
+const SHOT_SOURCE = 'scripts/site-capture.png';
 const SHOT = 'capture.png';
 /**
  * Adresse publique de la page, donnée par GitHub à la publication (variable SITE_URL) : elle sert
