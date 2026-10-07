@@ -1,0 +1,442 @@
+/*
+ * Style commun des pages de présentation des outils WeFlare (PG Soundings, Trimming tools…).
+ *
+ * Le même fichier est copié dans le dépôt de chaque outil, qui l'insère dans sa page : une
+ * modification se reporte telle quelle dans les autres dépôts, pour que les pages restent de la
+ * même famille. Ce qui est propre à un outil s'écrit dans son script de page, pas ici.
+ *
+ * Thème clair seulement. Les couleurs sont celles du thème clair de Wing Trim, la police est
+ * celle du logo WeFlare (Mona Sans, chargée par la page depuis Google Fonts).
+ */
+
+:root {
+    --wf-page: #f5f7f9;
+    --wf-surface: #fff;
+    --wf-ink: #17202b;
+    --wf-muted: #5a6472;
+    --wf-line: #dadee5;
+    --wf-accent: #007696;
+    --wf-accent-strong: #006083;
+    --wf-tint: #e4f4fa;
+    --wf-glow-1: rgba(154, 217, 238, 0.4);
+    --wf-glow-2: rgba(221, 207, 250, 0.3);
+    --wf-shadow: 0 1px 2px rgba(23, 32, 43, 0.05), 0 10px 28px rgba(23, 32, 43, 0.06);
+    --wf-radius: 14px;
+    --wf-radius-s: 9px;
+    --wf-gutter: clamp(16px, 4vw, 32px);
+    --wf-width: 66rem;
+    --wf-font:
+        'Mona Sans', 'Segoe UI', system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+    --wf-mono: ui-monospace, 'Cascadia Mono', Consolas, Menlo, monospace;
+    color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    margin: 0;
+    background:
+        radial-gradient(1200px 600px at 100% -10%, var(--wf-glow-1), transparent 60%),
+        radial-gradient(900px 500px at -10% 110%, var(--wf-glow-2), transparent 60%), var(--wf-page);
+    background-attachment: fixed;
+    color: var(--wf-ink);
+    font: 400 1rem/1.6 var(--wf-font);
+}
+
+a {
+    color: var(--wf-accent-strong);
+    text-underline-offset: 0.15em;
+}
+
+a:hover {
+    color: var(--wf-ink);
+}
+
+:focus-visible {
+    outline: 2px solid var(--wf-accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Bandeau du haut : logo WeFlare à gauche, choix de la langue à droite */
+.wf-top {
+    max-width: var(--wf-width);
+    margin: 0 auto;
+    padding: 18px var(--wf-gutter);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.wf-brand {
+    display: inline-flex;
+    color: var(--wf-ink);
+}
+
+.wf-logo {
+    display: block;
+    height: 34px;
+    width: auto;
+}
+
+.wf-lang {
+    display: inline-flex;
+    padding: 3px;
+    border: 1px solid var(--wf-line);
+    border-radius: 999px;
+    background: var(--wf-surface);
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+
+.wf-lang a {
+    padding: 4px 12px;
+    border-radius: 999px;
+    color: var(--wf-muted);
+    text-decoration: none;
+}
+
+.wf-lang a:hover {
+    color: var(--wf-ink);
+}
+
+.wf-lang a[aria-current] {
+    background: var(--wf-ink);
+    color: #fff;
+}
+
+.wf-page {
+    max-width: var(--wf-width);
+    margin: 0 auto;
+    padding: 0 var(--wf-gutter) clamp(40px, 8vw, 72px);
+}
+
+/* En-tête de la page : étiquette, titre, phrase de présentation, boutons */
+.wf-hero {
+    padding: clamp(20px, 5vw, 48px) 0 clamp(24px, 4vw, 40px);
+}
+
+.wf-eyebrow {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: var(--wf-tint);
+    color: var(--wf-accent-strong);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.wf-title {
+    margin: 14px 0 0;
+    font-size: clamp(2.2rem, 6.5vw, 3.7rem);
+    font-weight: 800;
+    line-height: 1.04;
+    letter-spacing: -0.04em;
+    text-wrap: balance;
+}
+
+.wf-lead {
+    margin: 14px 0 0;
+    max-width: 44em;
+    color: var(--wf-muted);
+    font-size: clamp(1.05rem, 2.2vw, 1.25rem);
+    line-height: 1.5;
+    text-wrap: pretty;
+}
+
+.wf-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 24px;
+}
+
+.wf-btn {
+    display: inline-block;
+    padding: 11px 20px;
+    border: 1px solid var(--wf-ink);
+    border-radius: var(--wf-radius-s);
+    background: var(--wf-ink);
+    color: #fff;
+    font: inherit;
+    font-weight: 700;
+    line-height: 1.3;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.wf-btn:hover {
+    border-color: var(--wf-accent-strong);
+    background: var(--wf-accent-strong);
+    color: #fff;
+}
+
+.wf-btn--ghost {
+    border-color: var(--wf-line);
+    background: var(--wf-surface);
+    color: var(--wf-ink);
+}
+
+.wf-btn--ghost:hover {
+    border-color: var(--wf-ink);
+    background: var(--wf-surface);
+    color: var(--wf-ink);
+}
+
+/* Titre d'une section */
+.wf-h {
+    margin: clamp(40px, 7vw, 64px) 0 0;
+    font-size: clamp(1.5rem, 3.6vw, 2rem);
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+    text-wrap: balance;
+    scroll-margin-top: 16px;
+}
+
+.wf-card {
+    padding: clamp(16px, 3vw, 24px);
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-radius);
+    background: var(--wf-surface);
+    box-shadow: var(--wf-shadow);
+}
+
+.wf-note {
+    color: var(--wf-muted);
+    font-size: 0.93rem;
+}
+
+/* Champ à copier, avec son bouton */
+.wf-copy {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.wf-copy input {
+    flex: 1 1 260px;
+    min-width: 0;
+    padding: 10px 12px;
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-radius-s);
+    background: var(--wf-page);
+    color: var(--wf-ink);
+    font: 500 0.85rem var(--wf-mono);
+}
+
+/* Sections repliables (versions d'un changelog) */
+.wf-fold {
+    margin-top: 18px;
+    padding: 0;
+    overflow: hidden;
+}
+
+.wf-fold details + details {
+    border-top: 1px solid var(--wf-line);
+}
+
+.wf-fold summary {
+    padding: 14px clamp(16px, 3vw, 24px);
+    font-size: 1.05rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.wf-fold summary:hover {
+    background: var(--wf-page);
+}
+
+.wf-fold summary small {
+    margin-left: 10px;
+    color: var(--wf-muted);
+    font-size: 0.85rem;
+    font-weight: 400;
+}
+
+.wf-fold-body {
+    padding: 0 clamp(16px, 3vw, 24px) 18px;
+}
+
+/* Texte courant venu d'un Markdown : titres, listes, tableaux, code, images */
+.wf-prose {
+    min-width: 0;
+}
+
+.wf-prose h2 {
+    margin: clamp(36px, 6vw, 56px) 0 12px;
+    font-size: clamp(1.4rem, 3.2vw, 1.8rem);
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+    text-wrap: balance;
+    scroll-margin-top: 16px;
+}
+
+.wf-prose h3 {
+    margin: 28px 0 8px;
+    font-size: 1.12rem;
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: -0.015em;
+}
+
+/* Dans une section repliable, les sous-titres sont des rubriques (« Ajouté », « Corrigé »…) */
+.wf-fold-body h3 {
+    margin: 22px 0 6px;
+    color: var(--wf-accent-strong);
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.wf-prose > :first-child {
+    margin-top: 0;
+}
+
+.wf-prose p,
+.wf-prose li {
+    max-width: 72ch;
+}
+
+.wf-prose p {
+    margin: 10px 0;
+}
+
+.wf-prose ul,
+.wf-prose ol {
+    margin: 10px 0;
+    padding-left: 1.3em;
+}
+
+.wf-prose li {
+    margin: 6px 0;
+}
+
+.wf-prose code {
+    padding: 0.1em 0.35em;
+    border-radius: 4px;
+    background: var(--wf-tint);
+    font: 0.88em var(--wf-mono);
+    overflow-wrap: anywhere;
+}
+
+.wf-prose pre {
+    padding: 14px;
+    border-radius: var(--wf-radius-s);
+    background: var(--wf-tint);
+    overflow-x: auto;
+}
+
+.wf-prose pre code {
+    padding: 0;
+    background: none;
+}
+
+.wf-prose img {
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-radius-s);
+    background: #fff;
+}
+
+/* Un tableau large défile dans son cadre, pas la page */
+.wf-scroll {
+    margin: 14px 0;
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-radius-s);
+    background: var(--wf-surface);
+    overflow-x: auto;
+}
+
+.wf-scroll table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.93rem;
+}
+
+.wf-scroll th,
+.wf-scroll td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--wf-line);
+    text-align: left;
+    vertical-align: top;
+}
+
+.wf-scroll tr:last-child td {
+    border-bottom: 0;
+}
+
+.wf-scroll th {
+    color: var(--wf-muted);
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+/* Pied de page : ce que dit l'outil de lui-même, puis WeFlare et ses autres outils */
+.wf-foot {
+    border-top: 1px solid var(--wf-line);
+    background: var(--wf-surface);
+}
+
+.wf-foot-in {
+    max-width: var(--wf-width);
+    margin: 0 auto;
+    padding: clamp(24px, 5vw, 40px) var(--wf-gutter);
+    display: grid;
+    gap: 20px;
+    color: var(--wf-muted);
+    font-size: 0.9rem;
+}
+
+.wf-foot p {
+    margin: 0;
+    max-width: 72ch;
+}
+
+.wf-made {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 18px;
+    color: var(--wf-ink);
+}
+
+.wf-made .wf-logo {
+    height: 26px;
+}
+
+.wf-tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.wf-tools li:first-child {
+    color: var(--wf-ink);
+    font-weight: 700;
+}
