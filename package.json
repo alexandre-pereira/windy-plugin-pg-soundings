@@ -8,7 +8,8 @@
         "start": "rollup -w -c",
         "build": "rollup -c --environment SERVE:false",
         "test": "vitest run",
-        "publish:windy": "node scripts/publish.mjs"
+        "publish:windy": "node scripts/publish.mjs",
+        "site": "node scripts/site-page.mjs"
     },
     "keywords": [
         "windy",
