@@ -8,6 +8,71 @@ Le dépôt git ne commence qu'après la 1.2.7 : les entrées plus anciennes ont 
 coup à partir des notes de publication. Chaque version reste installable depuis Windy à l'adresse
 `https://windy-plugins.com/2727410/<nom-du-plugin>/<version>/plugin.min.js`.
 
+## [1.13.0] - 2026-10-07
+
+Le dessin des nuages change, pas leur calcul : bases, sommets, pluie et heures sont les mêmes
+qu'avant, dans l'infobulle comme sur le graphique.
+
+### Ajouté
+
+- Infobulle du graphique, au doigt : une croix la ferme.
+
+### Modifié
+
+- Graphique « Vent & thermiques » : le bandeau « Pluie » n'est affiché que s'il pleut à l'une des
+  heures affichées, et le bandeau « CAPE LI » n'est pas affiché quand la CAPE et le LI restent
+  verts à toutes les heures. La pluie de l'heure reste dans l'infobulle.
+- Infobulle du graphique plus courte. L'altitude pointée n'est plus écrite que dans le titre : dans
+  chaque groupe, la valeur à cette altitude vient en premier, soulignée. Le vent est sur la ligne
+  de son titre, le vario à l'altitude pointée et le vario max sur une ligne, les trois
+  températures (altitude pointée, sol, isotherme 0 °C) sur une ligne, la nébulosité à l'altitude
+  pointée et son total sur une ligne. La vitesse de montée de l'air, à côté du vario max, n'y est
+  plus écrite. L'infobulle est un peu plus large.
+- Infobulle du graphique : le plafond est nommé « Plafond exploitable ».
+- Bandeau « Nouvelle version » : il dit de coller le lien à la place du texte déjà présent dans le
+  champ de Windy (« https://windy-plugins.com/ »). Collé à la suite, le lien commençait deux fois
+  et Windy le refusait.
+- Infobulle du graphique : la CAPE et le LI n'y sont plus. Ils se lisent dans le bandeau
+  « CAPE LI » et dans l'onglet « Émagramme ».
+- Nuages d'averses d'heures qui se suivent, ou qu'une seule heure sans averse sépare : une seule
+  masse, d'un seul contour, à la place d'une tour par heure collée aux voisines. Sa base et son
+  sommet passent par ceux de chaque heure d'averses, sans marches d'escalier ni bourgeons entre
+  deux heures.
+- Plafond nuageux : il n'est plus dessiné en nappe, mais par le trait sombre de sa base, sous
+  l'ombre du dessous du nuage, sur le voile des nuages du modèle qui montre déjà la couche. La
+  nappe, plus claire que le voile et dessinée jusqu'à son sommet, s'y lisait comme un nuage dans
+  un nuage ; là où la couche ne durait pas d'une heure à l'autre, ses bords faisaient des tours et
+  des collines, et une couche épaisse d'un jour de pluie devenait une forme grise sans sens. Le
+  dessus d'une mer de nuages reste souligné de blanc. Le dessus moutonné d'une couche en amas et
+  la bande mince d'un altocumulus ne sont plus dessinés : le genre de la couche se lit dans
+  l'infobulle. Le trait s'estompe quand la couche ne dure pas jusqu'à l'heure voisine, et n'est
+  pas dessiné là où un nuage d'averses traverse la couche à la même heure : c'est le même nuage.
+- Voile des nuages du modèle : plein dès 75 % de nébulosité, au lieu de 100 %, et plus léger
+  sous 40 %. Entre des heures à 80 et 100 %, le voile faisait des bandes verticales ; à 75 %, le
+  ciel est couvert. Et le bord d'un voile dont la nébulosité oscille autour de 30 % d'une heure à
+  l'autre faisait des bosses, la nuit surtout.
+- Plafond nuageux : le long d'une même couche, sa base et son sommet sont lissés avec les heures
+  voisines (moyenne sur trois heures), sur le graphique, dans l'infobulle et sur l'émagramme. Ils
+  sautaient d'un niveau du modèle à l'autre quand la nébulosité oscille autour du seuil : le
+  plafond d'un jour de pluie zigzaguait de 500 m d'une heure à l'autre.
+- Relief pris dans les nuages : les tirets ne sont plus dessinés sur un voile dense, qui montre déjà
+  que le relief est dans les nuages. Ils restent là où le voile est léger ou absent.
+- Cumulus des thermiques : même étalés, ceux de deux heures voisines ne se touchent plus.
+- Halo des nuages plus hauts que le graphique : il naît peu à peu d'une heure à l'autre, sans
+  bord net.
+
+### Corrigé
+
+- Bandeau « Nouvelle version » : il annonçait parfois une version intermédiaire au lieu de la
+  dernière, et pouvait garder des heures une version trouvée pendant une panne du réseau. La
+  dernière version est maintenant lue sur GitHub (dernière release) et vérifiée sur
+  windy-plugins.com avant d'être annoncée ; sans réponse de GitHub, la recherche de version en
+  version va jusqu'au bout et passe les numéros sautés.
+- Thème clair, sur téléphone : la croix qui ferme le panneau restait blanche, et la bande en haut
+  du panneau, entre la carte et le plugin, restait sombre.
+- Thème sombre : les listes déroulantes des réglages (altitude max, taille du panneau) s'ouvraient
+  en texte gris clair sur fond blanc.
+
 ## [1.12.0] - 2026-10-04
 
 ### Ajouté

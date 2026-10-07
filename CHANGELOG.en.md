@@ -8,7 +8,7 @@ The git repository only starts after 1.2.7: older entries were reconstructed aft
 release notes. Every version can still be installed from Windy at
 `https://windy-plugins.com/2727410/<plugin-name>/<version>/plugin.min.js`.
 
-## [Unreleased]
+## [1.13.0] - 2026-10-07
 
 The way clouds are drawn changes, not the way they are computed: bases, tops, rain and hours are the
 same as before, in the tooltip and on the chart.

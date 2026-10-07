@@ -192,7 +192,7 @@
                     >
                 {/if}
 
-                <!-- Rideau de pluie sous le nuage, tour ou nappe, d'où elle tombe -->
+                <!-- Rideau de pluie sous le nuage, tour ou plafond nuageux, d'où elle tombe -->
                 {#each cols as col}
                     {#if col.streaks}
                         {#each col.streaks.rows as row}
@@ -212,10 +212,36 @@
 
                 <!-- Nuages convectifs, en tour : base plate et sombre, flancs bourgeonnants, sommet en
                      chou-fleur. Blancs pour les cumulus des thermiques, gris quand il en tombe des
-                     averses. Tous les contours d'abord, les corps ensuite : les nuages d'averses
-                     d'heures qui se suivent se recouvrent et ne font qu'une masse -->
+                     averses. Les nuages d'averses d'heures qui se suivent ne font qu'une masse, d'un
+                     seul contour. Tous les contours d'abord, les corps ensuite -->
                 {#each cols as col}
                     {#if col.cloud}<path d={col.cloud.d} class="wpp-cu-edge" />{/if}
+                {/each}
+                {#each masses as m}
+                    <path d={m.d} class="wpp-cu-edge" />
+                {/each}
+                {#each masses as m, k}
+                    <linearGradient id="wpp-mass-body-{k}" gradientUnits="userSpaceOnUse" x1={m.x0} x2={m.x1} y1="0" y2="0">
+                        {#each m.stops as s}<stop offset={s.at} stop-color={s.body} />{/each}
+                    </linearGradient>
+                    <linearGradient id="wpp-mass-base-{k}" gradientUnits="userSpaceOnUse" x1={m.x0} x2={m.x1} y1="0" y2="0">
+                        {#each m.stops as s}<stop offset={s.at} stop-color={s.base} />{/each}
+                    </linearGradient>
+                    <clipPath id="wpp-mass-clip-{k}"><path d={m.d} /></clipPath>
+                    <path d={m.d} class="wpp-cu" fill="url(#wpp-mass-body-{k})" />
+                    <!-- Ombre de la base : traits de plus en plus larges le long de la base, dans le nuage -->
+                    <g clip-path="url(#wpp-mass-clip-{k})">
+                        {#each MASS_SHADE as part}
+                            <path
+                                d={m.base}
+                                fill="none"
+                                stroke="url(#wpp-mass-base-{k})"
+                                stroke-width={m.shade * part * 2}
+                                stroke-opacity="0.13"
+                            />
+                        {/each}
+                    </g>
+                    <path d={m.base} class="wpp-cu-base" fill="none" />
                 {/each}
                 {#each cols as col, i}
                     {#if col.cloud}
@@ -418,8 +444,10 @@
             />
 
             <!-- Pluviométrie de chaque heure (mm) -->
+            {#if hasRain}
             <rect x={left} y={rainTop} width={plotW} height={RAIN_H} rx="3" fill="currentColor" opacity="0.05" />
-            {#each cols as col, i}
+            {/if}
+            {#each hasRain ? cols : [] as col, i}
                 {@const mm = col.src.precip}
                 {#if mm >= 0.1}
                     {@const h = rainBarH(mm)}
@@ -456,7 +484,7 @@
 
             <!-- Instabilité de chaque heure, sur une ligne : CAPE standard à gauche de la case, LI à
                  droite, chacun sur la couleur de son palier -->
-            {#each cols as col, i}
+            {#each hasIx ? cols : [] as col, i}
                 {@const li = col.src.liftedIndex}
                 {@const x0 = left + i * colW + 1}
                 {@const cape = fitText(String(col.src.cape), ixCapeW)}
@@ -494,7 +522,7 @@
                     x1={selX}
                     x2={selX}
                     y1={railY + 8}
-                    y2={ixTop + IX_H}
+                    y2={stripsEnd}
                     stroke="#0f1822"
                     stroke-opacity="0.5"
                     stroke-width="3.5"
@@ -504,7 +532,7 @@
                     x1={selX}
                     x2={selX}
                     y1={railY + 8}
-                    y2={ixTop + IX_H}
+                    y2={stripsEnd}
                     stroke="#f5a623"
                     stroke-width="1.5"
                     pointer-events="none"
@@ -587,13 +615,23 @@
     </svg>
 
     {#if hover && tip}
-        <!-- Infobulle rangée par thème. Dans chaque groupe, la valeur à l'altitude pointée vient en
-             premier, repérée par la couleur de l'altitude du titre -->
+        <!-- Infobulle rangée par thème. L'altitude pointée n'est écrite que dans le titre : dans
+             chaque groupe, la valeur à cette altitude vient en premier, soulignée de sa couleur -->
         <div class="wpp-tip" style="left:{tipX - left}px;top:{tipY}px" bind:offsetHeight={tipH}>
             <div class="wpp-tip__title">
                 {hourText(tip.col.hour)}
-                {#if tip.alt}<span>· {r50(tip.alt.z)} m</span>{/if}
+                {#if tip.alt}· <span class="wpp-tip__here">{r50(tip.alt.z)} m</span>{/if}
             </div>
+            <!-- Au doigt, l'infobulle reste affichée une fois le doigt levé : une croix la ferme. À la
+                 souris, elle suit le pointeur et disparaît quand il quitte le graphique -->
+            {#if pointerType !== 'mouse'}
+                <button
+                    class="wpp-tip__close"
+                    title={tr('Fermer', 'Close')}
+                    aria-label={tr('Fermer', 'Close')}
+                    on:click={() => (hover = null)}>✕</button
+                >
+            {/if}
             {#if tip.alt?.beyond}
                 <div class="wpp-tip__nodata">
                     {tr(
@@ -708,14 +746,13 @@
             <!-- Vent à l'altitude pointée. Le vent au sol et les rafales sont écrits dans le relief du
                  graphique : ils ne sont pas répétés ici -->
             {#if tip.alt?.wind || tip.wave || tip.dust}
-                <div class="wpp-tip__group"><span>{tr('Vent', 'Wind')}</span></div>
-            {/if}
-            {#if tip.alt?.wind}
-                <div class="wpp-tip__row wpp-tip__row--alt">
-                    <span>{tr(`à ${r50(tip.alt.z)} m`, `at ${r50(tip.alt.z)} m`)}</span>
-                    <b style="color:{windColor(tip.alt.wind.kmh, light)}"
-                        >{tip.alt.wind.kmh} km/h {cardinal(tip.alt.wind.dir)}</b
-                    >
+                <div class="wpp-tip__group">
+                    <span>{tr('Vent', 'Wind')}</span>
+                    {#if tip.alt?.wind}
+                        <b class="wpp-tip__here" style="color:{windColor(tip.alt.wind.kmh, light)}"
+                            >{tip.alt.wind.kmh} km/h {cardinal(tip.alt.wind.dir)}</b
+                        >
+                    {/if}
                 </div>
             {/if}
             {#if tip.wave}
@@ -749,17 +786,20 @@
                     <b><i class="wpp-sw" style="background:{tip.ease.color}"></i>{tip.ease.label}</b>
                 {/if}
             </div>
-            {#if tip.alt && tip.alt.w > 0.05}
-                <div class="wpp-tip__row wpp-tip__row--alt">
-                    <span>{tr(`Vario à ${r50(tip.alt.z)} m`, `Vario at ${r50(tip.alt.z)} m`)}</span>
-                    <b><i class="wpp-sw" style="background:{thermalColor(tip.alt.w)}"></i>+{tip.alt.w.toFixed(1)} m/s</b>
-                </div>
-            {/if}
-            {#if tip.col.climb >= 0.1}
+            <!-- Vario à l'altitude pointée, puis vario max de l'heure, sur une seule ligne -->
+            {#if tip.lift != null || tip.col.climb >= 0.1}
                 <div class="wpp-tip__row">
-                    <span>{tr('Vario max', 'Max vario')}</span><b
-                        ><i class="wpp-sw" style="background:{thermalColor(tip.col.climb)}"></i>+{tip.col.climb.toFixed(1)} m/s
-                        <small>({tr('air', 'air')} {tip.col.wStar.toFixed(1)})</small></b
+                    <span>{tip.lift != null ? 'Vario' : tr('Vario max', 'Max vario')}</span>
+                    <b
+                        >{#if tip.lift != null}<span class="wpp-tip__here"
+                                ><i class="wpp-sw" style="background:{thermalColor(tip.lift)}"></i>+{tip.lift.toFixed(1)}</span
+                            >{/if}{#if tip.col.climb >= 0.1}{#if tip.lift != null}<small>· max</small>{' '}{/if}<span
+                                title={tr(
+                                    `Montée au vario, taux de chute de l’aile déduit : l’air monte à ${tip.col.wStar.toFixed(1)} m/s`,
+                                    `Climb on the vario, glider sink rate deducted: the air rises at ${tip.col.wStar.toFixed(1)} m/s`,
+                                )}
+                                ><i class="wpp-sw" style="background:{thermalColor(tip.col.climb)}"></i>+{tip.col.climb.toFixed(1)}</span
+                            >{/if} m/s</b
                     >
                 </div>
             {/if}
@@ -767,56 +807,52 @@
                 <div class="wpp-tip__row">
                     <span
                         title={tr(
-                            'Plafond exploitable : altitude où l’ascendance compense encore le taux de chute d’une aile en spirale',
-                            'Usable ceiling: height where the climb still beats a glider’s circling sink rate',
-                        )}>{tr('Plafond', 'Ceiling')}</span
+                            'Altitude où l’ascendance compense encore le taux de chute d’une aile en spirale',
+                            'Height where the climb still beats a glider’s circling sink rate',
+                        )}>{tr('Plafond exploitable', 'Usable ceiling')}</span
                     ><b>{r50(tip.col.ceiling)} m</b>
                 </div>
             {/if}
 
+            <!-- Les trois températures sur une ligne : à l'altitude pointée, au sol (à l'altitude que le
+                 modèle donne au sol du lieu), et l'altitude de l'isotherme 0 °C -->
             <div class="wpp-tip__group"><span>{tr('Température', 'Temperature')}</span></div>
-            {#if tip.alt && tip.alt.t != null}
-                <div class="wpp-tip__row wpp-tip__row--alt">
-                    <span>{tr(`à ${r50(tip.alt.z)} m`, `at ${r50(tip.alt.z)} m`)}</span><b>{tip.alt.t.toFixed(1)} °C</b>
-                </div>
-            {/if}
-            <!-- Température au sol, à l'altitude que le modèle donne au sol du lieu -->
-            <div class="wpp-tip__row">
+            <div class="wpp-tip__row wpp-tip__row--items">
+                {#if tip.alt && tip.alt.t != null}
+                    <b class="wpp-tip__here">{tip.alt.t.toFixed(1)} °C</b>
+                {/if}
                 <span
                     title={tr(
-                        'Altitude du sol dans le modèle : la moyenne de sa maille, qui peut différer de celle du site',
-                        'Ground elevation in the model: the average of its grid cell, which may differ from the site’s',
-                    )}>{tr(`Sol (${tip.col.ground} m)`, `Ground (${tip.col.ground} m)`)}</span
+                        `Sol du modèle, à ${tip.col.ground} m : la moyenne de sa maille, qui peut différer de l’altitude du site`,
+                        `Model ground, at ${tip.col.ground} m: the average of its grid cell, which may differ from the site’s elevation`,
+                    )}>{tr('Sol', 'Ground')} <b>{toCelsius(tip.col.t2m).toFixed(0)} °C</b></span
                 >
-                <b>{toCelsius(tip.col.t2m).toFixed(0)} °C</b>
+                {#if tip.col.freezing != null}
+                    <span title={tr('Isotherme 0 °C', 'Freezing level')}>0 °C <b>{r50(tip.col.freezing)} m</b></span>
+                {/if}
             </div>
-            {#if tip.col.freezing != null}
-                <div class="wpp-tip__row"><span>{tr('Isotherme 0 °C', 'Freezing level')}</span><b>{r50(tip.col.freezing)} m</b></div>
-            {/if}
 
             {#if tip.clouds}
                 <div class="wpp-tip__group"><span>{tr('Nuages et précipitations', 'Clouds and precipitation')}</span></div>
-                {#if tip.alt && tip.alt.cloud > 3}
-                    <div class="wpp-tip__row wpp-tip__row--alt">
-                        <span>{tr(`à ${r50(tip.alt.z)} m`, `at ${r50(tip.alt.z)} m`)}</span><b>{Math.round(tip.alt.cloud)} %</b>
-                    </div>
-                {/if}
-                <!-- Couverture totale, et entre parenthèses celle des nuages plus hauts que le graphique -->
-                {#if tip.col.cloudCover > 0.03 || cloudAbove(tip.col, yMax) > 0.05}
+                <!-- Nébulosité à l'altitude pointée, puis couverture totale, sur une seule ligne ; entre
+                     parenthèses, celle des nuages plus hauts que le graphique -->
+                {#if tip.cloudHere != null || tip.cloudTotal}
                     {@const above = cloudAbove(tip.col, yMax)}
-                    <div class="wpp-tip__row">
+                    <div class="wpp-tip__row wpp-tip__row--wrap">
                         <span
-                            title={tip.col.cloudTop != null
+                            title={tip.cloudTotal && tip.col.cloudTop != null
                                 ? tr(
                                       `Total sous ${Math.floor(tip.col.cloudTop / 500) * 500} m : le modèle ne fournit pas les nuages plus hauts, les voiles de cirrus ne sont pas comptés`,
                                       `Total below ${Math.floor(tip.col.cloudTop / 500) * 500} m: the model does not provide higher clouds, cirrus veils are not counted`,
                                   )
-                                : undefined}>{tr('Total', 'Total')}</span
+                                : undefined}>{tip.cloudHere != null ? tr('Nébulosité', 'Cloud cover') : tr('Total', 'Total')}</span
                         ><b
-                            >{Math.round(tip.col.cloudCover * 100)} %{#if above > 0.05}<small
-                                    title={tr('Nuages plus hauts que le graphique', 'Clouds higher than the chart')}
-                                    >({Math.round(above * 100)} % {tr('à plus de', 'above')} {yMax} m)</small
-                                >{/if}</b
+                            >{#if tip.cloudHere != null}<span class="wpp-tip__here">{tip.cloudHere} %</span>{/if}{#if tip.cloudTotal}{#if tip.cloudHere != null}<small
+                                        >· total</small
+                                    >{' '}{/if}{Math.round(tip.col.cloudCover * 100)} %{#if above > 0.05}<small
+                                        title={tr('Nuages plus hauts que le graphique', 'Clouds higher than the chart')}
+                                        >({Math.round(above * 100)} % {tr('à plus de', 'above')} {yMax} m)</small
+                                    >{/if}{/if}</b
                         >
                     </div>
                 {/if}
@@ -957,7 +993,8 @@
                 {/if}
             {/if}
 
-            <!-- Le risque d'orage sert de titre au groupe : il se lit avant la CAPE et le LI -->
+            <!-- Risque d'orage de l'heure. La CAPE et le LI se lisent dans leur bandeau, sous le
+                 graphique, et dans l'onglet « Émagramme » -->
             {#if tip.col.stormRisk > 0}
                 <div class="wpp-tip__group wpp-tip__group--storm" style="color:{STORM_COLORS[tip.col.stormRisk]}">
                     <span
@@ -967,18 +1004,6 @@
                             : tip.col.stormRisk === 2
                               ? tr('Orage probable', 'Storm likely')
                               : tr('Surdéveloppement', 'Overdevelopment')}</span
-                    >
-                </div>
-            {:else if tip.col.cape >= 100}
-                <div class="wpp-tip__group"><span>{tr('Instabilité', 'Instability')}</span></div>
-            {/if}
-            {#if tip.col.cape >= 100}
-                <div class="wpp-tip__row">
-                    <span>CAPE{tip.col.liftedIndex != null ? ' / LI' : ''}</span><b
-                        ><i class="wpp-sw wpp-sw--dot" style="background:{capeColor(tip.col.cape)}"></i>{tip.col.cape} J/kg{#if tip.col.liftedIndex != null}{' / '}<i
-                                class="wpp-sw wpp-sw--dot"
-                                style="background:{liftedIndexColor(tip.col.liftedIndex)}"
-                            ></i>{tip.col.liftedIndex > 0 ? '+' : ''}{tip.col.liftedIndex}{/if}</b
                     >
                 </div>
             {/if}
@@ -1035,15 +1060,19 @@
             <text x={left - 6} y={skyY + 3.5} class="wpp-axis wpp-axis--ease" text-anchor="end"
                 >{tr('Nuages', 'Clouds')}</text
             >
-            <text x={left - 6} y={rainTop + 13} class="wpp-axis wpp-axis--rain" text-anchor="end"
-                >{tr('Pluie', 'Rain')}</text
-            >
-            <text x={left - 6} y={rainTop + 24} class="wpp-axis wpp-axis--unit" text-anchor="end"
-                >mm</text
-            >
-            <text x={left - 6} y={ixTop + IX_H - 3.5} class="wpp-axis wpp-axis--ix" text-anchor="end"
-                >CAPE LI</text
-            >
+            {#if hasRain}
+                <text x={left - 6} y={rainTop + 13} class="wpp-axis wpp-axis--rain" text-anchor="end"
+                    >{tr('Pluie', 'Rain')}</text
+                >
+                <text x={left - 6} y={rainTop + 24} class="wpp-axis wpp-axis--unit" text-anchor="end"
+                    >mm</text
+                >
+            {/if}
+            {#if hasIx}
+                <text x={left - 6} y={ixTop + IX_H - 3.5} class="wpp-axis wpp-axis--ix" text-anchor="end"
+                    >CAPE LI</text
+                >
+            {/if}
             <!-- Altitude de la carte, écrite sur l'axe au bout de ses tirets orange -->
             {#if mapY != null && mapZ != null}
                 <rect x="2" y={mapY - 8} width={left - 4} height="16" rx="3" fill="#f5a623" />
@@ -1108,6 +1137,7 @@
         type Column,
         STORM_COLORS,
         capeColor,
+        INSTABILITY_COLORS,
         cardinal,
         cloudAt,
         type CloudDeck,
@@ -1115,7 +1145,6 @@
         cumulusCover,
         cumulusSpread,
         hasCumulus,
-        isCumuliform,
         interpProfile,
         liftedIndexColor,
         lowCloudColors,
@@ -1143,7 +1172,7 @@
         windColor,
     } from './physics';
     import { scrub, type ScrubPoint } from './scrub';
-    import { arrowPath, cumulusPath, frontPips, smoothPath } from './svg';
+    import { arrowPath, cloudMassPath, cumulusPath, frontPips, smoothPath } from './svg';
     import { dayKey, localHour } from './time';
     import type { NearbyStorm } from './nearby';
 
@@ -1227,12 +1256,15 @@
 
     /**
      * Largeur d'un cumulus des thermiques (part de la colonne) selon la quantité de cumulus : de
-     * quelques cumulus (10 % de nuages du modèle dans leur couche, ou moins) à des cumulus étalés (60 %)
+     * quelques cumulus (10 % de nuages du modèle dans leur couche, ou moins) à des cumulus étalés
+     * (60 %). Même étalés, ceux de deux heures voisines ne se touchent pas : ce sont deux nuages
      */
-    const CU_WIDTH = { few: 0.5, many: 0.95, cover: [10, 60] };
+    const CU_WIDTH = { few: 0.5, many: 0.82, cover: [10, 60] };
 
     /** Tirets de l'air saturé (px) : écart entre deux lignes, épaisseur, longueur d'un tiret et période */
     const MIST = { pitch: 6, thick: 2, dash: 9, period: 15 };
+    /** Nébulosité (0-1) du modèle au-delà de laquelle le voile est assez dense pour se passer des tirets */
+    const MIST_CLOUD = 0.4;
     /**
      * Halo des nuages plus hauts que le graphique, sous son bord supérieur : hauteur (px), hauteur
      * (px) de la bande pleine tout en haut, et opacité au plus fort du halo pour quelques nuages et
@@ -1241,28 +1273,35 @@
     const GLOW = 38;
     const GLOW_BAND = 5;
     const GLOW_ALPHA: readonly [number, number] = [0.6, 1];
+    /** Nébulosité (0-1) au-dessus du graphique sur laquelle le halo passe de rien à sa pleine opacité */
+    const GLOW_RISE = 0.3;
     /**
-     * Nappes de nuages du fond : opacité du corps, épaisseur (px) du trait sombre de la base et du
-     * dessus éclairé d'une mer de nuages, hauteur (px) de l'ombre au-dessus de la base, hauteurs (px)
-     * entre lesquelles s'estompe une couche épaisse, part de la colonne où un bout de nappe se
-     * referme, bourgeons du dessus d'une couche en amas (largeur et hauteur, px), et hauteur (px) au
-     * plus du corps d'un altocumulus : le modèle ne sait pas le faire aussi mince qu'il est, le voile
-     * montre au-dessus où il met des nuages
+     * Opacité du voile selon la nébulosité (0-1) du modèle : léger jusqu'à `light` (opacité
+     * `lightAlpha` à ce point), puis de plus en plus dense jusqu'à `full`, où il est plein : à 75 %
+     * d'une maille, le ciel y est couvert. Plein seulement à 100 %, deux heures à 80 et 100 %
+     * faisaient des bandes verticales ; trop dense sous 40 %, le bord d'un voile dont la nébulosité
+     * oscille autour de 30 % d'une heure à l'autre faisait des bosses
+     */
+    const VEIL = { light: 0.4, lightAlpha: 0.3, full: 0.75 };
+    /**
+     * Plafond nuageux du fond : épaisseur (px) du trait sombre de sa base et du dessus éclairé d'une
+     * mer de nuages, hauteur (px) de l'ombre du dessous du nuage, au-dessus de la base, et sa force
      */
     const SHEET = {
-        alpha: 0.9,
         base: 1.6,
         top: 2.4,
         shade: 14,
-        fade: [18, 90],
-        round: 0.4,
-        puff: [14, 6],
-        thin: 22,
+        shadeAlpha: 0.45,
     };
-    /** Taille des bourgeons qui se suivent (part de leur hauteur) : inégaux, comme un dessus de cumulus */
-    const PUFFS = [1, 0.6, 0.85, 0.5, 0.95, 0.7];
+    /** Ombre de la base d'une masse d'averses : hauteurs des traits superposés (part de sa hauteur) */
+    const MASS_SHADE = [1, 0.85, 0.7, 0.56, 0.43, 0.31, 0.2, 0.1];
 
-    /** Nappe de nuages d'une heure, à sa place sur le graphique (px) */
+    /**
+     * Plafond nuageux d'une heure, à sa place sur le graphique (px) : base et sommet de la plus
+     * basse couche dense. Seule la base est dessinée (trait sombre et ombre du dessous), sur le
+     * voile des nuages du modèle qui montre déjà la couche ; le sommet ne sert qu'au dessus éclairé
+     * d'une mer de nuages
+     */
     interface Sheet {
         yBase: number;
         yTop: number;
@@ -1270,14 +1309,7 @@
         rain: boolean;
         /** Mer de nuages : dessus éclairé */
         sea: boolean;
-        /**
-         * Couche dessinée jusqu'à son sommet (nuages bas) ou en bande mince (altocumulus) ; sinon
-         * couche épaisse, estompée en montant
-         */
-        low: boolean;
-        /** Couche en amas (cumulus, stratocumulus, altocumulus) : dessus moutonné */
-        puffy: boolean;
-        /** Même nappe que celle de l'heure qui précède */
+        /** Même couche que celle de l'heure qui précède */
         joined: boolean;
     }
 
@@ -1297,13 +1329,23 @@
     $: n = shown.length;
     $: plotW = Math.max(100, W - left - right);
     $: colW = n ? plotW / n : 0;
-    /** Bandeau de pluviométrie, sous le graphique */
+    /** Bandeau de pluviométrie, sous le graphique : seulement s'il pleut à l'une des heures affichées */
     const RAIN_H = 30;
     const rainTop = top + mainH + 6;
-    /** Bandeau de la CAPE et du LI sous la pluie : une case par heure, CAPE à gauche et LI à droite */
+    $: hasRain = shown.some(c => c.precip >= 0.1);
+    /**
+     * Bandeau de la CAPE et du LI sous la pluie : une case par heure, CAPE à gauche et LI à droite.
+     * Il n'est pas affiché quand les deux sont au palier vert (air stable) à toutes les heures
+     */
     const IX_H = 14;
-    const ixTop = rainTop + RAIN_H + 5;
-    const height = ixTop + IX_H + 3;
+    const calm = (c: Column) =>
+        capeColor(c.cape) === INSTABILITY_COLORS[0] &&
+        (c.liftedIndex == null || liftedIndexColor(c.liftedIndex) === INSTABILITY_COLORS[0]);
+    $: hasIx = shown.some(c => !calm(c));
+    $: ixTop = rainTop + (hasRain ? RAIN_H + 5 : 0);
+    /** Bas (px) du dernier bandeau affiché, ou du graphique s'il n'y en a aucun */
+    $: stripsEnd = hasIx ? ixTop + IX_H : hasRain ? rainTop + RAIN_H : top + mainH;
+    $: height = stripsEnd + 3;
     /** Part de la case réservée à la CAPE (jusqu'à 4 chiffres), le reste au LI (arrondi à l'unité) */
     const IX_CAPE_SHARE = 0.62;
     $: ixCapeW = (colW - 2) * IX_CAPE_SHARE;
@@ -1361,8 +1403,16 @@
      * La pluie de l'heure vient-elle des nuages en couches du modèle ? Oui s'il pleut sans nuage
      * d'averses dessiné sous `zTop`, le haut du graphique.
      */
-    const rainsFromLayers = (c: Column, zTop: number) =>
-        c.precip >= 0.1 && !(c.showerBase != null && (towerBase(c) as number) < zTop);
+    const rainsFromLayers = (c: Column, zTop: number) => c.precip >= 0.1 && !showerTower(c, zTop);
+
+    /** Un nuage d'averses est-il dessiné à cette heure, sous `zTop`, le haut du graphique ? */
+    const showerTower = (c: Column | undefined, zTop: number): c is Column =>
+        c?.showerBase != null && (towerBase(c) as number) < zTop;
+    /** Sommet (m AMSL) de la tour d'une heure : le plus haut du cumulus des thermiques et du nuage d'averses */
+    const towerTop = (c: Column) => {
+        const base = towerBase(c) as number;
+        return Math.max((hasCumulus(c) ? c.cuTop : null) ?? base, c.showerTop ?? base);
+    };
 
     $: cols = shown.map((src, i) => {
         const winds: { y: number; dir: number; kmh: number; color: string }[] = [];
@@ -1400,11 +1450,9 @@
         let cloud = null;
         if (cuBase != null && cuBase < yMax) {
             const shower = src.showerBase != null;
-            const cuTop = Math.max((thermalCu ? src.cuTop : null) ?? cuBase, src.showerTop ?? cuBase);
-            // Averses d'heures qui se suivent : tours assez larges pour se rejoindre
-            const fused = [shown[i - 1], shown[i + 1]].some(
-                o => o?.showerBase != null && (towerBase(o) as number) < yMax,
-            );
+            const cuTop = towerTop(src);
+            // Averses d'heures qui se suivent : une seule masse (voir masses), pas une tour par heure
+            const fused = shower && inMass.has(i);
             // Cumulus des thermiques : d'autant plus large que le modèle met de nuages dans leur couche
             const [few, many] = CU_WIDTH.cover;
             const share = shower
@@ -1412,17 +1460,19 @@
                     ? 0.95
                     : 0.85
                 : CU_WIDTH.few + (CU_WIDTH.many - CU_WIDTH.few) * smooth((cumulusCover(src) - few) / (many - few));
-            const w = shower && fused ? colW * 1.12 : Math.min(colW * share, 64);
+            const w = Math.min(colW * share, 64);
             const yb = y(cuBase);
             const colors = towerColors(shower, nightFactor(src.sunElev));
-            cloud = {
-                x: cx(i),
-                yb,
-                w,
-                body: rgbCss(colors.body),
-                base: rgbCss(colors.base),
-                d: cumulusPath(cx(i), yb, w, Math.min(yb - top + w, Math.max(w * 0.45, yb - y(cuTop)))),
-            };
+            if (!fused) {
+                cloud = {
+                    x: cx(i),
+                    yb,
+                    w,
+                    body: rgbCss(colors.body),
+                    base: rgbCss(colors.base),
+                    d: cumulusPath(cx(i), yb, w, Math.min(yb - top + w, Math.max(w * 0.45, yb - y(cuTop)))),
+                };
+            }
             if (shower) rain = { x: cx(i), y: yb, w: rainW };
         }
 
@@ -1462,29 +1512,70 @@
         return { src, winds, cloud, streaks, virga, surf, wave, dust };
     });
 
-    // --- Plafond nuageux de chaque heure (cloudDecksOf), dessiné en nappe par le fond : couche de
+    // --- Nuages d'averses d'heures qui se suivent, ou qu'une seule heure sans averse sépare : une
+    // seule masse de la première à la dernière heure (deux tours à une heure d'écart se lisaient
+    // comme deux nuages). Sa base et son sommet passent par ceux de chaque heure d'averses, reliés
+    // par une courbe lissée ; sa couleur suit le jour et la nuit d'une heure à l'autre.
+    $: massRuns = (() => {
+        const runs: number[][] = [];
+        shown.forEach((c, i) => {
+            if (!showerTower(c, yMax)) return;
+            const run = runs[runs.length - 1];
+            if (run && run[run.length - 1] >= i - 2) run.push(i);
+            else runs.push([i]);
+        });
+        return runs.filter(run => run.length > 1);
+    })();
+    /** Heures d'averses dessinées dans une masse, pas en tour */
+    $: inMass = new Set(massRuns.flat());
+    $: masses = (() => {
+        // Taille d'un bourgeon : celle d'une colonne, bornée pour rester un bourgeon
+        const unit = Math.max(18, Math.min(colW, 40));
+        return massRuns
+            .map(run => {
+                const xs = run.map(i => cx(i));
+                const colors = run.map(i => towerColors(true, nightFactor(shown[i].sunElev)));
+                return {
+                    ...cloudMassPath(
+                        xs,
+                        run.map(i => y(towerBase(shown[i]) as number)),
+                        run.map(i => y(towerTop(shown[i]))),
+                        colW * 0.56,
+                        unit,
+                    ),
+                    x0: xs[0],
+                    x1: xs[xs.length - 1],
+                    shade: unit * 0.7,
+                    stops: colors.map((c, k) => ({
+                        at: (xs[k] - xs[0]) / (xs[xs.length - 1] - xs[0]),
+                        body: rgbCss(c.body),
+                        base: rgbCss(c.base),
+                    })),
+                };
+            });
+    })();
+
+    // --- Plafond nuageux de chaque heure (cloudDecksOf), dont le fond souligne la base : couche de
     // nuages bas (stratus, brouillard, mer de nuages), couche d'où tombe la pluie quand elle ne
-    // vient pas d'un nuage d'averses (pluie de front), sinon plus basse couche dense du modèle.
-    // Le dessus d'une couche en amas (couche basse nourrie par les thermiques, altocumulus) est moutonné
+    // vient pas d'un nuage d'averses (pluie de front), sinon plus basse couche dense du modèle
     $: decks = cloudDecksOf(
         shown.map(c => c.profile),
         shown.map(c => rainsFromLayers(c, yMax)),
         shown.map(c => (c.ceiling != null ? c.thermalTop : null)),
     );
     // Sa place sur le graphique (px). Sous une couche d'où il pleut, la base n'est jamais au ras du
-    // sol : le rideau de pluie garde sa place
+    // sol : le rideau de pluie garde sa place. À une heure d'averses, la couche que traverse le
+    // nuage d'averses est ce nuage, déjà dessiné : pas de plafond, sauf si elle est tout entière sous sa base
     $: sheets = decks.map((deck, k): Sheet | null => {
         if (!deck || deck.base >= yMax) return null;
+        if (showerTower(shown[k], yMax) && deck.top > (towerBase(shown[k]) as number)) return null;
         const floor = deck.rain ? y(Math.max(shown[k].ground, yMin)) - 18 : Infinity;
         const yBase = Math.min(y(deck.base), floor);
-        const alto = deck.genus === 'altocumulus';
         return {
             yBase,
-            yTop: Math.min(alto ? Math.max(y(deck.top), yBase - SHEET.thin) : y(deck.top), yBase - 7),
+            yTop: Math.min(y(deck.top), yBase - 7),
             rain: deck.rain,
             sea: !!deck.low?.sea,
-            low: !!deck.low || alto,
-            puffy: isCumuliform(deck),
             joined: deck.joined,
         };
     });
@@ -1538,19 +1629,31 @@
         Math.max(0, Math.min(a1, b1) - Math.max(a0, b0));
 
     /**
-     * Nappe à l'abscisse `x` (px depuis le bord gauche du graphique, colonnes de largeur `cw`) : base
-     * et sommet (px depuis son haut), lissés d'une heure à l'autre comme la ligne de plafond, part de
-     * pluie, de mer de nuages, de couche épaisse et de couche en amas, et opacité. null hors de toute
-     * nappe. Là où la couche ne se prolonge pas à l'heure voisine, la nappe se referme au bord de la colonne : en
-     * arrondi pour une couche basse, en fondu pour une couche épaisse ; au bord du graphique, elle
-     * reste ouverte.
+     * Plafond nuageux à l'abscisse `x` (px depuis le bord gauche du graphique, colonnes de largeur
+     * `cw`) : base et sommet (px depuis son haut), lissés d'une heure à l'autre comme la ligne de
+     * plafond, part de pluie et de mer de nuages, et opacité. null hors de toute couche. Là où la
+     * couche ne se prolonge pas à l'heure voisine, son trait s'estompe d'une heure à l'autre, comme
+     * tout ce qui est interpolé entre deux heures : jusqu'à l'heure voisine si celle-ci n'a pas de
+     * couche, jusqu'au bord de la colonne si elle en a une autre. Au bord du graphique, il reste plein.
      */
     const sheetAt = (marks: (Sheet | null)[], x: number, cw: number) => {
         const u = x / cw;
         const c = Math.min(marks.length - 1, Math.max(0, Math.floor(u)));
         const here = marks[c];
-        if (!here) return null;
         const after = u - c >= 0.5;
+        /** Couche `s` à la distance `t` de son heure (0) vers le bout où elle s'estompe (1) */
+        const tip = (s: Sheet, t: number) => ({
+            yb: s.yBase,
+            yt: s.yTop,
+            rain: +s.rain,
+            sea: +s.sea,
+            alpha: 1 - smooth(t),
+        });
+        // Heure sans couche : le bout de celle de l'heure voisine, de ce côté, vient y finir
+        if (!here) {
+            const near = marks[after ? c + 1 : c - 1];
+            return near ? tip(near, after ? c + 1.5 - u : u - (c - 0.5)) : null;
+        }
         const i0 = after ? c : c - 1;
         const a = marks[i0];
         const b = marks[i0 + 1];
@@ -1567,44 +1670,15 @@
                         (3 * a[key] - p0[key] - 3 * b[key] + p3[key]) * f * f * f);
                 return Math.min(Math.max(v, Math.min(a[key], b[key])), Math.max(a[key], b[key]));
             };
-            const part = (key: 'rain' | 'sea' | 'low' | 'puffy') => +a[key] + (+b[key] - +a[key]) * f;
-            return {
-                yb: at('yBase'),
-                yt: at('yTop'),
-                rain: part('rain'),
-                sea: part('sea'),
-                thick: 1 - part('low'),
-                puffy: part('puffy'),
-                alpha: 1,
-            };
+            const part = (key: 'rain' | 'sea') => +a[key] + (+b[key] - +a[key]) * f;
+            return { yb: at('yBase'), yt: at('yTop'), rain: part('rain'), sea: part('sea'), alpha: 1 };
         }
-        let yb = here.yBase;
-        let yt = here.yTop;
-        let alpha = 1;
-        // Bout de nappe, s'il y a une heure affichée au-delà
-        if (after ? c < marks.length - 1 : c > 0) {
-            const d = (after ? c + 1 - u : u - c) * cw;
-            const r = Math.min(cw * SHEET.round, here.low ? (yb - yt) / 2 : Infinity);
-            if (d < r) {
-                if (here.low) {
-                    const squeeze = ((yb - yt) / 2) * (1 - Math.sqrt(1 - ((r - d) / r) ** 2));
-                    yb -= squeeze;
-                    yt += squeeze;
-                } else alpha = smooth(d / r);
-            }
-        }
-        return { yb, yt, rain: +here.rain, sea: +here.sea, thick: +!here.low, puffy: +here.puffy, alpha };
-    };
-
-    /**
-     * Dessus moutonné d'une couche en amas : hauteur (px, vers le haut) du bourgeon à l'abscisse `x`.
-     * Une suite d'arcs inégaux, dont les creux descendent un peu sous le sommet de la couche.
-     */
-    const puffAt = (x: number) => {
-        const u = x / SHEET.puff[0];
-        const k = Math.floor(u);
-        const arc = Math.sqrt(1 - (2 * (u - k) - 1) ** 2);
-        return SHEET.puff[1] * (PUFFS[k % PUFFS.length] * arc - 0.25);
+        // Bout de couche, s'il y a une heure affichée au-delà : jusqu'à cette heure si elle n'a pas
+        // de couche, jusqu'au bord de la colonne si elle en a une autre
+        const k = after ? c + 1 : c - 1;
+        if (k < 0 || k > marks.length - 1) return tip(here, 0);
+        const away = Math.abs(u - (c + 0.5));
+        return tip(here, marks[k] ? away * 2 : away);
     };
 
     const drawField = (
@@ -1679,7 +1753,6 @@
 
         const img = ctx.createImageData(gw, gh);
         const px = [0, 0, 0];
-        const tint = [0, 0, 0];
         const cw = w / cols.length;
         const half = FIELD_RES / 2;
         // Nappe de chaque abscisse, et pente de sa base : son trait garde son épaisseur là où elle
@@ -1709,15 +1782,16 @@
             const sky = skyColors(night);
             const above = a.above + (b.above - a.above) * f;
 
-            // Nappe : claire pour une couche sans pluie, grise quand il en pleut
+            // Plafond nuageux : trait sombre de sa base et ombre du dessous du nuage, plus sombres
+            // quand il en pleut. Le voile des nuages du modèle montre déjà la couche elle-même : un
+            // corps plus clair s'y lisait comme un nuage dans un nuage, et ses bords, là où la couche
+            // ne durait pas d'une heure à l'autre, faisaient des tours et des collines
             const sheet = sheetOf[gx];
             const dry = lowCloudColors(night);
             const wet = towerColors(true, night);
-            const body = sheet ? blend(dry.body, wet.body, sheet.rain) : dry.body;
             const under = sheet ? blend(dry.base, wet.base, sheet.rain) : dry.base;
             const yb = sheet ? sheet.yb - top : 0;
-            // Couche en amas : dessus moutonné
-            const yt = sheet ? sheet.yt - top - sheet.puffy * puffAt((gx + 0.5) * FIELD_RES) : 0;
+            const yt = sheet ? sheet.yt - top : 0;
             const baseLine = SHEET.base * Math.min(6, Math.hypot(1, slopeOf(gx)));
 
             for (let gy = 0; gy < gh; gy++) {
@@ -1738,9 +1812,16 @@
                 }
 
                 const cl = a.cloud[gy] + (b.cloud[gy] - a.cloud[gy]) * f;
-                // Courbe légèrement bombée : les couvertures moyennes se voient mieux, 100 % est presque opaque
                 // Voile uni : les tours de cumulus s'en détachent par leur contour sombre
-                if (cl > 0.02) mix(px, sky.cloud, Math.pow(Math.min(1, cl), 0.8) * cloudAlpha);
+                if (cl > 0.02) {
+                    const veil =
+                        cl <= VEIL.light
+                            ? (VEIL.lightAlpha * cl) / VEIL.light
+                            : VEIL.lightAlpha +
+                              (1 - VEIL.lightAlpha) *
+                                  Math.min(1, (cl - VEIL.light) / (VEIL.full - VEIL.light));
+                    mix(px, sky.cloud, veil * cloudAlpha);
+                }
 
                 // Nuages plus hauts que le graphique : halo clair qui descend de son bord supérieur
                 const yMid = (gy + 0.5) * FIELD_RES;
@@ -1748,41 +1829,36 @@
                     // Bande pleine au ras du bord, puis fondu : le halo se voit sur le ciel du jour
                     // comme sur celui de la nuit
                     const fade = yMid <= GLOW_BAND ? 1 : 1 - (yMid - GLOW_BAND) / (GLOW - GLOW_BAND);
-                    mix(px, sky.glow, (GLOW_ALPHA[0] + (GLOW_ALPHA[1] - GLOW_ALPHA[0]) * above) * fade);
+                    // Il naît peu à peu entre une heure sans nuages hauts et une heure qui en a : pas
+                    // de bord net au milieu du ciel
+                    const rise = smooth((above - 0.05) / GLOW_RISE);
+                    mix(px, sky.glow, (GLOW_ALPHA[0] + (GLOW_ALPHA[1] - GLOW_ALPHA[0]) * above) * fade * rise);
                 }
 
-                // Nappe : corps à la base ombrée, d'un trait sombre dessous ; dessus éclairé d'une mer
-                // de nuages. Une couche épaisse s'estompe en montant : son sommet se perd dans le voile
-                let inSheet = false;
+                // Plafond nuageux : ombre du dessous du nuage, qui s'éclaircit en montant depuis la
+                // base, et trait sombre de la base ; dessus éclairé d'une mer de nuages
                 if (sheet && yMid > yt - half && yMid < yb + half) {
-                    /** Part de la maille (0 à 1) prise par la tranche de la nappe qui va de y0 à y1 */
+                    /** Part de la maille (0 à 1) prise par la tranche qui va de y0 à y1 */
                     const cover = (y0: number, y1: number) => overlap(yMid - half, yMid + half, y0, y1) / FIELD_RES;
                     const up = yb - yMid;
-                    const fade = smooth((up - SHEET.fade[0]) / (SHEET.fade[1] - SHEET.fade[0]));
-                    const solid = sheet.alpha * (1 - sheet.thick * fade);
-                    const shade = 0.45 * Math.max(0, 1 - up / SHEET.shade);
-                    tint[0] = body[0] + (under[0] - body[0]) * shade;
-                    tint[1] = body[1] + (under[1] - body[1]) * shade;
-                    tint[2] = body[2] + (under[2] - body[2]) * shade;
-                    mix(px, tint, SHEET.alpha * solid * cover(yt, yb));
+                    const shade = SHEET.shadeAlpha * Math.max(0, 1 - up / SHEET.shade);
+                    mix(px, under, shade * sheet.alpha * cover(yt, yb));
                     if (sheet.sea > 0) {
                         const lit = cover(yt, Math.min(yb, yt + SHEET.top));
-                        mix(px, dry.top, lit * sheet.sea * (1 - sheet.thick) * sheet.alpha);
+                        mix(px, dry.top, lit * sheet.sea * sheet.alpha);
                     }
                     mix(px, under, 0.95 * sheet.alpha * cover(Math.max(yt, yb - baseLine), yb));
-                    inSheet = solid > 0.5;
                 }
 
                 // Air saturé à hauteur du relief voisin (il est pris dans les nuages) : tirets horizontaux
-                // en quinconce, comme le symbole de la brume ; clairs sur le ciel, sombres sur le voile.
-                // Rien dans une nappe : elle dit déjà que le relief est dans les nuages
-                if (a.spread[gy] + (b.spread[gy] - a.spread[gy]) * f <= SATURATED_SPREAD) {
+                // en quinconce, comme le symbole de la brume, clairs sur le ciel. Rien sur un voile
+                // dense : il dit déjà que le relief est dans les nuages
+                if (cl <= MIST_CLOUD && a.spread[gy] + (b.spread[gy] - a.spread[gy]) * f <= SATURATED_SPREAD) {
                     const yPx = gy * FIELD_RES;
                     const line = Math.floor(yPx / MIST.pitch);
                     const xPx = gx * FIELD_RES + (line % 2) * (MIST.period / 2);
-                    if (!inSheet && yPx - line * MIST.pitch < MIST.thick && xPx % MIST.period < MIST.dash) {
-                        if (cl > 0.4) mix(px, sky.top, 0.34);
-                        else mix(px, sky.cloud, 0.95);
+                    if (yPx - line * MIST.pitch < MIST.thick && xPx % MIST.period < MIST.dash) {
+                        mix(px, sky.cloud, 0.95);
                     }
                 }
 
@@ -2072,12 +2148,16 @@
                         tr('Base et sommet de la couche d’où tombe la pluie', 'Base and top of the layer the rain falls from'),
                     )
                   : null;
-        return { col, ease, alt, clouds, low, ceiling, genus, rainCloud, snowLine, virga, strongVirga, dust, wave, spread: cumulusSpread(col) };
+        // Valeurs à l'altitude pointée écrites seulement au-dessus d'un seuil : vario, nébulosité (%)
+        const lift = alt != null && alt.w > 0.05 ? alt.w : null;
+        const cloudHere = alt != null && alt.cloud > 3 ? Math.round(alt.cloud) : null;
+        const cloudTotal = col.cloudCover > 0.03 || cloudAbove(col, yMax) > 0.05;
+        return { col, ease, alt, lift, cloudHere, cloudTotal, clouds, low, ceiling, genus, rainCloud, snowLine, virga, strongVirga, dust, wave, spread: cumulusSpread(col) };
     };
 
     // --- Position de l'infobulle, toujours dans le cadre. Au doigt, on la place dans la moitié
     // du graphique opposée au point touché pour ne pas le masquer.
-    const TIP_W = 196;
+    const TIP_W = 218;
     /** Hauteur mesurée de l'infobulle : elle varie avec le nombre de lignes affichées */
     let tipH = 0;
     let pointerType = 'mouse';
@@ -2415,7 +2495,7 @@
             font-weight: bold;
             font-variant-numeric: tabular-nums;
         }
-        // Nuage convectif : contour sombre, pour se détacher du voile comme des nappes ; dans une
+        // Nuage convectif : contour sombre, pour se détacher du voile ; dans une
         // masse de nuages qui se recouvrent, il ne reste des contours qu'un bourgeonnement discret
         .wpp-cu-edge {
             fill: none;
@@ -2471,7 +2551,7 @@
     .wpp-tip {
         position: absolute;
         z-index: 5;
-        width: 196px;
+        width: 218px;
         padding: 6px 10px;
         border-radius: 8px;
         background: var(--wpp-popup-bg);
@@ -2492,6 +2572,26 @@
                 color: var(--wpp-accent);
             }
         }
+        // Valeur à l'altitude pointée : soulignée de la couleur de l'altitude du titre
+        &__here {
+            border-bottom: 1.5px solid var(--wpp-accent);
+        }
+        // Croix de fermeture (au doigt) : seule partie de l'infobulle qui reçoit le toucher
+        &__close {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 32px;
+            height: 30px;
+            padding: 0;
+            border: none;
+            background: none;
+            color: var(--wpp-fg-dim);
+            font-size: 14px;
+            line-height: 1;
+            cursor: pointer;
+            pointer-events: auto;
+        }
         &__row {
             display: flex;
             justify-content: space-between;
@@ -2500,9 +2600,13 @@
                 color: var(--wpp-fg);
                 white-space: nowrap;
             }
-            // Valeur à l'altitude pointée : même couleur que l'altitude du titre
-            &--alt span {
-                color: var(--wpp-accent);
+            // Plusieurs valeurs côte à côte, chacune avec son nom
+            &--items {
+                flex-wrap: wrap;
+                gap: 0 6px;
+                span {
+                    white-space: nowrap;
+                }
             }
             // Valeur suivie de précisions : elles passent à la ligne plutôt que de déborder
             &--wrap b {
@@ -2547,10 +2651,6 @@
             margin-right: 5px;
             border-radius: 2px;
             vertical-align: 0;
-            // Pastille ronde des paliers de la CAPE et du LI, comme dans la légende
-            &--dot {
-                border-radius: 50%;
-            }
         }
         &__hint {
             margin-top: 3px;

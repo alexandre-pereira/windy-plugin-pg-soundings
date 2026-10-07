@@ -155,38 +155,32 @@
                 </li>
                 <li>
                     <svg width="26" height="14"
-                        ><rect x="2" y="0" width="22" height="14" rx="2" fill="#4a8fd0" /><rect x="2" y="4" width="22" height="7" fill="#dce3ed" /><line
-                            x1="2"
-                            x2="24"
-                            y1="4"
-                            y2="4"
-                            stroke="#ffffff"
-                            stroke-width="2"
-                        /><line x1="2" x2="24" y1="11" y2="11" stroke="#8c99ad" stroke-width="1.4" /></svg
+                        ><rect x="2" y="0" width="22" height="14" rx="2" fill="#4a8fd0" /><rect x="2" y="0" width="22" height="11" fill="#dce3ed" /><rect
+                            x="2"
+                            y="7"
+                            width="22"
+                            height="4"
+                            fill="#b9c3d2"
+                        /><line x1="2" x2="24" y1="11" y2="11" stroke="#8c99ad" stroke-width="1.6" /></svg
                     >
-                    <span>{tr("Nappe : la plus basse couche où le modèle prévoit au moins 50 % de nuages, soulignée d’un trait sombre à sa base. C’est le plafond nuageux de l’heure. Couche basse (stratus, stratocumulus, base à moins de 2 000 m du sol, brouillard si elle le touche) : dessinée jusqu’à son sommet, souligné de blanc pour une mer de nuages, sous un air clair et sec. Couche épaisse, ou de l’étage haut : elle s’estompe en montant, son sommet se perd dans le voile. Base et sommet sont placés entre deux niveaux du modèle, à quelques centaines de mètres près", "Sheet: the lowest layer where the model forecasts at least 50 % cloud, underlined by a dark line at its base. It is the cloud ceiling of the hour. Low layer (stratus, stratocumulus, base less than 2,000 m above the ground, fog if it touches it): drawn up to its top, underlined in white for a sea of clouds, under clear dry air. Thick or high-level layer: it fades upwards, its top merging into the veil. Base and top are placed between two model levels, accurate to a few hundred metres")}</span>
+                    <span>{tr("Plafond nuageux : trait sombre, sous une ombre, à la base de la plus basse couche où le modèle prévoit au moins 50 % de nuages ; la couche elle-même est le voile au-dessus. Couche basse (stratus, stratocumulus) quand sa base est à moins de 2 000 m du sol, brouillard si elle le touche ; dessus souligné de blanc pour une mer de nuages, sous un air clair et sec. La base est placée entre deux niveaux du modèle, à quelques centaines de mètres près", "Cloud ceiling: a dark line, under a shadow, at the base of the lowest layer where the model forecasts at least 50 % cloud; the layer itself is the veil above. Low layer (stratus, stratocumulus) when its base is less than 2,000 m above the ground, fog if it touches it; top underlined in white for a sea of clouds, under clear dry air. The base is placed between two model levels, accurate to a few hundred metres")}</span>
                 </li>
                 <li>
                     <svg width="26" height="14"
-                        ><rect x="2" y="0" width="22" height="14" rx="2" fill="#4a8fd0" /><path
-                            d="M2 11V6.5a3.2 3.2 0 0 1 5.5 0a2.4 2.4 0 0 1 4.5 0a3.4 3.4 0 0 1 6 0a3.2 3.2 0 0 1 6 0V11Z"
-                            fill="#dce3ed"
-                        /><line x1="2" x2="24" y1="11" y2="11" stroke="#8c99ad" stroke-width="1.4" /></svg
+                        ><rect x="2" y="0" width="22" height="14" rx="2" fill="#78b0e2" /><rect x="2" y="0" width="22" height="7" fill="#ced6e1" /><rect
+                            x="2"
+                            y="4"
+                            width="22"
+                            height="3"
+                            fill="#9ea9ba"
+                        /><line x1="2" x2="24" y1="7" y2="7" stroke="#5c687c" stroke-width="1.6" /><path
+                            d="M8.5 8.5l-1.4 4M13.5 8.5l-1.4 4M18.5 8.5l-1.4 4"
+                            stroke="#2f7cf6"
+                            stroke-width="1.3"
+                            stroke-linecap="round"
+                        /></svg
                     >
-                    <span>{tr("Dessus moutonné : couche en amas, séparés par des trouées, plutôt qu’en nappe continue. Couche basse que les thermiques nourrissent (cumulus, stratocumulus), ou couche mince de l’étage moyen, à plus de 2 000 m du sol (altocumulus). Une couche épaisse de l’étage moyen garde un dessus lisse : altostratus, ou altocumulus épais", "Lumpy top: a layer of clumps separated by gaps, rather than a continuous sheet. Low layer fed by thermals (cumulus, stratocumulus), or thin mid-level layer, more than 2,000 m above the ground (altocumulus). A thick mid-level layer keeps a smooth top: altostratus, or thick altocumulus")}</span>
-                </li>
-                <li>
-                    <svg width="26" height="14"
-                        ><rect x="2" y="0" width="22" height="14" rx="2" fill="#78b0e2" /><rect x="2" y="0" width="22" height="7" fill="#9ea9ba" /><line
-                            x1="2"
-                            x2="24"
-                            y1="7"
-                            y2="7"
-                            stroke="#5c687c"
-                            stroke-width="1.6"
-                        /><path d="M8.5 8.5l-1.4 4M13.5 8.5l-1.4 4M18.5 8.5l-1.4 4" stroke="#2f7cf6" stroke-width="1.3" stroke-linecap="round" /></svg
-                    >
-                    <span>{tr("Nappe grise : la pluie en tombe (pluie de front, bruine sous un stratus), rideau de pluie dessous", "Grey sheet: the rain falls from it (frontal rain, drizzle under stratus), with a rain curtain below")}</span>
+                    <span>{tr("Rideau de pluie sous le plafond nuageux, dont la base est plus sombre : la pluie tombe de cette couche (pluie de front, bruine sous un stratus)", "Rain curtain under the cloud ceiling, whose base is darker: the rain falls from that layer (frontal rain, drizzle under stratus)")}</span>
                 </li>
                 <li>
                     <svg width="26" height="14"
@@ -196,7 +190,7 @@
                             stroke-width="1.5"
                         /></svg
                     >
-                    <span>{tr("Tirets : relief pris dans les nuages. L’air y est saturé (moins de 1,5 °C entre la température et le point de rosée) et condense sur les pentes, même là où le modèle n’annonce pas de couche. Dessinés seulement en montagne, du sol au niveau des crêtes voisines (pointillé brun, triangle sur l’axe) : le plus haut du terrain à 10 km à la ronde. Rien dans une nappe : elle dit déjà que le relief y est dans les nuages", "Dashes: terrain in cloud. The air there is saturated (less than 1.5 °C between temperature and dew point) and condenses on the slopes, even where the model forecasts no layer. Drawn only in the mountains, from the ground to the level of the nearby ridges (brown dotted line, triangle on the axis): the highest terrain within 10 km. Nothing inside a sheet: it already says the terrain there is in cloud")}</span>
+                    <span>{tr("Tirets : relief pris dans les nuages. L’air y est saturé (moins de 1,5 °C entre la température et le point de rosée) et condense sur les pentes, même là où le modèle n’annonce pas de couche. Dessinés seulement en montagne, du sol au niveau des crêtes voisines (pointillé brun, triangle sur l’axe) : le plus haut du terrain à 10 km à la ronde. Rien sur un voile dense : il dit déjà que le relief y est dans les nuages", "Dashes: terrain in cloud. The air there is saturated (less than 1.5 °C between temperature and dew point) and condenses on the slopes, even where the model forecasts no layer. Drawn only in the mountains, from the ground to the level of the nearby ridges (brown dotted line, triangle on the axis): the highest terrain within 10 km. Nothing on a dense veil: it already says the terrain there is in cloud")}</span>
                 </li>
                 <li>
                     <svg width="26" height="14"

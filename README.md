@@ -12,15 +12,17 @@ Plugin Windy.com qui affiche, pour un site de vol, un graphique **altitude × he
   larges que le modèle prévoit de nuages dans leur couche)
 - **Nuages d'averses** (tours grises, de la base au sommet, avec un rideau de pluie dessous) quand
   la pluie est faite d'averses, même sans thermiques (nuit, ciel couvert) ; les averses d'heures
-  qui se suivent ne font qu'une masse
-- **Plafond nuageux** : la plus basse couche de nuages dense de chaque heure, dessinée en nappe et
-  soulignée d'un trait sombre à sa base. Grise quand la pluie en tombe (pluie de front), avec son
-  rideau de pluie. Couche de **nuages bas** (stratus, stratocumulus) dessinée jusqu'à son sommet,
-  brouillard quand elle touche le sol, dessus souligné de blanc pour une **mer de nuages** ; couche
-  épaisse ou de l'étage haut estompée en montant. Dessus **moutonné** pour une couche en amas,
-  séparés par des trouées : couche de cumulus que nourrissent les thermiques, **altocumulus**
+  qui se suivent, ou qu'une seule heure sans averse sépare, ne font qu'une masse, d'un seul
+  contour, dont la base et le sommet passent par ceux de chaque heure d'averses
+- **Plafond nuageux** : la base de la plus basse couche de nuages dense de chaque heure, soulignée
+  d'un trait sombre sous l'ombre du dessous du nuage ; la couche elle-même est le voile du modèle
+  au-dessus. Base plus sombre et rideau de pluie quand la pluie en tombe (pluie de front). Couche
+  de **nuages bas** (stratus, stratocumulus), brouillard quand elle touche le sol, dessus souligné
+  de blanc pour une **mer de nuages**. Le trait n'est pas dessiné là où un nuage d'averses traverse
+  la couche à la même heure, et s'estompe quand la couche ne dure pas jusqu'à l'heure voisine. Le
+  genre de la couche (cumulus, altocumulus, altostratus) se lit dans l'infobulle
 - En montagne, tirets là où le **relief est pris dans les nuages**, du sol au niveau des crêtes
-  voisines
+  voisines, sauf sous un voile dense qui le montre déjà
 - **Ciel de chaque heure** : bandeau « Nuages » au-dessus du graphique, une case par heure où est
   écrite la couverture nuageuse (%), tous étages confondus ; la case va de transparente (ciel
   dégagé) à grise (ciel couvert), de jour comme de nuit
@@ -46,10 +48,10 @@ Plugin Windy.com qui affiche, pour un site de vol, un graphique **altitude × he
   (tirets bleus), relief du modèle
 - **CAPE et LI heure par heure** : bandeau « CAPE LI » sous la pluie, une case par heure, la CAPE à
   gauche et le LI à droite, chacun sur la couleur de son palier, du vert (stable) au rouge (très
-  instable)
-- Infobulle au survol : vent, température, vario et nuages à l'altitude pointée, puis plafond,
-  qualité des thermiques, cumulus, vario max, T° au sol (à l'altitude du sol dans le modèle),
-  isotherme 0 °C, CAPE / LI, pluie ; aux heures que traverse le trait d'un front, le changement de
+  instable). Le bandeau n'est pas affiché quand les deux restent verts à toutes les heures
+- Infobulle au survol : vent, température, vario et nuages à l'altitude pointée, puis plafond
+  exploitable, qualité des thermiques, cumulus, vario max, T° au sol (à l'altitude du sol dans le
+  modèle), isotherme 0 °C, pluie ; aux heures que traverse le trait d'un front, le changement de
   température en altitude, la rotation du vent, la pluie autour du passage, les heures du passage
   au sol et en altitude et la remontée de la pression
 - Onglets par jour, choix du modèle (ECMWF, ICON, GFS, ICON-EU, ICON-D2, AROME FR, UKV), altitude max, vue 24 h
@@ -78,7 +80,7 @@ Plugin Windy.com qui affiche, pour un site de vol, un graphique **altitude × he
   **rafales** (« Raf. »). Quand le relief est trop mince pour eux, le bas du graphique descend un
   peu sous l'altitude du sol
 - Pluviométrie en bas du graphique principal (barres bleues, en mm) : sous chaque heure, la pluie de
-  l'heure qui suit
+  l'heure qui suit. Le bandeau n'est affiché que s'il pleut à l'une des heures affichées
 - Survolez une colonne pour voir le détail de l'heure, cliquez dessus pour choisir cette heure et
   cette altitude : l'onglet « Émagramme » montre alors le sondage de l'heure choisie.
   Au doigt, touchez une heure pour la lire, ou gardez le doigt appuyé un instant puis glissez : la
@@ -117,7 +119,7 @@ L'interface est en français ou en anglais, selon la langue de Windy.
 Sur <https://www.windy.com/plugins>, choisissez « Load plugin directly from URL » et collez :
 
 ```
-https://windy-plugins.com/2727410/windy-plugin-pg-soundings/1.12.0/plugin.min.js
+https://windy-plugins.com/2727410/windy-plugin-pg-soundings/1.13.0/plugin.min.js
 ```
 
 Le plugin signale ensuite lui-même les nouvelles versions. L'historique est dans
@@ -216,21 +218,23 @@ de pression (souvent 7 niveaux seulement pour ECMWF : rien entre 850 et 700 hPa,
   averse isolée au milieu d'une pluie de front. Le nuage dessiné est celui de la particule
   standard, sinon celui de la particule la plus instable ; sans l'un ni l'autre, la pluie reste
   dessinée sous la nappe
-- dessine les nuages d'averses d'heures qui se suivent assez larges pour se recouvrir : ils ne
-  font qu'une masse, au contour bourgeonnant
-- dessine en nappe le **plafond nuageux** de chaque heure, sa plus basse couche de nuages dense :
+- dessine les nuages d'averses d'heures qui se suivent, ou qu'une seule heure sans averse sépare,
+  en une masse au contour bourgeonnant
+- souligne la base du **plafond nuageux** de chaque heure, sa plus basse couche de nuages dense :
   la couche de nuages bas s'il y en a une (voir plus bas), sinon la plus basse couche continue où
   la nébulosité du modèle atteint 50 %, à n'importe quelle altitude, de l'altitude où elle dépasse
   40 % à celle où elle y retombe. Mesurée à 40 %, la base ne saute pas d'un niveau à l'autre quand
   la nébulosité oscille autour de 50 %. La couche naît à 50 % et se prolonge d'heure en heure tant
   qu'elle garde 40 % à la même altitude : une autre couche, plus basse ou plus haute, qui n'a
-  jamais atteint 50 %, ne prend pas sa place. Deux heures voisines portent la même nappe quand
-  leurs couches se recouvrent en altitude, à 250 m près ; sinon ce sont deux nappes. Une couche
-  épaisse, ou de l'étage haut, s'estompe en montant : seule sa base est sûre, son sommet se perd
-  dans le voile
-- quand la pluie n'est pas faite d'averses, elle tombe de cette nappe, dessinée en gris (**pluie de
-  front**, bruine). Sans couche dense, elle garde la plus basse couche continue où la nébulosité
-  atteint la moitié de sa plus forte valeur
+  jamais atteint 50 %, ne prend pas sa place. Deux heures voisines portent la même couche quand
+  leurs altitudes se recouvrent, à 250 m près ; sinon ce sont deux couches, et le long d'une même
+  couche, base et sommet sont lissés avec les heures voisines (moyenne sur trois heures) : ils
+  sautaient d'un niveau du modèle à l'autre quand la nébulosité oscille autour du seuil. Seule la base est
+  dessinée : la couche elle-même est le voile du modèle, léger jusqu'à 40 % de nébulosité et
+  plein dès 75 %, et son sommet s'y perd
+- quand la pluie n'est pas faite d'averses, elle tombe de cette couche, à la base plus sombre
+  (**pluie de front**, bruine). Sans couche dense, elle garde la plus basse couche continue où la
+  nébulosité atteint la moitié de sa plus forte valeur
 - dessine une **couche de nuages bas** (stratus, stratocumulus) quand la plus basse couche continue à
   50 % de nébulosité a sa base à moins de 2 000 m du sol et son sommet à moins de 3 000 m (plus
   épaisse, c'est une masse nuageuse de front). Elle naît à 50 % et se prolonge d'heure en heure tant
@@ -239,14 +243,12 @@ de pression (souvent 7 niveaux seulement pour ECMWF : rien entre 850 et 700 hPa,
   du ciel sous un air clair (20 % de nuages au plus) et sec (T − Td ≥ 5 °C) au niveau du modèle
   juste au-dessus. Base et sommet sont interpolés entre deux niveaux du modèle : ils ne sont justes
   qu'à quelques centaines de mètres près quand ces niveaux sont espacés
-- donne le **genre** d'une couche quand le profil le dit, et dessine son dessus moutonné quand elle
-  est faite d'amas séparés par des trouées. Une couche de nuages bas est une **couche de cumulus**
-  (cumulus, stratocumulus) quand des thermiques exploitables montent jusqu'à elle, à 300 m près ;
-  sans thermique, le profil ne sépare pas le stratus du stratocumulus : elle reste « nuages bas »,
-  au dessus lisse. Une couche sans pluie dont la base est à l'étage moyen (à plus de 2 000 m du
-  sol, sous 450 hPa) est un **altocumulus** si elle fait moins de 2 000 m d'épaisseur, dessiné en
-  bande mince au dessus moutonné (le modèle ne sait pas le faire aussi mince qu'il est) ; plus
-  épaisse, c'est un **altostratus** ou un altocumulus épais, qui s'estompe en montant. Calé sur le
+- donne le **genre** d'une couche quand le profil le dit, écrit dans l'infobulle. Une couche de
+  nuages bas est une **couche de cumulus** (cumulus, stratocumulus) quand des thermiques
+  exploitables montent jusqu'à elle, à 300 m près ; sans thermique, le profil ne sépare pas le
+  stratus du stratocumulus : elle reste « nuages bas ». Une couche sans pluie dont la base est à
+  l'étage moyen (à plus de 2 000 m du sol, sous 450 hPa) est un **altocumulus** si elle fait moins
+  de 2 000 m d'épaisseur ; plus épaisse, c'est un **altostratus** ou un altocumulus épais. Calé sur le
   genre noté par les observateurs des mêmes 62 stations : sous une couche de cumulus, ils notent
   des cumulus ou des cumulonimbus 8 fois sur 10 (4 fois sur 10 sous une couche basse sans
   thermique) ; sous un altocumulus, des altocumulus près de 8 fois sur 10 ; sous une couche
@@ -299,7 +301,7 @@ de pression (souvent 7 niveaux seulement pour ECMWF : rien entre 850 et 700 hPa,
   paramètre de Scorer (stabilité ÷ carré du vent) est au moins deux fois plus fort dans les 1 500
   premiers mètres que plus haut. L'orientation des crêtes n'est pas connue : c'est un signal
 - dessine les cumulus des thermiques d'autant plus larges que le modèle prévoit de nuages dans
-  leur couche : la moitié de la colonne à 10 % de nébulosité ou moins, presque toute la colonne à
+  leur couche : la moitié de la colonne à 10 % de nébulosité ou moins, les quatre cinquièmes à
   60 % (cumulus étalés)
 - trace la courbe d'état de l'**émagramme** en gardant l'air surchauffé près du sol. Entre le point
   à 2 m et le premier niveau de pression, souvent 300 à 500 m plus haut, le modèle ne donne rien :

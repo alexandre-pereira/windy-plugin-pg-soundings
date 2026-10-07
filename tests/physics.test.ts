@@ -1074,9 +1074,11 @@ describe('plafond nuageux d’heure en heure', () => {
         const [low, mass, mid, none] = cloudDecksOf([STRATUS, MASS, middle(90), CLEAR], dry(4));
         expect(low!.low).toMatchObject({ sea: true, fog: false });
         expect(low!.top).toBeLessThan(1600);
-        expect(mass).toMatchObject({ low: null, rain: false, top: 4400 });
+        // La masse et la couche de l'heure suivante se recouvrent : même couche, lissée entre elles
+        expect(mass).toMatchObject({ low: null, rain: false });
+        expect(mass!.top).toBeGreaterThan(4000);
         expect(mass!.base).toBeGreaterThan(900);
-        expect(mass!.base).toBeLessThan(1600);
+        expect(mass!.base).toBeLessThan(2000);
         expect(mid!.low).toBeNull();
         expect(mid!.base).toBeGreaterThan(1600);
         expect(mid!.base).toBeLessThan(3200);
@@ -1097,6 +1099,30 @@ describe('plafond nuageux d’heure en heure', () => {
     it('la couche naît à 50 % et se prolonge tant qu’elle garde 40 %', () => {
         const decks = cloudDecksOf([45, 60, 45, 30, 45].map(middle), dry(5));
         expect(decks.map(d => d != null)).toEqual([true, true, true, false, false]);
+    });
+
+    it('le long d’une même couche, la base est lissée avec les heures voisines', () => {
+        /** Masse nuageuse dont la base, entre 900 et 1 600 m, monte avec la nébulosité à 900 m */
+        const mass = (cloud900: number) => [
+            GROUND,
+            level(900, cloud900, 0.5),
+            level(1600, 90, 0.5),
+            level(3200, 90, 0.5),
+            level(4400, 90, 0.5),
+        ];
+        const raw = [60, 0, 60].map(c => cloudDecksOf([mass(c)], dry(1))[0]!.base);
+        expect(raw[1]).toBeGreaterThan(raw[0] + 300);
+        const decks = cloudDecksOf([60, 0, 60].map(mass), dry(3));
+        expect(decks.every(d => d && d.joined === (d !== decks[0]))).toBe(true);
+        // Les trois heures : moyenne avec les voisines, le creux du milieu est comblé pour moitié
+        const bases = decks.map(d => d!.base);
+        expect(bases[1]).toBeCloseTo((raw[0] + 2 * raw[1] + raw[2]) / 4, 0);
+        expect(bases[0]).toBeCloseTo((3 * raw[0] + raw[1]) / 4, 0);
+        expect(bases[1] - bases[0]).toBeLessThan(raw[1] - raw[0]);
+        // Deux couches différentes ne se lissent pas entre elles
+        const [low, mid] = cloudDecksOf([STRATUS, middle(90)], dry(2));
+        expect(mid!.joined).toBe(false);
+        expect(low!.base).toBe(cloudDecksOf([STRATUS], dry(1))[0]!.base);
     });
 
     it('elle ne se prolonge qu’à la même altitude : un lambeau plus bas ne prend pas sa place', () => {

@@ -9,14 +9,16 @@
         {title}
     </div>
 
-    <!-- Nouvelle version publiée : un plugin installé par lien ne se met pas à jour tout seul -->
+    <!-- Nouvelle version publiée : un plugin installé par lien ne se met pas à jour tout seul. Le
+         champ de Windy où coller le lien contient déjà « https://windy-plugins.com/ » : collé à la
+         suite, le lien commencerait deux fois -->
     {#if newVersion && newVersion !== dismissedVersion}
         <div class="wpp__update">
             <div class="wpp__update-text">
                 <b>🆕 {tr('Nouvelle version', 'New version')} {newVersion}</b>
                 {tr(
-                    'Pour l’installer : windy.com/plugins → « Load plugin directly from URL » → colle le lien.',
-                    'To install it: windy.com/plugins → “Load plugin directly from URL” → paste the link.',
+                    'Pour l’installer : windy.com/plugins → « Load plugin directly from URL » → colle le lien à la place du texte déjà dans le champ.',
+                    'To install it: windy.com/plugins → “Load plugin directly from URL” → paste the link in place of the text already in the field.',
                 )}
             </div>
             <div class="wpp__update-actions">
@@ -662,6 +664,10 @@
         }
     };
     $: saveTheme(lightTheme);
+    // Le fond et la croix de fermeture que Windy dessine autour du panneau, sur téléphone, suivent
+    // le thème : ils sont hors du panneau, d'où la classe posée sur l'élément qui le contient
+    const LIGHT_ROOT = 'wpp-root--light';
+    $: root?.classList.toggle(LIGHT_ROOT, lightTheme);
 
     // Ascension de la particule sur l'émagramme : option, mémorisée dans le navigateur
     const ASCENT_KEY = 'wpp-ascent';
@@ -1392,6 +1398,7 @@
         if (pickerTimer) clearTimeout(pickerTimer);
         removeMarker();
         clearSize();
+        root?.classList.remove(LIGHT_ROOT);
     });
 </script>
 
@@ -1418,6 +1425,8 @@
         --wpp-border-strong: rgba(255, 255, 255, 0.32);
         --wpp-popup-bg: rgba(18, 24, 32, 0.97);
         --wpp-popup-border: rgba(255, 255, 255, 0.15);
+        // Fond des listes déroulantes des réglages, opaque : le navigateur les dessine hors du panneau
+        --wpp-menu-bg: #1c2632;
         --wpp-sky-top: #22364a;
         --wpp-sky-bottom: #1a2531;
         --wpp-stable: #e9edf2;
@@ -1459,6 +1468,7 @@
             --wpp-border-strong: rgba(15, 23, 42, 0.32);
             --wpp-popup-bg: rgba(255, 255, 255, 0.98);
             --wpp-popup-border: rgba(15, 23, 42, 0.15);
+            --wpp-menu-bg: #ffffff;
             --wpp-sky-top: #e8f0f8;
             --wpp-sky-bottom: #d9e4ee;
             --wpp-stable: #1f2933;
@@ -1570,7 +1580,18 @@
                 border-radius: 4px;
                 padding: 2px 4px;
                 font-size: 12px;
+                // La liste déroulante est dessinée par le navigateur, sur fond blanc s'il ne sait rien
+                // du thème : le texte clair du thème sombre n'y serait pas lisible
+                color-scheme: dark;
+
+                option {
+                    background: var(--wpp-menu-bg);
+                    color: var(--wpp-fg);
+                }
             }
+        }
+        &--light &__footer select {
+            color-scheme: light;
         }
         &__check {
             cursor: pointer;
@@ -2165,6 +2186,14 @@
     // tire : elle est masquée, la taille du panneau ne se change que par le réglage du bas de page
     .wpp ~ :global(.sliding-x) {
         display: none;
+    }
+    // Thème clair, sur téléphone : le fond du panneau de Windy, visible dans la bande laissée au-dessus
+    // du contenu, et sa croix de fermeture, blanche, prennent les couleurs du thème
+    :global(.plugin-mobile-bottom-slide.wpp-root--light) {
+        background-color: #f6f8fb !important;
+    }
+    :global(.plugin-mobile-bottom-slide.wpp-root--light > .closing-x) {
+        color: #1f2933 !important;
     }
     // Windy donne 25 px de marge à gauche et à droite du contenu : une partie est rendue au graphique
     .wpp {

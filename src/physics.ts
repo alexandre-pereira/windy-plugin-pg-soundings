@@ -1457,24 +1457,48 @@ export const cloudDecksOf = (
         const rain = !!rains[k];
         const layer = lows[k] ?? dense[k] ?? (rain ? rainLayer(p) : null);
         if (!layer) return null;
-        const thermalTop = thermalTops[k];
-        let genus: DeckGenus | null = null;
-        if (lows[k]) {
-            if (thermalTop != null && thermalTop >= layer.base - FED_MARGIN) genus = 'cumulus';
-        } else if (
-            !rain &&
-            layer.base - p[0].z > LOW_CLOUD_BASE &&
-            pressureAt(p, layer.base) > HIGH_STAGE
-        )
-            genus = layer.top - layer.base < MID_THICK ? 'altocumulus' : 'altostratus';
-        return { base: layer.base, top: layer.top, low: lows[k], rain, joined: false, genus };
+        return { base: layer.base, top: layer.top, low: lows[k], rain, joined: false, genus: null };
     });
     decks.forEach((deck, k) => {
         const before = decks[k - 1];
         if (deck && before) deck.joined = sameLayer(deck, before);
     });
-    return decks;
+    // Le long d'une même couche, base et sommet sont lissés d'une heure à l'autre (moyenne avec
+    // les heures voisines) : ils sautent d'un niveau du modèle à l'autre quand la nébulosité
+    // oscille autour du seuil, ce qui faisait zigzaguer le plafond d'un jour de pluie
+    const smoothed = decks.map((deck, k) => {
+        if (!deck) return deck;
+        const before = deck.joined ? decks[k - 1] : null;
+        const after = decks[k + 1]?.joined ? decks[k + 1] : null;
+        if (!before && !after) return deck;
+        const mean = (key: 'base' | 'top') =>
+            ((before ?? deck)[key] + 2 * deck[key] + (after ?? deck)[key]) / 4;
+        // Le brouillard garde sa base au sol
+        const base = deck.low?.fog ? deck.base : mean('base');
+        // Au plus le dernier niveau fourni par le modèle à cette heure
+        const zTop = profiles[k][profiles[k].length - 1].z;
+        const top = Math.min(zTop, Math.max(mean('top'), base + DECK_MIN_DEPTH));
+        return { ...deck, base, top, low: deck.low && { ...deck.low, base, top } };
+    });
+    // Genre, d'après la couche lissée
+    smoothed.forEach((deck, k) => {
+        if (!deck) return;
+        const p = profiles[k];
+        const thermalTop = thermalTops[k];
+        if (deck.low) {
+            if (thermalTop != null && thermalTop >= deck.base - FED_MARGIN) deck.genus = 'cumulus';
+        } else if (
+            !deck.rain &&
+            deck.base - p[0].z > LOW_CLOUD_BASE &&
+            pressureAt(p, deck.base) > HIGH_STAGE
+        )
+            deck.genus = deck.top - deck.base < MID_THICK ? 'altocumulus' : 'altostratus';
+    });
+    return smoothed;
 };
+
+/** Épaisseur (m) que garde au moins une couche dont base et sommet sont lissés */
+const DECK_MIN_DEPTH = 100;
 
 /**
  * Écart T − Td (K) sous lequel l'air condense dès qu'une pente le soulève de moins de 200 m (le
