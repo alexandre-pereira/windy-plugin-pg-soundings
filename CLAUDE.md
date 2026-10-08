@@ -85,8 +85,8 @@ Les réglages de l'utilisateur sont gardés dans le `localStorage` de Windy, sou
   `npm run site` la fabrique en local pour la voir. `.tmp/site-wordpress/` garde sa première
   forme, un bloc HTML à coller dans WordPress
 - `scripts/site-capture.png` : capture du plugin affichée par cette page
-- `scripts/weflare.css`, `scripts/weflare.svg`, `scripts/weflare-mark.svg` : habillage commun des
-  pages des outils WeFlare (feuille de style, logo, icône de l'onglet). Les mêmes fichiers sont
+- `scripts/wesoar.css`, `scripts/wesoar.svg`, `scripts/wesoar-mark.svg` : habillage commun des
+  pages des outils WeSoar (feuille de style, logo, icône de l'onglet). Les mêmes fichiers sont
   dans le dépôt de chaque outil (`outils/` de `trimming-tools`) : une modification s'y reporte
   telle quelle. Ce qui est propre à cette page reste dans `site-page.mjs`
 - `instagram/` (ignoré par git, retiré du dépôt le 2026-10-07) : visuels et légendes des

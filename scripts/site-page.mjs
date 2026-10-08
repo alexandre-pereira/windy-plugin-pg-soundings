@@ -6,7 +6,7 @@
 //                                   site/favicon.svg (dossier ignoré par git)
 //
 // La version vient de src/pluginConfig.ts, les versions de CHANGELOG.en.md et de CHANGELOG.md.
-// L'habillage (scripts/weflare.css, scripts/weflare.svg) est celui de tous les outils WeFlare.
+// L'habillage (scripts/wesoar.css, scripts/wesoar.svg) est celui de tous les outils WeSoar.
 // GitHub refait la page et la publie à chaque envoi sur main (.github/workflows/pages.yml) : rien
 // à lancer à la main, sauf pour la voir avant de l'envoyer.
 
@@ -37,7 +37,7 @@ const SITE_URL = (process.env.SITE_URL ?? '').replace(/\/+$/, '');
 const LANGS = ['en', 'fr'];
 /** Clé du `localStorage` qui retient la langue choisie par le visiteur */
 const LANG_KEY = 'wf-lang';
-/** Les autres outils WeFlare, cités au pied de la page */
+/** Les autres outils WeSoar, cités au pied de la page */
 const OTHER_TOOLS = [
     {
         // L'application n'existe qu'en français : une seule adresse
@@ -123,7 +123,7 @@ const TEXTS = {
             return `${d} ${months.split(' ')[m - 1]} ${y}`;
         },
         disclaimer: `Estimates drawn from forecast models: nothing replaces watching the sky. PG Soundings is an independent, free and <a href="${REPO}">open-source</a> plugin; how each estimate is computed is described in its <a href="${REPO}#readme">README</a> (in French).`,
-        madeBy: 'Developed and offered free of charge by WeFlare.',
+        madeBy: 'Developed and offered free of charge by WeSoar.',
         otherTools: 'Other free tools:',
         langLabel: 'Language',
     },
@@ -193,7 +193,7 @@ const TEXTS = {
             return `${d === 1 ? '1er' : d} ${months.split(' ')[m - 1]} ${y}`;
         },
         disclaimer: `Des estimations tirées des modèles de prévision : rien ne remplace l’observation du ciel. PG Soundings est un plugin indépendant, gratuit et <a href="${REPO}">à code ouvert</a> ; la façon dont chaque estimation est calculée est décrite dans son <a href="${REPO}#readme">README</a>.`,
-        madeBy: 'Développé et offert gratuitement par WeFlare.',
+        madeBy: 'Développé et offert gratuitement par WeSoar.',
         otherTools: 'Autres outils gratuits :',
         langLabel: 'Langue',
     },
@@ -268,9 +268,9 @@ const oneLine = css =>
         .replace(/\s*\n\s*/g, ' ')
         .trim();
 
-// Ce qui est propre à cette page ; le reste vient de la feuille commune des outils WeFlare
+// Ce qui est propre à cette page ; le reste vient de la feuille commune des outils WeSoar
 const css =
-    oneLine(read('scripts/weflare.css')) +
+    oneLine(read('scripts/wesoar.css')) +
     oneLine(`
 .pgs-cols{display:grid;grid-template-columns:minmax(0,320px) minmax(0,1fr);gap:clamp(20px,4vw,40px);align-items:start}
 .pgs-shot{border:6px solid var(--wf-ink);border-radius:26px;overflow:hidden;background:#2b2b2b;
@@ -288,8 +288,8 @@ const css =
 @media (max-width:720px){.pgs-cols{grid-template-columns:1fr}.pgs-shot{max-width:320px;margin:0 auto}}
 `);
 
-/** Le logo WeFlare, dessiné dans la page pour prendre la couleur du texte */
-const logo = read('scripts/weflare.svg').trim().replace('<svg ', '<svg class="wf-logo" ');
+/** Le logo WeSoar, dessiné dans la page pour prendre la couleur du texte */
+const logo = read('scripts/wesoar.svg').trim().replace('<svg ', '<svg class="wf-logo" ');
 
 /** Adresse du dossier d'une langue, depuis la page d'une autre : « ./ », « fr/ » ou « ../ » */
 const pathTo = (from, to) =>
@@ -413,7 +413,7 @@ for (const lang of LANGS) {
     fs.writeFileSync(path.join(dir, 'index.html'), pageOf(lang));
 }
 fs.copyFileSync(path.join(root, SHOT_SOURCE), path.join(out, SHOT));
-fs.copyFileSync(path.join(root, 'scripts/weflare-mark.svg'), path.join(out, 'favicon.svg'));
+fs.copyFileSync(path.join(root, 'scripts/wesoar-mark.svg'), path.join(out, 'favicon.svg'));
 console.log(
     `site/ : PG Soundings ${version}, ` +
         LANGS.map(lang => `${lang} ${versions[lang].length} versions`).join(', ') +

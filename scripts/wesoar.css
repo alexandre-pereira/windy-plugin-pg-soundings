@@ -1,12 +1,12 @@
 /*
- * Style commun des pages de présentation des outils WeFlare (PG Soundings, Trimming tools…).
+ * Style commun des pages de présentation des outils WeSoar (PG Soundings, Trimming tools…).
  *
  * Le même fichier est copié dans le dépôt de chaque outil, qui l'insère dans sa page : une
  * modification se reporte telle quelle dans les autres dépôts, pour que les pages restent de la
  * même famille. Ce qui est propre à un outil s'écrit dans son script de page, pas ici.
  *
  * Thème clair seulement. Les couleurs sont celles du thème clair de Wing Trim, la police est
- * celle du logo WeFlare (Mona Sans, chargée par la page depuis Google Fonts).
+ * celle du logo WeSoar (Mona Sans, chargée par la page depuis Google Fonts).
  */
 
 :root {
@@ -72,7 +72,7 @@ img {
     height: auto;
 }
 
-/* Bandeau du haut : logo WeFlare à gauche, choix de la langue à droite */
+/* Bandeau du haut : logo WeSoar à gauche, choix de la langue à droite */
 .wf-top {
     max-width: var(--wf-width);
     margin: 0 auto;
@@ -90,7 +90,7 @@ img {
 
 .wf-logo {
     display: block;
-    height: 34px;
+    height: 45px;
     width: auto;
 }
 
@@ -394,7 +394,7 @@ img {
     white-space: nowrap;
 }
 
-/* Pied de page : ce que dit l'outil de lui-même, puis WeFlare et ses autres outils */
+/* Pied de page : ce que dit l'outil de lui-même, puis WeSoar et ses autres outils */
 .wf-foot {
     border-top: 1px solid var(--wf-line);
     background: var(--wf-surface);
@@ -424,7 +424,7 @@ img {
 }
 
 .wf-made .wf-logo {
-    height: 26px;
+    height: 35px;
 }
 
 .wf-tools {
