@@ -1,0 +1,264 @@
+PG Soundings : titulaire, marques et fichiers tiers (NOTICE)
+============================================================
+
+Ce fichier accompagne la licence (LICENSE). Il dit à qui appartient le code, ce que la licence ne
+couvre pas, et d'où viennent les fichiers qui ne sont pas de PG Soundings, avec leurs licences.
+
+
+1. Code de PG Soundings
+-----------------------
+
+Le code de PG Soundings appartient à WeSoar SASU, qui le diffuse. Il est écrit par Alexandre
+Pereira. Il est sous licence ISC (fichier LICENSE), à l'exception des fichiers tiers de la
+section 3, qui gardent leurs auteurs et leurs licences.
+
+
+2. Nom et logo WeSoar
+---------------------
+
+Le nom WeSoar et son logo (scripts/wesoar.svg, scripts/wesoar-mark.svg, et le même dessin partout
+où il est repris) appartiennent à WeSoar et n'entrent pas dans la licence ISC. La licence ne donne
+aucun droit sur eux : ils ne s'utilisent qu'avec l'autorisation écrite de WeSoar. Une copie fidèle
+du dépôt peut les garder, pour désigner WeSoar comme diffuseur d'origine ; une version modifiée ne
+porte ni le nom ni le logo WeSoar, et ne laisse pas croire qu'elle vient de WeSoar ou que WeSoar
+l'approuve.
+
+
+3. Fichiers tiers
+-----------------
+
+3.1 Modèle de plugin de Windy (windycom/windy-plugin-template)
+
+Source : https://github.com/windycom/windy-plugin-template
+Auteur et licence déclarés par le modèle (package.json : "author": "Windyty, S.E.",
+"license": "ISC") ; le modèle n'a pas de fichier de licence ni d'année de copyright.
+
+Repris tels quels :
+  .eslintrc.cjs (sauf un commentaire retiré), .prettierrc, tsconfig.eslint.json,
+  declarations/index.d.ts, declarations/leaflet-gl-L.d.ts
+Repris et modifiés :
+  rollup.config.js, tsconfig.json, svelte.config.js
+
+    ISC License
+
+    Copyright (c) Windyty, S.E.
+
+    Permission to use, copy, modify, and/or distribute this software for any
+    purpose with or without fee is hereby granted, provided that the above
+    copyright notice and this permission notice appear in all copies.
+
+    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+    WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+    MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+    ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+    WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+    ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+    OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+3.2 Leaflet et MapLibre GL JS, dans declarations/leaflet-gl-L.d.ts
+
+declarations/leaflet-gl-L.d.ts (déclarations de types de la carte de Windy, tirées du modèle
+ci-dessus) reprend la documentation de Leaflet et de MapLibre GL JS. Il ne sert qu'à la
+vérification des types et à l'éditeur (type de l'objet global L utilisé par src/plugin.svelte) :
+il n'entre pas dans la version compilée du plugin.
+
+Leaflet (https://github.com/Leaflet/Leaflet), licence BSD à 2 clauses :
+
+    BSD 2-Clause License
+
+    Copyright (c) 2010-2026, Volodymyr Agafonkin
+    Copyright (c) 2010-2011, CloudMade
+    All rights reserved.
+
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions are met:
+
+    1. Redistributions of source code must retain the above copyright notice, this
+       list of conditions and the following disclaimer.
+
+    2. Redistributions in binary form must reproduce the above copyright notice,
+       this list of conditions and the following disclaimer in the documentation
+       and/or other materials provided with the distribution.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+    FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+    DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+    SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+    CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+    OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+MapLibre GL JS (https://github.com/maplibre/maplibre-gl-js), licence BSD à 3 clauses, texte
+complet du fichier LICENSE.txt du projet (avec Mapbox GL JS v1.13, glfx.js et d3-color, dont il
+contient du code) :
+
+    Copyright (c) 2023, MapLibre contributors
+
+    All rights reserved.
+
+    Redistribution and use in source and binary forms, with or without modification,
+    are permitted provided that the following conditions are met:
+
+        * Redistributions of source code must retain the above copyright notice,
+          this list of conditions and the following disclaimer.
+        * Redistributions in binary form must reproduce the above copyright notice,
+          this list of conditions and the following disclaimer in the documentation
+          and/or other materials provided with the distribution.
+        * Neither the name of MapLibre GL JS nor the names of its contributors
+          may be used to endorse or promote products derived from this software
+          without specific prior written permission.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+    A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+    CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+    EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+    PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+    PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+    LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+    NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+    -------------------------------------------------------------------------------
+
+    Contains code from mapbox-gl-js v1.13 and earlier
+
+    Version v1.13 of mapbox-gl-js and earlier are licensed under a BSD-3-Clause license
+
+    Copyright (c) 2020, Mapbox
+    Redistribution and use in source and binary forms, with or without modification,
+    are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright notice,
+      this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright notice,
+      this list of conditions and the following disclaimer in the documentation
+      and/or other materials provided with the distribution.
+    * Neither the name of Mapbox GL JS nor the names of its contributors
+      may be used to endorse or promote products derived from this software
+      without specific prior written permission.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+    A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+    CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+    EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+    PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+    PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+    LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+    NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+    EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+    -------------------------------------------------------------------------------
+
+    Contains code from glfx.js
+
+    Copyright (C) 2011 by Evan Wallace
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in
+    all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+    THE SOFTWARE.
+
+    --------------------------------------------------------------------------------
+
+    Contains a portion of d3-color https://github.com/d3/d3-color
+
+    Copyright 2010-2016 Mike Bostock
+    All rights reserved.
+
+    Redistribution and use in source and binary forms, with or without modification,
+    are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright notice, this
+      list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above copyright notice,
+      this list of conditions and the following disclaimer in the documentation
+      and/or other materials provided with the distribution.
+
+    * Neither the name of the author nor the names of contributors may be used to
+      endorse or promote products derived from this software without specific prior
+      written permission.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+    ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+    ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+    (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+    LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+    ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+3.3 Svelte, dans la version compilée du plugin
+
+La version compilée (dist/plugin.min.js, publiée sur Windy) contient le code de Svelte
+(https://github.com/sveltejs/svelte), version 4, sous licence MIT. Le texte de cette licence est
+repris en tête du fichier compilé :
+
+    Copyright (c) 2016-23 [these people](https://github.com/sveltejs/svelte/graphs/contributors)
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy of this
+    software and associated documentation files (the "Software"), to deal in the Software without
+    restriction, including without limitation the rights to use, copy, modify, merge, publish,
+    distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
+    Software is furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all copies or
+    substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+    INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+    PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR
+    ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+    ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+
+3.4 Police Mona Sans, de la page de présentation
+
+scripts/mona-sans.woff2 est le fichier MonaSansVF[opsz,wght].woff2, non modifié (seul son nom
+change), de la version officielle v2.0.27 de Mona Sans :
+  https://github.com/github/mona-sans/releases/tag/v2.0.27
+  archive mona-sans-webfonts-v2.0.27.zip, fichier fonts/webfonts/variable/MonaSansVF[opsz,wght].woff2
+  SHA-256 : 62e40f6e14e5bbb97132b4513a4d97319ab6aaa46996cf46c7a9f357edadb662
+scripts/mona-sans-OFL.txt est le fichier OFL.txt de la même archive : Copyright 2022 The Mona
+Sans Project Authors (https://github.com/github/mona-sans), with Reserved Font Name "Mona",
+sous SIL Open Font License 1.1.
+
+
+English summary
+---------------
+
+The PG Soundings code belongs to WeSoar SASU, which distributes it; it is written by Alexandre
+Pereira and licensed under the ISC licence (LICENSE), except for the third-party files listed in
+section 3, which keep their own authors and licences: configuration files and type declarations
+from windycom/windy-plugin-template (ISC, Windyty, S.E.), the Leaflet (BSD-2-Clause) and MapLibre
+GL JS (BSD-3-Clause) documentation in declarations/leaflet-gl-L.d.ts, Svelte (MIT) in the compiled
+plugin, and the unmodified Mona Sans font (SIL Open Font License 1.1). The WeSoar name and logo
+(scripts/wesoar.svg, scripts/wesoar-mark.svg, and the same design wherever it appears) belong to
+WeSoar and are not covered by the licence: they may only be used with WeSoar's written permission.
+An unmodified copy of the repository may keep them, to credit WeSoar as the original distributor;
+a modified version must not bear the WeSoar name or logo, nor suggest that it comes from or is
+endorsed by WeSoar.

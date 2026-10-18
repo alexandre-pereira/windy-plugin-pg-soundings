@@ -89,7 +89,10 @@ Les réglages de l'utilisateur sont gardés dans le `localStorage` de Windy, sou
   forme, un bloc HTML à coller dans WordPress
 - `scripts/site-capture.png` : capture du plugin affichée par cette page
 - `scripts/mona-sans.woff2`, `scripts/mona-sans-OFL.txt` : police de la page et sa licence, servies
-  avec elle (pas de Google Fonts, qui verrait l'adresse IP des visiteurs)
+  avec elle (pas de Google Fonts, qui verrait l'adresse IP des visiteurs). C'est le fichier
+  officiel `MonaSansVF[opsz,wght].woff2` de github/mona-sans v2.0.27, non modifié (provenance et
+  empreinte dans `NOTICE`) : ne pas le sous-ensembler ni le retoucher, une version modifiée ne
+  pourrait plus porter le nom réservé « Mona » (SIL OFL)
 - `scripts/wesoar.css`, `scripts/wesoar.svg`, `scripts/wesoar-mark.svg` : habillage commun des
   pages des outils WeSoar (feuille de style, logo, icône de l'onglet). Les mêmes fichiers sont
   dans le dépôt de chaque outil (`outils/` de `trimming-tools`) : une modification s'y reporte
@@ -120,8 +123,11 @@ Les réglages de l'utilisateur sont gardés dans le `localStorage` de Windy, sou
 - Le plugin n'interroge que Windy : aucune requête vers un autre site (GitHub, polices, mesure
   d'audience…), qui verrait passer l'adresse IP de l'utilisateur.
 - Le plugin est diffusé par WeSoar (`author` de `pluginConfig.ts`, mentions légales de la page) ;
-  le code reste celui d'Alexandre Pereira (`LICENSE`). Le nom WeSoar et son logo n'entrent pas
-  dans la licence ISC : ne rien écrire qui les dise libres.
+  le code appartient à WeSoar SASU et est écrit par Alexandre Pereira. `LICENSE` ne contient que le
+  texte ISC canonique (GitHub y reconnaît la licence) ; le reste va dans `NOTICE` : titulaire, nom
+  et logo WeSoar (hors de la licence ISC : ne rien écrire qui les dise libres), fichiers tiers et
+  leurs licences (configuration et `declarations/` du modèle de plugin de Windy, Svelte dans la
+  version compilée, police). Un fichier tiers ajouté au dépôt y est noté avec sa licence.
 - `.windy-api-key` contient la clé de publication : ne jamais l'afficher ni la versionner.
 
 ## Changelog

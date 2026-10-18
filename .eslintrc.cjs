@@ -96,7 +96,6 @@ const tsRules = {
 const importOrder = {
     'import/order': [
         'warn',
-        // DO NOT make it too detailed, we are not nazi
         {
             groups: [['builtin', 'internal', 'external'], ['parent', 'sibling', 'index'], 'type'],
 

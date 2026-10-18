@@ -15,9 +15,10 @@ release notes. Every version can still be installed from Windy at
 - At the bottom of the panel, above “Settings & info”, a reminder that stays visible: the values
   are estimates drawn from forecast models, nothing replaces watching the sky, and the decision to
   fly is the pilot’s.
-- In “Settings & info”, a link to the legal notice and privacy.
-- The code is published under the ISC licence (`LICENSE` file), as Windy asks of plugins open to
-  everyone.
+- In “Settings & info”, a link to the legal notice and privacy, and what goes through Windy: the
+  forecasts, the position asked for on first opening and the favourites.
+- The code is published under an open-source licence, as Windy asks of plugins open to everyone:
+  the ISC licence (`LICENSE` file).
 
 ### Changed
 

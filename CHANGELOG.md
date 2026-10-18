@@ -15,9 +15,10 @@ coup à partir des notes de publication. Chaque version reste installable depuis
 - Au bas du panneau, au-dessus de « Réglages et infos », un rappel toujours visible : les valeurs
   sont des estimations tirées des modèles de prévision, rien ne remplace l'observation du ciel, et
   la décision de voler appartient au pilote.
-- Dans « Réglages et infos », un lien vers les mentions légales et la confidentialité.
-- Le code est publié sous licence ISC (fichier `LICENSE`), comme Windy le demande aux plugins
-  ouverts à tous.
+- Dans « Réglages et infos », un lien vers les mentions légales et la confidentialité, et ce qui
+  passe par Windy : les prévisions, la position demandée à la première ouverture et les favoris.
+- Le code est publié sous licence open source, comme Windy le demande aux plugins ouverts à
+  tous : la licence ISC (fichier `LICENSE`).
 
 ### Modifié
 

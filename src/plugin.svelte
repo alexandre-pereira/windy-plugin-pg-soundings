@@ -428,7 +428,7 @@
         {/if}
         <!-- Éditeur, licence et données personnelles : les mentions légales de la page du plugin -->
         <p class="wpp__about">
-            {tr('PG Soundings, diffusé par WeSoar, à code ouvert (licence ISC). Il ne collecte aucune donnée :', 'PG Soundings, distributed by WeSoar, open source (ISC licence). It collects no data:')}
+            {tr('PG Soundings, diffusé par WeSoar, à code ouvert (licence ISC). Il ne collecte aucune donnée : prévisions, position demandée à la première ouverture et favoris passent par Windy. Détail :', 'PG Soundings, distributed by WeSoar, open source (ISC licence). It collects no data: forecasts, the position asked for on first opening and favourites go through Windy. Details:')}
             <a
                 href={tr('https://soundings.wesoar.fr/fr/#legal', 'https://soundings.wesoar.fr/#legal')}
                 target="_blank"

@@ -17,11 +17,22 @@ const useSourceMaps = true;
 /**
  * Mentions de licence en tête de la version minifiée, posées après la minification qui retire les
  * commentaires : celle du plugin, et celle de Svelte, dont le code compilé est inclus (la licence
- * MIT demande de la reproduire)
+ * MIT demande d'en reproduire le copyright et le texte, ici en entier, tel que dans
+ * node_modules/svelte/LICENSE.md). Les commentaires `/*!` sont ceux que les minificateurs gardent.
  */
 const LICENCES =
-    '/*! PG Soundings | (c) Alexandre Pereira, diffusé par WeSoar | ISC | github.com/alexandre-pereira/windy-plugin-pg-soundings */\n' +
-    '/*! Svelte | (c) 2016-23 Svelte contributors | MIT | github.com/sveltejs/svelte/blob/main/LICENSE.md */\n';
+    '/*! PG Soundings | (c) 2026 WeSoar SASU | ISC | github.com/alexandre-pereira/windy-plugin-pg-soundings */\n' +
+    `/*! Svelte (https://github.com/sveltejs/svelte), licence MIT :
+
+Copyright (c) 2016-23 [these people](https://github.com/sveltejs/svelte/graphs/contributors)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
+`;
 const licences = () => ({ name: 'licences', renderChunk: code => ({ code: LICENCES + code, map: null }) });
 
 const input = 'src/plugin.svelte';

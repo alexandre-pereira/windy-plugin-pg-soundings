@@ -127,18 +127,34 @@ Le plugin signale ensuite lui-même les nouvelles versions. L'historique est dan
 
 ## Données personnelles
 
-Le plugin ne collecte aucune donnée. Les prévisions, l'altitude du terrain et les lieux favoris
-sont lus auprès de Windy, avec le compte Windy de l'utilisateur. Les réglages (taille du panneau,
-thème, dernier lieu…) restent dans le navigateur. Pour savoir si une version plus récente existe,
-le plugin interroge au plus toutes les 6 heures windy-plugins.com, le site des plugins de Windy :
-aucun site extérieur à Windy ne voit passer l'utilisateur.
+Le plugin ne collecte aucune donnée : il n'a pas de serveur et n'envoie rien à WeSoar. Ce qu'il
+lit ou écrit passe par Windy :
+
+- **Prévisions, terrain, nom du lieu** : les prévisions, l'altitude du terrain et le nom du lieu
+  choisi sont demandés à Windy.
+- **Position, à la première ouverture** : quand le plugin s'ouvre sans lieu (ni lieu donné par la
+  carte, ni dernier lieu gardé dans le navigateur), il demande la position de l'appareil par la
+  géolocalisation de Windy. Le navigateur ou l'appareil demande alors l'autorisation ; sans elle,
+  Windy donne une position approchée, tirée de l'adresse IP, et à défaut le plugin prend le centre
+  de la carte. Cette position devient le lieu affiché, et le dernier lieu gardé dans le navigateur.
+- **Favoris** : les lieux favoris sont ceux de Windy. Le cœur de l'en-tête ajoute le lieu affiché
+  (son nom et ses coordonnées) aux favoris de Windy, ou l'en retire : Windy l'enregistre dans ses favoris
+  et, si l'utilisateur est connecté, dans son compte Windy, d'où le lieu se retrouve sur ses autres
+  appareils.
+- **Réglages** : la taille du panneau, le thème, le dernier lieu… restent dans le navigateur.
+- **Nouvelle version** : pour savoir si une version plus récente existe, le plugin interroge au plus
+  toutes les 6 heures windy-plugins.com, le site des plugins de Windy.
+
+Aucun site extérieur à Windy ne voit passer l'utilisateur.
 
 ## Licence
 
-Code d'Alexandre Pereira, ouvert sous licence [ISC](LICENSE) et diffusé par WeSoar. Le nom WeSoar
-et son logo n'entrent pas dans la licence : ils appartiennent à WeSoar, et une version modifiée ne
-les porte pas. La version compilée contient Svelte (licence MIT). Les mentions légales sont au pied de la
-[page du plugin](https://soundings.wesoar.fr/fr/#legal).
+Code de WeSoar SASU, écrit par Alexandre Pereira, ouvert sous licence [ISC](LICENSE) et diffusé
+par WeSoar. Le fichier [NOTICE](NOTICE) dit ce que la licence ne couvre pas : le nom WeSoar et son
+logo, qui appartiennent à WeSoar (une version modifiée ne les porte pas), et les fichiers tiers,
+qui gardent leurs auteurs et leurs licences (fichiers de configuration et déclarations de types
+tirés du modèle de plugin de Windy, Svelte dans la version compilée, police Mona Sans de la page).
+Les mentions légales sont au pied de la [page du plugin](https://soundings.wesoar.fr/fr/#legal).
 
 Les valeurs affichées sont des estimations tirées des modèles de prévision, qui peuvent se tromper :
 elles ne remplacent ni l'observation du ciel ni les prévisions officielles, et la décision de voler
