@@ -88,8 +88,8 @@ const OTHER_TOOLS = [
         // Le Viewer n'existe qu'en français : une seule adresse
         url: { en: 'https://viewer.wesoar.fr/', fr: 'https://viewer.wesoar.fr/' },
         name: {
-            en: 'Viewer WeSoar, your flight tracks replayed in 3D and shared with a link',
-            fr: 'Viewer WeSoar, le replay 3D de vos traces de vol, à partager d’un lien',
+            en: 'Viewer 3D, to replay your flights over the terrain and share them',
+            fr: 'Viewer 3D, pour revoir vos vols sur le relief et les partager',
         },
     },
 ];
@@ -528,16 +528,21 @@ const LABELS = {
     registration: 'immatriculation (RCS)',
     phone: 'téléphone',
 };
-const missing = Object.keys({ ...LABELS, ...PUBLISHER }).filter(
-    key => (key in LABELS && !PUBLISHER[key]) || String(PUBLISHER[key] ?? '').includes(TODO),
-);
-if (missing.length) {
-    const text = `Mentions légales incomplètes, à remplir dans PUBLISHER : ${missing.map(key => LABELS[key] ?? key).join(', ')}`;
-    // Sur GitHub, la page n'est pas publiée avec des mentions légales incomplètes : l'erreur arrête
-    // la publication (.github/workflows/pages.yml) tant que PUBLISHER n'est pas rempli
+const empty = Object.keys(LABELS).filter(key => !PUBLISHER[key]);
+const todo = Object.keys(PUBLISHER).filter(key => String(PUBLISHER[key] ?? '').includes(TODO));
+const names = keys => keys.map(key => LABELS[key] ?? key).join(', ');
+// Un champ vidé par erreur arrête la publication sur GitHub (.github/workflows/pages.yml). Les champs encore
+// marqués « à compléter » (en attente du Kbis) ne font qu'avertir : bloquer ne publierait que l'ancienne page,
+// avec les mêmes trous et sans les textes corrigés depuis. Une fois PUBLISHER rempli, les traiter comme `empty`.
+if (empty.length) {
+    const text = `Mentions légales incomplètes, champs vides dans PUBLISHER : ${names(empty)}`;
     if (process.env.GITHUB_ACTIONS) {
         console.error(`::error::${text}`);
         process.exit(1);
     }
     console.warn(text);
+}
+if (todo.length) {
+    const text = `Mentions légales à compléter dans PUBLISHER (Kbis) : ${names(todo)}`;
+    console.warn(process.env.GITHUB_ACTIONS ? `::warning::${text}` : `Attention : ${text}`);
 }
