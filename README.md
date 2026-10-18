@@ -135,8 +135,9 @@ aucun site extérieur à Windy ne voit passer l'utilisateur.
 
 ## Licence
 
-Code d'Alexandre Pereira, ouvert sous licence [ISC](LICENSE) et diffusé par WeSoar. La version
-compilée contient Svelte (licence MIT). Les mentions légales sont au pied de la
+Code d'Alexandre Pereira, ouvert sous licence [ISC](LICENSE) et diffusé par WeSoar. Le nom WeSoar
+et son logo n'entrent pas dans la licence : ils appartiennent à WeSoar, et une version modifiée ne
+les porte pas. La version compilée contient Svelte (licence MIT). Les mentions légales sont au pied de la
 [page du plugin](https://soundings.wesoar.fr/fr/#legal).
 
 Les valeurs affichées sont des estimations tirées des modèles de prévision, qui peuvent se tromper :

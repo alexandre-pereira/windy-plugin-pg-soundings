@@ -1,3 +1,29 @@
+PG Soundings : licence
+======================
+
+Le code de PG Soundings est écrit par Alexandre Pereira, titulaire des droits, et diffusé
+par WeSoar. Il est sous licence ISC, dont le texte complet suit.
+
+Ne sont pas couverts par cette licence :
+
+- le nom WeSoar et son logo (scripts/wesoar.svg, scripts/wesoar-mark.svg, et le même
+  dessin partout où il est repris), qui appartiennent à WeSoar. La licence ne donne aucun
+  droit sur eux : ils ne s'utilisent qu'avec l'autorisation écrite de WeSoar. Une copie
+  fidèle du dépôt peut les garder, pour désigner WeSoar comme diffuseur d'origine ; une
+  version modifiée ne porte ni le nom ni le logo WeSoar, et ne laisse pas croire qu'elle
+  vient de WeSoar ou que WeSoar l'approuve ;
+- la police Mona Sans (scripts/mona-sans.woff2), des Mona Sans Project Authors, sous
+  SIL Open Font License 1.1 (scripts/mona-sans-OFL.txt).
+
+English: the code is under the ISC licence below. The WeSoar name and logo
+(scripts/wesoar.svg, scripts/wesoar-mark.svg, and the same design wherever it appears)
+belong to WeSoar and are not covered by it: they may only be used with WeSoar's written
+permission. An unmodified copy of the repository may keep them, to credit WeSoar as the
+original distributor; a modified version must not bear the WeSoar name or logo, nor
+suggest that it comes from or is endorsed by WeSoar. The Mona Sans typeface is under the
+SIL Open Font License 1.1.
+
+
 ISC License
 
 Copyright (c) 2026 Alexandre Pereira

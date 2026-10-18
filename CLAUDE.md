@@ -122,7 +122,8 @@ Les réglages de l'utilisateur sont gardés dans le `localStorage` de Windy, sou
 - Le plugin n'interroge que Windy : aucune requête vers un autre site (GitHub, polices, mesure
   d'audience…), qui verrait passer l'adresse IP de l'utilisateur.
 - Le plugin est diffusé par WeSoar (`author` de `pluginConfig.ts`, mentions légales de la page) ;
-  le code reste celui d'Alexandre Pereira (`LICENSE`).
+  le code reste celui d'Alexandre Pereira (`LICENSE`). Le nom WeSoar et son logo n'entrent pas
+  dans la licence ISC : ne rien écrire qui les dise libres.
 - `.windy-api-key` contient la clé de publication : ne jamais l'afficher ni la versionner.
 
 ## Changelog
