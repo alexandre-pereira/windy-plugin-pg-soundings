@@ -86,7 +86,9 @@ Les réglages de l'utilisateur sont gardés dans le `localStorage` de Windy, sou
   langue par défaut) et en français dans `site/fr/`, fabriquée depuis `src/pluginConfig.ts`,
   `CHANGELOG.en.md` et `CHANGELOG.md`. Ses textes sont dans `TEXTS`, une entrée par langue. Ses
   mentions légales (pied de page) prennent l'éditeur dans `PUBLISHER` (société WeSoar) et
-  l'hébergeur dans `HOST` ; un champ vide n'est pas écrit, et `npm run site` le signale.
+  l'hébergeur dans `HOST` ; un champ vide n'est pas écrit, et `npm run site` le signale. Sur
+  GitHub (`GITHUB_ACTIONS`), un champ obligatoire vide ou encore « à compléter » fait échouer le
+  script, et donc la publication de la page.
   `.github/workflows/pages.yml` la refait et la publie sur GitHub Pages à chaque envoi sur `main` ;
   `npm run site` la fabrique en local pour la voir. `.tmp/site-wordpress/` garde sa première
   forme, un bloc HTML à coller dans WordPress

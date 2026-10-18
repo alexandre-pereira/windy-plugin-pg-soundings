@@ -35,9 +35,10 @@ const SITE_URL = (process.env.SITE_URL ?? '').replace(/\/+$/, '');
 
 /**
  * Éditeur de la page, pour les mentions légales (LCEN, art. 1-1) : la société WeSoar, qui diffuse
- * le plugin. Ce qui n'est pas encore connu porte la marque `TODO` (« […à compléter] ») : la page
- * l'affiche tel quel et la fabrication de la page le signale. Capital, siège et immatriculation
- * sont à reporter depuis l'extrait Kbis ; le téléphone est obligatoire pour une société.
+ * le plugin. Ce qui n'est pas encore connu porte la marque `TODO` (« […à compléter] ») : en local,
+ * la fabrication de la page le signale ; sur GitHub, elle échoue, et la page n'est pas publiée tant
+ * qu'un champ en porte la marque. Capital, siège et immatriculation sont à reporter depuis l'extrait
+ * Kbis ; le téléphone est obligatoire pour une société.
  */
 const TODO = 'à compléter';
 const PUBLISHER = {
@@ -107,7 +108,11 @@ const TEXTS = {
         source: 'Source code',
         shotAlt:
             'Altitude × hour chart of PG Soundings: wind arrows, thermal zone, shower clouds and a cold front passing',
-        shotCredit: 'Source: <a href="https://www.windy.com/">Windy.com</a>',
+        shotCredit:
+            'Source: <a href="https://www.windy.com/">Windy.com</a> — ECMWF IFS model data, © ECMWF, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>, processed by PG Soundings',
+        // Crédit de la capture dans l'aperçu des liens, qui montre l'image sans sa légende
+        shotSource:
+            'Screenshot: Windy.com, ECMWF IFS model data, © ECMWF, CC BY 4.0, processed by PG Soundings.',
         features: [
             [
                 'Wind aloft',
@@ -175,9 +180,11 @@ const TEXTS = {
                 .filter(Boolean)
                 .join(', ')}. Publication director: ${p.director}, president.`,
             `<b>Host</b>: ${h.name} (GitHub Pages), ${h.address}, United States, phone ${h.phone}.`,
-            `<b>Personal data</b>: this page sets no cookie, does not measure its audience and loads nothing from other sites. It only keeps, in your browser, the language you chose. As with any web page, the host (GitHub) receives the visitor’s IP address. The plugin itself collects no data and sends nothing to WeSoar: what it reads or writes goes through Windy. It asks Windy for the forecasts, the terrain height and the name of the place. When it opens without a place (none given by the map, no last place kept in the browser), it asks for the device’s position through Windy’s geolocation: the browser or the device asks for your permission; without it, Windy gives an approximate position drawn from the IP address. The heart in its header adds the place shown (name and coordinates) to Windy’s favourites, or removes it: Windy saves it, in your Windy account if you are signed in. Its settings and last place stay in the browser, and it checks windy-plugins.com, Windy’s plugin site, for a new version at most every 6 hours (<a href="${REPO}#données-personnelles">details</a>, in French).`,
+            `<b>Personal data</b>: the controller is WeSoar (the publisher), contact <a href="mailto:${p.email}">${p.email}</a>. This page sets no cookie, does not measure its audience and loads nothing from other sites; it only keeps, in your browser, the language you chose. Its host, GitHub, Inc. (United States, certified under the EU-U.S. Data Privacy Framework), records visitors’ IP addresses in its logs for the security of the service, and keeps them for the periods set by its <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">privacy statement</a>. An e-mail sent to WeSoar is kept for the time of the exchange.`,
+            `<b>The plugin</b> collects no data and sends nothing to WeSoar: what it reads or writes goes through Windy. It asks Windy for the forecasts, the terrain height and the name of the place. When it opens without a place (none given by the map, no last place kept), it asks for the device’s position through Windy’s geolocation: the browser asks for your permission, unless it was already given to windy.com, in which case no prompt appears; without it, Windy gives an approximate position drawn from the IP address. The heart in its header adds the place shown (name and coordinates) to Windy’s favourites, or removes it: Windy saves it, in your Windy account if you are signed in. Its settings and last place stay in the browser storage of the windy.com site, readable by Windy and its other plugins; the device’s position is only kept there, as in the page address, rounded to about 1 km, and “Forget the last place” erases it. It checks windy-plugins.com, Windy’s plugin site, for a new version at most every 6 hours (<a href="${REPO}#données-personnelles">details</a>, in French).`,
+            `<b>Your rights</b>: you can ask for access to your data, its rectification or erasure, and object to its processing, by writing to <a href="mailto:${p.email}">${p.email}</a>. You can also lodge a complaint with the CNIL (<a href="https://www.cnil.fr/">cnil.fr</a>).`,
             `<b>Intellectual property</b>: the code of PG Soundings belongs to WeSoar SASU; written by Alexandre Pereira, it is published under the <a href="${REPO}/blob/main/LICENSE">ISC licence</a> and distributed by WeSoar. The WeSoar name and logo belong to the publisher and are not covered by this licence; third-party files keep their own authors and licences (<a href="${REPO}/blob/main/NOTICE">NOTICE</a>). The Mona Sans typeface is used under the <a href="${base}mona-sans-OFL.txt">SIL Open Font License</a>. Windy is a trademark of Windyty, SE; PG Soundings is not published by Windy.`,
-            `<b>Liability</b>: the plugin shows estimates computed from forecast models, which can be wrong. They do not replace watching the sky or official forecasts, and the decision to fly is the pilot’s alone.`,
+            `<b>Liability</b>: the plugin shows estimates computed from forecast models, which can be wrong. It is an unofficial, uncertified tool, for flight preparation only: it is not official aeronautical weather information (check your national aviation weather service; in France, Météo-France and AEROWEB). No thunderstorm warning does not mean no risk, and airspace regulations must be followed. The estimates do not replace watching the sky or official forecasts, and the decision to fly is the pilot’s alone.`,
         ],
         otherTools: 'Other free tools:',
         langLabel: 'Language',
@@ -195,7 +202,10 @@ const TEXTS = {
         source: 'Code source',
         shotAlt:
             'Graphique altitude × heure de PG Soundings : flèches du vent, zone des thermiques, nuages d’averses et passage d’un front froid',
-        shotCredit: 'Source : <a href="https://www.windy.com/">Windy.com</a>',
+        shotCredit:
+            'Source : <a href="https://www.windy.com/">Windy.com</a> — données du modèle ECMWF IFS, © ECMWF, <a href="https://creativecommons.org/licenses/by/4.0/deed.fr">CC BY 4.0</a>, retraitées par PG Soundings',
+        shotSource:
+            'Capture : Windy.com, données du modèle ECMWF IFS, © ECMWF, CC BY 4.0, retraitées par PG Soundings.',
         features: [
             [
                 'Vent en altitude',
@@ -263,9 +273,11 @@ const TEXTS = {
                 .filter(Boolean)
                 .join(', ')}. Directeur de la publication : ${p.director}, président.`,
             `<b>Hébergeur</b> : ${h.name} (GitHub Pages), ${h.address}, États-Unis, téléphone ${h.phone}.`,
-            `<b>Données personnelles</b> : cette page ne pose aucun cookie, ne mesure pas l’audience et ne charge rien depuis d’autres sites. Elle retient seulement, dans votre navigateur, la langue choisie. Comme pour toute page web, l’hébergeur (GitHub) reçoit l’adresse IP du visiteur. Le plugin lui-même ne collecte aucune donnée et n’envoie rien à WeSoar : ce qu’il lit ou écrit passe par Windy. Il demande à Windy les prévisions, l’altitude du terrain et le nom du lieu. Quand il s’ouvre sans lieu (ni lieu donné par la carte, ni dernier lieu gardé dans le navigateur), il demande la position de l’appareil par la géolocalisation de Windy : le navigateur ou l’appareil vous demande l’autorisation ; sans elle, Windy donne une position approchée, tirée de l’adresse IP. Le cœur de son en-tête ajoute le lieu affiché (nom et coordonnées) aux favoris de Windy, ou l’en retire : Windy l’enregistre, dans votre compte Windy si vous êtes connecté. Ses réglages et le dernier lieu restent dans le navigateur, et il interroge au plus toutes les 6 heures windy-plugins.com, le site des plugins de Windy, pour savoir si une nouvelle version existe (<a href="${REPO}#données-personnelles">détail</a>).`,
+            `<b>Données personnelles</b> : le responsable du traitement est WeSoar (l’éditeur), contact <a href="mailto:${p.email}">${p.email}</a>. Cette page ne pose aucun cookie, ne mesure pas l’audience et ne charge rien depuis d’autres sites ; elle retient seulement, dans votre navigateur, la langue choisie. Son hébergeur, GitHub, Inc. (États-Unis, certifié au Data Privacy Framework UE–États-Unis), enregistre l’adresse IP des visiteurs dans ses journaux, pour la sécurité du service, et la garde pendant les durées fixées par sa <a href="https://docs.github.com/fr/site-policy/privacy-policies/github-general-privacy-statement">déclaration de confidentialité</a>. Un e-mail envoyé à WeSoar est gardé le temps de l’échange.`,
+            `<b>Le plugin</b> ne collecte aucune donnée et n’envoie rien à WeSoar : ce qu’il lit ou écrit passe par Windy. Il demande à Windy les prévisions, l’altitude du terrain et le nom du lieu. Quand il s’ouvre sans lieu (ni lieu donné par la carte, ni dernier lieu gardé), il demande la position de l’appareil par la géolocalisation de Windy : le navigateur vous demande l’autorisation, sauf si elle a déjà été donnée à windy.com, auquel cas aucune demande n’apparaît ; sans elle, Windy donne une position approchée, tirée de l’adresse IP. Le cœur de son en-tête ajoute le lieu affiché (nom et coordonnées) aux favoris de Windy, ou l’en retire : Windy l’enregistre, dans votre compte Windy si vous êtes connecté. Ses réglages et le dernier lieu restent dans le stockage du navigateur pour le site windy.com, lisible par Windy et ses autres plugins ; la position de l’appareil n’y est gardée, comme dans l’adresse de la page, qu’arrondie à environ 1 km, et « Oublier le dernier lieu » l’efface. Il interroge au plus toutes les 6 heures windy-plugins.com, le site des plugins de Windy, pour savoir si une nouvelle version existe (<a href="${REPO}#données-personnelles">détail</a>).`,
+            `<b>Vos droits</b> : vous pouvez demander l’accès à vos données, leur rectification ou leur effacement, et vous opposer à leur traitement, en écrivant à <a href="mailto:${p.email}">${p.email}</a>. Vous pouvez aussi adresser une réclamation à la CNIL (<a href="https://www.cnil.fr/">cnil.fr</a>).`,
             `<b>Propriété intellectuelle</b> : le code de PG Soundings appartient à WeSoar SASU ; écrit par Alexandre Pereira, il est publié sous <a href="${REPO}/blob/main/LICENSE">licence ISC</a> et diffusé par WeSoar. Le nom et le logo WeSoar appartiennent à l’éditeur et n’entrent pas dans cette licence ; les fichiers tiers gardent leurs auteurs et leurs licences (<a href="${REPO}/blob/main/NOTICE">NOTICE</a>). La police Mona Sans est utilisée sous <a href="${base}mona-sans-OFL.txt">licence SIL Open Font License</a>. Windy est une marque de Windyty, SE ; PG Soundings n’est pas édité par Windy.`,
-            `<b>Responsabilité</b> : le plugin affiche des estimations calculées à partir de modèles de prévision, qui peuvent se tromper. Elles ne remplacent ni l’observation du ciel ni les prévisions officielles, et la décision de voler appartient au seul pilote.`,
+            `<b>Responsabilité</b> : le plugin affiche des estimations calculées à partir de modèles de prévision, qui peuvent se tromper. C’est un outil non officiel et non certifié, pour la seule préparation du vol : ce n’est pas une information météorologique aéronautique officielle (consultez Météo-France et AEROWEB). L’absence d’alerte d’orage ne signifie pas l’absence de risque, et la réglementation de l’espace aérien reste à respecter. Ces estimations ne remplacent ni l’observation du ciel ni les prévisions officielles, et la décision de voler appartient au seul pilote.`,
         ],
         otherTools: 'Autres outils gratuits :',
         langLabel: 'Langue',
@@ -382,7 +394,8 @@ const pageOf = lang => {
         `<meta property="og:type" content="website">`,
         `<meta property="og:locale" content="${t.locale}">`,
         `<meta property="og:title" content="${t.title}">`,
-        `<meta property="og:description" content="${t.description}">`,
+        // La capture (og:image) n'est pas fabriquée ici : son crédit va dans la description
+        `<meta property="og:description" content="${t.description} ${t.shotSource}">`,
         ...(SITE_URL
             ? [
                   `<link rel="canonical" href="${publicUrl(lang)}">`,
@@ -508,14 +521,23 @@ console.log(
         LANGS.map(lang => `${lang} ${versions[lang].length} versions`).join(', ') +
         (SITE_URL ? `, pour ${SITE_URL}` : ''),
 );
-const missing = Object.entries({
+// Champs obligatoires vides, et tout champ encore marqué « à compléter »
+const LABELS = {
     capital: 'capital',
     address: 'siège social',
     registration: 'immatriculation (RCS)',
     phone: 'téléphone',
-}).filter(([key]) => !PUBLISHER[key] || PUBLISHER[key].includes(TODO));
+};
+const missing = Object.keys({ ...LABELS, ...PUBLISHER }).filter(
+    key => (key in LABELS && !PUBLISHER[key]) || String(PUBLISHER[key] ?? '').includes(TODO),
+);
 if (missing.length) {
-    console.warn(
-        `Mentions légales incomplètes, à remplir dans PUBLISHER : ${missing.map(([, label]) => label).join(', ')}`,
-    );
+    const text = `Mentions légales incomplètes, à remplir dans PUBLISHER : ${missing.map(key => LABELS[key] ?? key).join(', ')}`;
+    // Sur GitHub, la page n'est pas publiée avec des mentions légales incomplètes : l'erreur arrête
+    // la publication (.github/workflows/pages.yml) tant que PUBLISHER n'est pas rempli
+    if (process.env.GITHUB_ACTIONS) {
+        console.error(`::error::${text}`);
+        process.exit(1);
+    }
+    console.warn(text);
 }
