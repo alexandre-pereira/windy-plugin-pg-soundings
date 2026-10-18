@@ -8,7 +8,7 @@ The git repository only starts after 1.2.7: older entries were reconstructed aft
 release notes. Every version can still be installed from Windy at
 `https://windy-plugins.com/2727410/<plugin-name>/<version>/plugin.min.js`.
 
-## [Unreleased]
+## [1.14.0] - 2026-10-18
 
 ### Added
 
