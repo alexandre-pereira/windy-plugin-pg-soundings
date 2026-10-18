@@ -2,7 +2,6 @@ import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import terser from '@rollup/plugin-terser';
 
-import serve from 'rollup-plugin-serve';
 import rollupSvelte from 'rollup-plugin-svelte';
 import rollupSwc from 'rollup-plugin-swc3';
 import rollupCleanup from 'rollup-plugin-cleanup';
@@ -11,6 +10,8 @@ import { less } from 'svelte-preprocess-less';
 import sveltePreprocess from 'svelte-preprocess';
 
 import { transformCodeToESMPlugin, keyPEM, certificatePEM } from '@windycom/plugin-devtools';
+
+import { devServer } from './scripts/dev-server.js';
 
 const useSourceMaps = true;
 
@@ -91,18 +92,6 @@ export default {
         }),
         commonjs(),
         transformCodeToESMPlugin(),
-        process.env.SERVE !== 'false' &&
-            serve({
-                contentBase: 'dist',
-                host: '0.0.0.0',
-                port: 9999,
-                headers: {
-                    'Access-Control-Allow-Origin': '*',
-                },
-                https: {
-                    key: keyPEM,
-                    cert: certificatePEM,
-                },
-            }),
+        process.env.SERVE !== 'false' && devServer({ dir: 'dist', port: 9999, key: keyPEM, cert: certificatePEM }),
     ],
 };
