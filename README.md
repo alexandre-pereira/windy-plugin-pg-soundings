@@ -114,6 +114,21 @@ Plugin Windy.com qui affiche, pour un site de vol, un graphique **altitude × he
 
 L'interface est en français ou en anglais, selon la langue de Windy.
 
+## Données de prévision
+
+Les prévisions viennent de Windy.com, qui sert les modèles de leurs producteurs. PG Soundings les
+interpole (au pas horaire, entre les niveaux d'altitude) et en tire ses propres estimations :
+
+- **ECMWF** : modèle IFS, © ECMWF, licence CC BY 4.0
+- **ICON, ICON-EU, ICON-D2** : source Deutscher Wetterdienst
+- **GFS** : NOAA, domaine public ; la NOAA ne soutient ni n'approuve PG Soundings
+- **AROME** : source Météo-France, Licence Ouverte Etalab 2.0
+- **UKV** : source Met Office
+
+Le panneau donne la source du modèle choisi dans « Réglages et infos ». Quand Windy ne fournit le
+modèle que toutes les 3 heures (compte sans Premium, échéances lointaines), une ligne sous le
+graphique le dit et donne les heures que le modèle fournit : les autres sont interpolées.
+
 ## Installer le plugin
 
 Sur <https://www.windy.com/plugins>, choisissez « Load plugin directly from URL » et collez :
@@ -134,14 +149,21 @@ lit ou écrit passe par Windy :
   choisi sont demandés à Windy.
 - **Position, à la première ouverture** : quand le plugin s'ouvre sans lieu (ni lieu donné par la
   carte, ni dernier lieu gardé dans le navigateur), il demande la position de l'appareil par la
-  géolocalisation de Windy. Le navigateur ou l'appareil demande alors l'autorisation ; sans elle,
-  Windy donne une position approchée, tirée de l'adresse IP, et à défaut le plugin prend le centre
-  de la carte. Cette position devient le lieu affiché, et le dernier lieu gardé dans le navigateur.
+  géolocalisation de Windy. Le navigateur demande alors l'autorisation, sauf si elle a déjà été
+  donnée à windy.com : aucune demande n'apparaît dans ce cas. Sans autorisation, Windy donne une
+  position approchée, tirée de l'adresse IP, et à défaut le plugin prend le centre de la carte.
+  Cette position devient le lieu affiché ; elle n'est gardée dans le navigateur et écrite dans
+  l'adresse de la page qu'arrondie à 0,01° (environ 1 km). Un lieu choisi sur la carte ou dans les
+  favoris est gardé tel quel.
+- **Dernier lieu** : il est gardé dans le stockage du navigateur (`localStorage`) pour le site
+  windy.com, où Windy et ses autres plugins peuvent le lire. Le bouton « Oublier le dernier lieu »
+  de « Réglages et infos » l'efface ; le prochain lieu choisi est de nouveau gardé.
 - **Favoris** : les lieux favoris sont ceux de Windy. Le cœur de l'en-tête ajoute le lieu affiché
   (son nom et ses coordonnées) aux favoris de Windy, ou l'en retire : Windy l'enregistre dans ses favoris
   et, si l'utilisateur est connecté, dans son compte Windy, d'où le lieu se retrouve sur ses autres
   appareils.
-- **Réglages** : la taille du panneau, le thème, le dernier lieu… restent dans le navigateur.
+- **Réglages** : la taille du panneau, le thème… restent dans le stockage du navigateur pour
+  windy.com, comme le dernier lieu.
 - **Nouvelle version** : pour savoir si une version plus récente existe, le plugin interroge au plus
   toutes les 6 heures windy-plugins.com, le site des plugins de Windy.
 
@@ -158,7 +180,10 @@ Les mentions légales sont au pied de la [page du plugin](https://soundings.weso
 
 Les valeurs affichées sont des estimations tirées des modèles de prévision, qui peuvent se tromper :
 elles ne remplacent ni l'observation du ciel ni les prévisions officielles, et la décision de voler
-appartient au seul pilote.
+appartient au seul pilote. PG Soundings est un outil non officiel et non certifié, pour la seule
+préparation du vol : ce n'est pas une information météorologique aéronautique officielle (consulter
+Météo-France et AEROWEB). L'absence d'alerte d'orage ne signifie pas l'absence de risque, et la
+réglementation de l'espace aérien reste à respecter.
 
 ## Lancer le plugin en local
 

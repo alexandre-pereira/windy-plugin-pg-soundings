@@ -24,7 +24,9 @@ export interface LoadedForecast {
 /** Prévision d'un point telle que Windy la donne, ramenée au pas horaire */
 const loadPayload = async (model: string, lat: number, lon: number, include: Include) => {
     // Windy ne tient compte de `days` qu'avec un abonnement Premium ; sans lui, il sert 5 jours,
-    // ou 7 avec `extended` (le maximum que son serveur accorde à un compte sans Premium)
+    // ou 7 avec `extended` (le maximum que son serveur accorde à un compte sans Premium).
+    // `extended` n'est pas documenté pour les plugins : il reste en place pour le moment, une
+    // demande d'accord à Windy pour s'en servir étant en préparation.
     const query: Query = { lat, lon, step: 1, days: MAX_DAYS, extended: true };
     const { data } = await getPointForecastData(model as Model, query, include);
     // Heure par heure même si Windy ne donne qu'un pas de 3 h (compte sans Premium)

@@ -77,6 +77,8 @@ Les réglages de l'utilisateur sont gardés dans le `localStorage` de Windy, sou
   hauteur sur téléphone), posée par-dessus les règles CSS de Windy
 - `src/favorites.ts` : lieux favoris, ceux du compte Windy (`@windy/userFavs`), listés et modifiés
   depuis l'en-tête du panneau (`src/PlacePicker.svelte`)
+- `src/position.ts` : dernier lieu gardé dans le navigateur (et oublié à la demande) ; la position
+  de l'appareil n'y est gardée, comme dans l'adresse de la page (`setUrl`), qu'arrondie à 0,01°
 - `src/pluginConfig.ts` : nom, version et description envoyés à Windy
 - `scripts/publish.mjs` : envoi à Windy
 - `scripts/site-page.mjs` : page de présentation du plugin (dossier `site/`, ignoré par git : le

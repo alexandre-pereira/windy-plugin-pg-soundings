@@ -10,7 +10,25 @@ coup à partir des notes de publication. Chaque version reste installable depuis
 
 ## [Non publié]
 
+### Ajouté
+
+- Dans « Réglages et infos », l'origine des données du modèle choisi et la licence de son
+  producteur (par exemple « ECMWF IFS via Windy.com (© ECMWF, CC BY 4.0) »), interpolées et
+  retraitées par PG Soundings.
+- Sous le graphique, une ligne quand Windy ne fournit le modèle que toutes les 3 heures pour le
+  jour affiché : elle donne les heures fournies par le modèle, les autres étant interpolées.
+- Dans « Réglages et infos », un bouton « Oublier le dernier lieu », qui efface le lieu gardé dans
+  le navigateur.
+
 ### Modifié
+
+- Le rappel du bas du panneau le dit aussi : outil non officiel et non certifié, pour la seule
+  préparation du vol, qui n'est pas une information météorologique aéronautique officielle
+  (Météo-France, AEROWEB) ; l'absence d'alerte d'orage ne signifie pas l'absence de risque ; la
+  réglementation de l'espace aérien reste à respecter.
+- La position de l'appareil, demandée quand le plugin s'ouvre sans lieu, n'est plus gardée dans le
+  navigateur ni écrite dans l'adresse de la page qu'arrondie à environ 1 km. Les lieux choisis sur
+  la carte restent exacts.
 
 - La recherche d'une nouvelle version interroge le site des plugins de Windy en 10 requêtes au plus
   (60 auparavant). Un plugin très en retard voit d'abord une version intermédiaire, puis la

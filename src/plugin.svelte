@@ -315,6 +315,20 @@
                 </div>
             {/if}
         </div>
+        <!-- Heures interpolées : dit en clair, pas seulement dans les infobulles -->
+        {#if modelSteps && !loading && !error}
+            <p class="wpp__interp">
+                {modelSteps.hours
+                    ? tr(
+                          `Ce jour-là, Windy ne fournit ${modelLabel} que toutes les ${modelSteps.every} h (${modelSteps.hours}) : les heures intermédiaires sont interpolées par PG Soundings, donc moins sûres.`,
+                          `On this day, Windy only provides ${modelLabel} every ${modelSteps.every} h (${modelSteps.hours}): the hours in between are interpolated by PG Soundings, and less certain.`,
+                      )
+                    : tr(
+                          `Ce jour-là, Windy ne fournit ${modelLabel} que toutes les ${modelSteps.every} h : les heures affichées sont interpolées par PG Soundings, donc moins sûres.`,
+                          `On this day, Windy only provides ${modelLabel} every ${modelSteps.every} h: the hours shown are interpolated by PG Soundings, and less certain.`,
+                      )}
+            </p>
+        {/if}
         </div>
 
         <!-- Réglages d'affichage secondaires et informations sur les données, en bas de page : repliés,
@@ -323,8 +337,8 @@
             <!-- Toujours visible, sous les graphiques : ce que valent les valeurs affichées -->
             <p class="wpp__caveat">
                 {tr(
-                    'Estimations tirées des modèles de prévision : rien ne remplace l’observation du ciel. La décision de voler appartient au pilote.',
-                    'Estimates drawn from forecast models: nothing replaces watching the sky. The decision to fly is the pilot’s.',
+                    'Estimations tirées des modèles de prévision : rien ne remplace l’observation du ciel. Outil non officiel et non certifié, pour la seule préparation du vol : ce n’est pas une information météorologique aéronautique officielle (consultez Météo-France, AEROWEB). L’absence d’alerte d’orage ne signifie pas l’absence de risque. Respectez la réglementation de l’espace aérien. La décision de voler appartient au pilote.',
+                    'Estimates drawn from forecast models: nothing replaces watching the sky. Unofficial, uncertified tool, for flight preparation only: this is not official aeronautical weather information (check your national aviation weather service, in France Météo-France and AEROWEB). No thunderstorm warning does not mean no risk. Follow airspace regulations. The decision to fly is the pilot’s.',
                 )}
             </p>
             <button
@@ -399,6 +413,10 @@
                     </select>
                 </label>
             {/if}
+            <!-- Efface le dernier lieu gardé dans le navigateur (position.ts) -->
+            <button class="wpp__forget" disabled={forgotten} on:click={forgetPlace}
+                >{forgotten ? tr('Dernier lieu oublié ✓', 'Last place forgotten ✓') : tr('Oublier le dernier lieu', 'Forget the last place')}</button
+            >
         </div>
 
         <!-- Informations sur les données -->
@@ -427,8 +445,18 @@
             </dl>
         {/if}
         <!-- Éditeur, licence et données personnelles : les mentions légales de la page du plugin -->
+        <!-- Origine des données du modèle choisi et licence de son producteur -->
         <p class="wpp__about">
-            {tr('PG Soundings, diffusé par WeSoar, à code ouvert (licence ISC). Il ne collecte aucune donnée : prévisions, position demandée à la première ouverture et favoris passent par Windy. Détail :', 'PG Soundings, distributed by WeSoar, open source (ISC licence). It collects no data: forecasts, the position asked for on first opening and favourites go through Windy. Details:')}
+            {tr(
+                `Données : ${MODEL_SOURCES[model][0]}, interpolées et retraitées par PG Soundings.`,
+                `Data: ${MODEL_SOURCES[model][1]}, interpolated and processed by PG Soundings.`,
+            )}
+        </p>
+        <p class="wpp__about">
+            {tr(
+                'PG Soundings, diffusé par WeSoar, à code ouvert (licence ISC). Il ne collecte aucune donnée : prévisions, position et favoris passent par Windy. Ouvert sans lieu, il demande la position de l’appareil par Windy (aucune demande n’apparaît si windy.com y a déjà accès). Le dernier lieu reste dans le stockage du navigateur pour le site windy.com, lisible par Windy et ses autres plugins ; la position de l’appareil n’y est gardée qu’arrondie à environ 1 km. Détail :',
+                'PG Soundings, distributed by WeSoar, open source (ISC licence). It collects no data: forecasts, position and favourites go through Windy. Opened without a place, it asks Windy for the device’s position (no prompt appears if windy.com already has access). The last place stays in the browser storage of the windy.com site, readable by Windy and its other plugins; the device’s position is only kept there rounded to about 1 km. Details:',
+            )}
             <a
                 href={tr('https://soundings.wesoar.fr/fr/#legal', 'https://soundings.wesoar.fr/#legal')}
                 target="_blank"
@@ -472,6 +500,7 @@
     import { applySize, clearSize, panelSide, savedSize, saveSize, SHARES, type PanelSide, type Share } from './size';
     import { addFavorite, favoriteAt, loadFavorites, removeFavorite, type Favorite } from './favorites';
     import PlacePicker from './PlacePicker.svelte';
+    import { coarsePosition, forgetLastLocation, lastLocation, saveLastLocation } from './position';
     import { airMassOf, frontDays, frontsOf, mapFronts } from './fronts';
     import { payloadAt } from './interpolate';
     import {
@@ -530,6 +559,33 @@
         modelEntry('ukv', 'UKV', '2 km', tr('Royaume-Uni', 'United Kingdom'), 120),
     ];
     type ModelId = 'ecmwf' | 'icon' | 'gfs' | 'iconEu' | 'iconD2' | 'aromeFrance' | 'ukv';
+
+    /**
+     * Origine des données de chaque modèle, avec le producteur et sa licence, en français et en
+     * anglais : la mention que demande chaque producteur, écrite dans « Réglages et infos ». GFS est
+     * du domaine public, sans que la NOAA soutienne le plugin.
+     */
+    const MODEL_SOURCES: Record<ModelId, [string, string]> = (() => {
+        const dwd = (m: string): [string, string] => [
+            `${m} via Windy.com (source : Deutscher Wetterdienst)`,
+            `${m} via Windy.com (source: Deutscher Wetterdienst)`,
+        ];
+        return {
+            ecmwf: ['ECMWF IFS via Windy.com (© ECMWF, CC BY 4.0)', 'ECMWF IFS via Windy.com (© ECMWF, CC BY 4.0)'],
+            icon: dwd('ICON'),
+            iconEu: dwd('ICON-EU'),
+            iconD2: dwd('ICON-D2'),
+            gfs: [
+                'GFS via Windy.com (NOAA, domaine public ; la NOAA ne soutient ni n’approuve PG Soundings)',
+                'GFS via Windy.com (NOAA, public domain; NOAA does not endorse PG Soundings)',
+            ],
+            aromeFrance: [
+                'AROME via Windy.com (source : Météo-France, Licence Ouverte Etalab 2.0)',
+                'AROME via Windy.com (source: Météo-France, Etalab Open Licence 2.0)',
+            ],
+            ukv: ['UKV via Windy.com (source : Met Office)', 'UKV via Windy.com (source: Met Office)'],
+        };
+    })();
 
     /** Onglets : graphique vent & thermiques, émagramme */
     type Tab = 'chart' | 'emagram';
@@ -897,6 +953,24 @@
 
     $: dayIndex = pickDay(days, pinnedDay, fullDay);
     $: dayColumns = visibleColumns(days[dayIndex], fullDay);
+
+    /**
+     * Quand Windy ne fournit le modèle que toutes les 3 heures (compte sans Premium, échéances
+     * lointaines), les heures entre deux pas sont interpolées (toHourly) : le pas et les heures que le
+     * modèle fournit pour le jour affiché, écrits sous le graphique. null quand tout est horaire.
+     */
+    const modelStepsOf = (cols: Column[]) => {
+        const between = cols.find(c => c.step && c.step[0] !== c.step[1]);
+        if (!between?.step) return null;
+        return {
+            every: Math.round((between.step[1] - between.step[0]) / HOUR_MS),
+            hours: cols
+                .filter(c => c.step && c.step[0] === c.step[1])
+                .map(c => hourText(c.hour))
+                .join(', '),
+        };
+    };
+    $: modelSteps = modelStepsOf(dayColumns);
 
     // --- Instant affiché, à 5 min près (curseur de l'émagramme, repère du graphique) : l'heure de la
     // carte, sinon l'heure actuelle si elle fait partie du jour affiché, sinon 14 h. En changeant de
@@ -1282,14 +1356,23 @@
         if (pickerTimer) clearTimeout(pickerTimer);
     };
 
-    const setLocation = (latLon: LatLon) => {
+    /** Lieu choisi sur la carte, dans les favoris ou par l'adresse de la page */
+    const setLocation = (latLon: LatLon) => goTo(latLon, false);
+
+    /**
+     * Change de lieu. `fromDevice` : position de l'appareil (géolocalisation), qui n'est gardée dans
+     * le navigateur et écrite dans l'adresse de la page qu'arrondie à environ 1 km (voir position.ts) ;
+     * la prévision, elle, est celle de la position exacte
+     */
+    const goTo = (latLon: LatLon, fromDevice: boolean) => {
         const lat = Number(latLon.lat);
         const lon = Number(latLon.lon);
         if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
 
         loc = { lat, lon };
         placeName = '';
-        saveLastLocation(lat, lon);
+        saveLastLocation(loc, fromDevice);
+        forgotten = false;
 
         if (pickerAt && !sameSpot(pickerAt, loc)) {
             // Sélecteur ouvert ailleurs : il vient sur le lieu choisi
@@ -1300,7 +1383,7 @@
                 console.error(e);
             }
         }
-        setUrl(name, { lat, lon });
+        setUrl(name, fromDevice ? coarsePosition(loc) : { lat, lon });
 
         reverse
             .get({ lat, lon })
@@ -1344,24 +1427,12 @@
         }
     };
 
-    // Dernier point choisi, mémorisé dans le navigateur : rouvert quand le plugin s'ouvre sans point
-    const LAST_LOC_KEY = 'wpp-last-location';
-
-    const saveLastLocation = (lat: number, lon: number) => {
-        try {
-            localStorage.setItem(LAST_LOC_KEY, JSON.stringify({ lat, lon }));
-        } catch {
-            /* stockage indisponible */
-        }
-    };
-
-    const lastLocation = (): LatLon | null => {
-        try {
-            const saved = JSON.parse(localStorage.getItem(LAST_LOC_KEY) || 'null');
-            return saved && Number.isFinite(saved.lat) && Number.isFinite(saved.lon) ? saved : null;
-        } catch {
-            return null;
-        }
+    // Dernier lieu choisi, gardé dans le navigateur (position.ts) : rouvert quand le plugin s'ouvre
+    // sans lieu. Le bouton des réglages l'oublie ; le prochain lieu choisi est de nouveau gardé.
+    let forgotten = false;
+    const forgetPlace = () => {
+        forgetLastLocation();
+        forgotten = true;
     };
 
     export const onopen = (params?: LatLon) => {
@@ -1373,8 +1444,9 @@
         } else if (last) {
             setLocation(last);
         } else {
+            // Position de l'appareil, ou position approchée tirée de l'adresse IP : arrondie
             getGPSlocation()
-                .then(pos => setLocation(pos))
+                .then(pos => goTo(pos, true))
                 .catch(() => {
                     const c = map.getCenter();
                     setLocation({ lat: c.lat, lon: c.lng });
@@ -1561,6 +1633,13 @@
             padding-top: 10px;
             border-top: 1px solid var(--wpp-border);
         }
+        &__interp {
+            margin: 6px 0 0;
+            font-size: 11px;
+            line-height: 1.4;
+            text-align: center;
+            color: var(--wpp-fg-dim);
+        }
         &__caveat {
             margin: 0;
             font-size: 11px;
@@ -1626,6 +1705,20 @@
                     background: var(--wpp-menu-bg);
                     color: var(--wpp-fg);
                 }
+            }
+        }
+        &__forget {
+            padding: 3px 8px;
+            border: 1px solid var(--wpp-border);
+            border-radius: 6px;
+            background: var(--wpp-surface);
+            color: var(--wpp-fg);
+            font: inherit;
+            cursor: pointer;
+
+            &:disabled {
+                cursor: default;
+                opacity: 0.7;
             }
         }
         &--light &__footer select {

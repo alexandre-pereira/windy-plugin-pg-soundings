@@ -10,7 +10,24 @@ release notes. Every version can still be installed from Windy at
 
 ## [Unreleased]
 
+### Added
+
+- In “Settings & info”, the origin of the data of the chosen model and the licence of its producer
+  (for example “ECMWF IFS via Windy.com (© ECMWF, CC BY 4.0)”), interpolated and processed by PG
+  Soundings.
+- Below the chart, a line when Windy only provides the model every 3 hours for the day shown: it
+  gives the hours provided by the model, the others being interpolated.
+- In “Settings & info”, a “Forget the last place” button, which erases the place kept in the
+  browser.
+
 ### Changed
+
+- The reminder at the bottom of the panel also says: unofficial, uncertified tool, for flight
+  preparation only, which is not official aeronautical weather information; no thunderstorm
+  warning does not mean no risk; airspace regulations must be followed.
+- The device’s position, asked for when the plugin opens without a place, is only kept in the
+  browser and written in the page address rounded to about 1 km. Places chosen on the map stay
+  exact.
 
 - The check for a new version asks Windy’s plugin site with at most 10 requests (60 before). A
   plugin far behind first sees an intermediate version, then the latest one on the following
