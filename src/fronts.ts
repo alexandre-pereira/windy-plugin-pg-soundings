@@ -37,9 +37,8 @@ export const FRONT_TOP = FREE_AIR[1];
 /** Durée (h) sur laquelle on mesure le changement de masse d'air */
 const FRONT_WINDOW = 6;
 /**
- * Seuils d'un front repéré sur le lieu seul (points voisins indisponibles), calés sur GFS, ICON et
- * ECMWF (16 sites d'Europe, du 8 septembre au 8 octobre 2026) contre les fronts de la carte (voir
- * MAP). Le front est reconnu au changement de masse d'air, mesuré par la température potentielle
+ * Seuils d'un front repéré sur le lieu seul (points voisins indisponibles), accordés aux fronts de
+ * la carte (voir MAP). Le front est reconnu au changement de masse d'air, mesuré par la température potentielle
  * équivalente (elle baisse ou monte de plusieurs degrés quand l'air change, et ne bouge pas quand
  * il ne fait que monter ou descendre) et confirmé par la température.
  * - changement franc : au moins 5 K de température potentielle équivalente en 6 h, dont au moins
@@ -50,8 +49,7 @@ const FRONT_WINDOW = 6;
  * - front froid : l'advection moyenne pendant le changement est froide ;
  * - front chaud : advection chaude d'au moins 0,1 K/h, sous un ciel couvert (sans quoi l'air humide
  *   que les thermiques montent dans la couche, l'après-midi, passerait pour un front chaud).
- * Sur ces prévisions, 79 % des fronts de la carte sont retrouvés, et 78 % des fronts annoncés y
- * sont. La rotation du vent et le creux de pression n'ajoutent rien à ces règles : ils ne servent
+ * La rotation du vent et le creux de pression n'ajoutent rien à ces règles : ils ne servent
  * qu'à décrire le front.
  */
 const CHANGE = {

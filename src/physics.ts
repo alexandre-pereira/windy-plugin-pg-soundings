@@ -1004,8 +1004,7 @@ const deepLayerWind = (profile: ProfilePoint[], ground: number) => {
  * ~500 m²/s²). La CAPE calculée ici s'arrête au dernier niveau fourni (400 hPa) : elle vaut environ
  * 65 % de la CAPE complète, donc 500 ici ≈ 620 sur un profil complet. Un vent fort en altitude ne
  * suffit pas : il faut aussi un air nettement instable (LI ≤ −2). Sans vent en altitude, il faut
- * une instabilité très forte (LI ≤ −6). Seuils calés sur GFS et ICON-EU (30 sites d'Europe,
- * septembre 2026) : un jour d'orage sur trois à quatre y est classé violent.
+ * une instabilité très forte (LI ≤ −6).
  */
 const SEVERE_WMAXSHEAR = 500;
 const SEVERE_WMAXSHEAR_LI = -2;
@@ -1152,11 +1151,8 @@ const SHOWER_LI = 2.5;
  * - l'air est froid en altitude au-dessus d'un air humide : indice des totaux d'au moins 47 K, ou,
  *   là où il n'existe pas (850 hPa sous le sol), indice de soulèvement d'au plus 2,5 K. Les averses
  *   de traîne, derrière un front froid, n'ont presque pas d'énergie : la CAPE ne les voit pas.
- * Seuils calés sur le temps noté par les observateurs de 62 stations d'Europe (messages SYNOP, du 9
- * septembre au 2 octobre 2026 : averse ou orage, contre pluie continue ou bruine), avec ECMWF, GFS
- * et ICON : 7 heures dessinées en averses sur 10 en sont bien, et 5 à 7 heures d'averses observées
- * sur 10 sont dessinées en averses. Sans l'indice des totaux, ECMWF, qui ne fournit pas de
- * précipitations convectives, n'en dessinait que 3 sur 10.
+ * L'indice des totaux sert surtout aux modèles qui ne fournissent pas de précipitations
+ * convectives, comme ECMWF.
  * La nature affichée de la pluie tient aussi compte des heures voisines : voir showerHours.
  */
 export const isShower = (s: {
@@ -1396,12 +1392,7 @@ const MID_THICK = 2000;
  *   commence à 2 000 m du sol, où finit celui des nuages bas, et s'arrête à 450 hPa ;
  * - `altostratus` : couche épaisse de l'étage moyen, sans pluie : altocumulus épais ou en plusieurs
  *   couches, altostratus.
- * Calé sur le genre noté par les observateurs de 62 stations d'Europe (messages SYNOP, du 9
- * septembre au 2 octobre 2026), avec ECMWF, GFS et ICON : sous une couche basse nourrie par les
- * thermiques, l'observateur note des cumulus ou des cumulonimbus 8 fois sur 10 (4 fois sur 10 sans
- * thermique) ; sous une couche de l'étage moyen, des altocumulus près de 8 fois sur 10, et leur
- * forme épaisse ou en plusieurs couches, ou un altostratus, 5 à 7 fois sur 10 quand la couche
- * dépasse 2 000 m (4 fois sur 10 en dessous). Le profil ne sépare ni le stratus du stratocumulus,
+ * Le profil ne sépare ni le stratus du stratocumulus,
  * ni l'altocumulus castellanus des autres altocumulus : ils ne sont pas nommés.
  */
 export type DeckGenus = 'cumulus' | 'altocumulus' | 'altostratus';
@@ -1640,8 +1631,7 @@ export const virgaOf = (
  * jusqu'à son thermomètre mouillé par la pluie qui s'y évapore, descend le long de la
  * pseudo-adiabatique jusqu'au sol en restant plus froid, donc plus lourd, que l'air qui l'entoure.
  * L'énergie de cette descente (DCAPE, J/kg) donne une vitesse, √(2 · DCAPE) : c'est un maximum, que
- * le mélange avec l'air ambiant réduit (sur les prévisions d'essai, environ trois fois les rafales
- * que le modèle prévoit à ces heures). Elle ne s'affiche donc pas comme une rafale prévue : à
+ * le mélange avec l'air ambiant réduit. Elle ne s'affiche donc pas comme une rafale prévue : à
  * partir de STRONG_DOWNDRAFT (100 km/h, soit une DCAPE d'environ 400 J/kg), la virga est signalée
  * comme pouvant donner de fortes rafales. null sans virga (voir virgaOf).
  */
