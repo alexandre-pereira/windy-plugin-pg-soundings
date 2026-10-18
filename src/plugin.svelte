@@ -961,7 +961,9 @@
      */
     const modelStepsOf = (cols: Column[]) => {
         const between = cols.find(c => c.step && c.step[0] !== c.step[1]);
-        if (!between?.step) return null;
+        if (!between?.step) {
+            return null;
+        }
         return {
             every: Math.round((between.step[1] - between.step[0]) / HOUR_MS),
             hours: cols

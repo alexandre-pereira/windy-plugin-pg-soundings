@@ -75,8 +75,9 @@ export const checkForUpdate = async (current: string = config.version): Promise<
         const saved = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
         if (saved && saved.from === current) {
             if (Date.now() - saved.t < CACHE_MS) return saved.latest;
-            if (typeof saved.latest === 'string' && isNewer(saved.latest, current))
+            if (typeof saved.latest === 'string' && isNewer(saved.latest, current)) {
                 known = saved.latest;
+            }
         }
     } catch {
         /* stockage indisponible : on vérifie */
