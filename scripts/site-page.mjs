@@ -83,6 +83,14 @@ const OTHER_TOOLS = [
         },
         name: { en: 'Paraglider trimming bench', fr: 'Banc de calage parapente' },
     },
+    {
+        // Le Viewer n'existe qu'en français : une seule adresse
+        url: { en: 'https://viewer.wesoar.fr/', fr: 'https://viewer.wesoar.fr/' },
+        name: {
+            en: 'Viewer WeSoar, your flight tracks replayed in 3D and shared with a link',
+            fr: 'Viewer WeSoar, le replay 3D de vos traces de vol, à partager d’un lien',
+        },
+    },
 ];
 
 const TEXTS = {
