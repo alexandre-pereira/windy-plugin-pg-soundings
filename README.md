@@ -125,6 +125,24 @@ https://windy-plugins.com/2727410/windy-plugin-pg-soundings/1.13.0/plugin.min.js
 Le plugin signale ensuite lui-même les nouvelles versions. L'historique est dans
 [CHANGELOG.md](CHANGELOG.md).
 
+## Données personnelles
+
+Le plugin ne collecte aucune donnée. Les prévisions, l'altitude du terrain et les lieux favoris
+sont lus auprès de Windy, avec le compte Windy de l'utilisateur. Les réglages (taille du panneau,
+thème, dernier lieu…) restent dans le navigateur. Pour savoir si une version plus récente existe,
+le plugin interroge au plus toutes les 6 heures windy-plugins.com, le site des plugins de Windy :
+aucun site extérieur à Windy ne voit passer l'utilisateur.
+
+## Licence
+
+Code d'Alexandre Pereira, ouvert sous licence [ISC](LICENSE) et diffusé par WeSoar. La version
+compilée contient Svelte (licence MIT). Les mentions légales sont au pied de la
+[page du plugin](https://soundings.wesoar.fr/fr/#legal).
+
+Les valeurs affichées sont des estimations tirées des modèles de prévision, qui peuvent se tromper :
+elles ne remplacent ni l'observation du ciel ni les prévisions officielles, et la décision de voler
+appartient au seul pilote.
+
 ## Lancer le plugin en local
 
 1. Installez [Node.js LTS](https://nodejs.org/) (par exemple `winget install OpenJS.NodeJS.LTS`)
@@ -134,7 +152,9 @@ Le plugin signale ensuite lui-même les nouvelles versions. L'historique est dan
 5. Ouvrez le plugin depuis le menu (ou par clic droit sur la carte), puis cliquez sur la carte pour changer de site
 
 `npm run build` produit la version finale dans `dist/`. `npm test` lance les tests des calculs
-(`tests/`, avec deux prévisions ECMWF réelles enregistrées dans `tests/fixtures/`).
+(`tests/`), sur deux prévisions ECMWF réelles enregistrées dans `tests/fixtures/`. Ces prévisions
+viennent de Windy, dont les conditions d'utilisation interdisent de redistribuer le contenu : elles
+ne sont pas publiées avec le code, et les tests qui les lisent ne passent que là où elles sont.
 
 ## Comment sont calculées les estimations
 

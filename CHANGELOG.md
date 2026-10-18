@@ -8,6 +8,23 @@ Le dépôt git ne commence qu'après la 1.2.7 : les entrées plus anciennes ont 
 coup à partir des notes de publication. Chaque version reste installable depuis Windy à l'adresse
 `https://windy-plugins.com/2727410/<nom-du-plugin>/<version>/plugin.min.js`.
 
+## [Non publié]
+
+### Ajouté
+
+- Au bas du panneau, au-dessus de « Réglages et infos », un rappel toujours visible : les valeurs
+  sont des estimations tirées des modèles de prévision, rien ne remplace l'observation du ciel, et
+  la décision de voler appartient au pilote.
+- Dans « Réglages et infos », un lien vers les mentions légales et la confidentialité.
+- Le code est publié sous licence ISC (fichier `LICENSE`), comme Windy le demande aux plugins
+  ouverts à tous.
+
+### Modifié
+
+- Le plugin est diffusé par WeSoar.
+- La recherche d'une nouvelle version n'interroge plus que le site des plugins de Windy : aucun
+  site extérieur à Windy ne voit plus passer le plugin.
+
 ## [1.13.0] - 2026-10-07
 
 Le dessin des nuages change, pas leur calcul : bases, sommets, pluie et heures sont les mêmes

@@ -33,6 +33,35 @@ const SHOT = 'capture.png';
  */
 const SITE_URL = (process.env.SITE_URL ?? '').replace(/\/+$/, '');
 
+/**
+ * Éditeur de la page, pour les mentions légales (LCEN, art. 1-1) : la société WeSoar, qui diffuse
+ * le plugin. Ce qui n'est pas encore connu porte la marque `TODO` (« […à compléter] ») : la page
+ * l'affiche tel quel et la fabrication de la page le signale. Capital, siège et immatriculation
+ * sont à reporter depuis l'extrait Kbis ; le téléphone est obligatoire pour une société.
+ */
+const TODO = 'à compléter';
+const PUBLISHER = {
+    name: 'WeSoar',
+    form: 'SASU',
+    /** Capital social, ex. « 1 000 € » */
+    capital: `[capital ${TODO}]`,
+    /** Adresse du siège social */
+    address: `[adresse du siège ${TODO}]`,
+    /** Immatriculation, ex. « RCS Annecy 123 456 789 » */
+    registration: `RCS [ville ${TODO}] [SIREN ${TODO}]`,
+    phone: `[téléphone ${TODO}]`,
+    /** Numéro de TVA intracommunautaire, s'il existe ; vide, il n'est pas écrit */
+    vat: '',
+    email: 'alex@wesoar.fr',
+    director: 'Alexandre Pereira',
+};
+/** Hébergeur de la page (GitHub Pages) */
+const HOST = {
+    name: 'GitHub, Inc.',
+    address: '88 Colin P. Kelly Jr. Street, San Francisco, CA 94107',
+    phone: '+1 877 448 4820',
+};
+
 /** Langues de la page ; la première est à la racine du site, les autres dans un dossier à leur nom */
 const LANGS = ['en', 'fr'];
 /** Clé du `localStorage` qui retient la langue choisie par le visiteur */
@@ -70,6 +99,7 @@ const TEXTS = {
         source: 'Source code',
         shotAlt:
             'Altitude × hour chart of PG Soundings: wind arrows, thermal zone, shower clouds and a cold front passing',
+        shotCredit: 'Source: <a href="https://www.windy.com/">Windy.com</a>',
         features: [
             [
                 'Wind aloft',
@@ -124,6 +154,23 @@ const TEXTS = {
         },
         disclaimer: `Estimates drawn from forecast models: nothing replaces watching the sky. PG Soundings is an independent, free and <a href="${REPO}">open-source</a> plugin; how each estimate is computed is described in its <a href="${REPO}#readme">README</a> (in French).`,
         madeBy: 'Developed and offered free of charge by WeSoar.',
+        legalTitle: 'Legal notice',
+        legal: (p, h, base) => [
+            `<b>Publisher</b>: ${[
+                p.name + (p.form ? `, ${p.form}` : '') + (p.capital ? ` with a share capital of ${p.capital}` : ''),
+                p.address && `registered office: ${p.address}`,
+                p.registration,
+                p.vat && `VAT ${p.vat}`,
+                p.phone && `phone ${p.phone}`,
+                `<a href="mailto:${p.email}">${p.email}</a>`,
+            ]
+                .filter(Boolean)
+                .join(', ')}. Publication director: ${p.director}, president.`,
+            `<b>Host</b>: ${h.name} (GitHub Pages), ${h.address}, United States, phone ${h.phone}.`,
+            `<b>Personal data</b>: this page sets no cookie, does not measure its audience and loads nothing from other sites. It only keeps, in your browser, the language you chose. As with any web page, the host (GitHub) receives the visitor’s IP address. The plugin itself collects no data (<a href="${REPO}#données-personnelles">details</a>, in French).`,
+            `<b>Intellectual property</b>: the code of PG Soundings, written by Alexandre Pereira, is published under the <a href="${REPO}/blob/main/LICENSE">ISC licence</a> and distributed by WeSoar. The WeSoar name and logo belong to the publisher. The Mona Sans typeface is used under the <a href="${base}mona-sans-OFL.txt">SIL Open Font License</a>. Windy is a trademark of Windyty, SE; PG Soundings is not published by Windy.`,
+            `<b>Liability</b>: the plugin shows estimates computed from forecast models, which can be wrong. They do not replace watching the sky or official forecasts, and the decision to fly is the pilot’s alone.`,
+        ],
         otherTools: 'Other free tools:',
         langLabel: 'Language',
     },
@@ -140,6 +187,7 @@ const TEXTS = {
         source: 'Code source',
         shotAlt:
             'Graphique altitude × heure de PG Soundings : flèches du vent, zone des thermiques, nuages d’averses et passage d’un front froid',
+        shotCredit: 'Source : <a href="https://www.windy.com/">Windy.com</a>',
         features: [
             [
                 'Vent en altitude',
@@ -194,6 +242,23 @@ const TEXTS = {
         },
         disclaimer: `Des estimations tirées des modèles de prévision : rien ne remplace l’observation du ciel. PG Soundings est un plugin indépendant, gratuit et <a href="${REPO}">à code ouvert</a> ; la façon dont chaque estimation est calculée est décrite dans son <a href="${REPO}#readme">README</a>.`,
         madeBy: 'Développé et offert gratuitement par WeSoar.',
+        legalTitle: 'Mentions légales',
+        legal: (p, h, base) => [
+            `<b>Éditeur</b> : ${[
+                p.name + (p.form ? `, ${p.form}` : '') + (p.capital ? ` au capital de ${p.capital}` : ''),
+                p.address && `siège social : ${p.address}`,
+                p.registration,
+                p.vat && `TVA ${p.vat}`,
+                p.phone && `téléphone ${p.phone}`,
+                `<a href="mailto:${p.email}">${p.email}</a>`,
+            ]
+                .filter(Boolean)
+                .join(', ')}. Directeur de la publication : ${p.director}, président.`,
+            `<b>Hébergeur</b> : ${h.name} (GitHub Pages), ${h.address}, États-Unis, téléphone ${h.phone}.`,
+            `<b>Données personnelles</b> : cette page ne pose aucun cookie, ne mesure pas l’audience et ne charge rien depuis d’autres sites. Elle retient seulement, dans votre navigateur, la langue choisie. Comme pour toute page web, l’hébergeur (GitHub) reçoit l’adresse IP du visiteur. Le plugin lui-même ne collecte aucune donnée (<a href="${REPO}#données-personnelles">détail</a>).`,
+            `<b>Propriété intellectuelle</b> : le code de PG Soundings, écrit par Alexandre Pereira, est publié sous <a href="${REPO}/blob/main/LICENSE">licence ISC</a> et diffusé par WeSoar. Le nom et le logo WeSoar appartiennent à l’éditeur. La police Mona Sans est utilisée sous <a href="${base}mona-sans-OFL.txt">licence SIL Open Font License</a>. Windy est une marque de Windyty, SE ; PG Soundings n’est pas édité par Windy.`,
+            `<b>Responsabilité</b> : le plugin affiche des estimations calculées à partir de modèles de prévision, qui peuvent se tromper. Elles ne remplacent ni l’observation du ciel ni les prévisions officielles, et la décision de voler appartient au seul pilote.`,
+        ],
         otherTools: 'Autres outils gratuits :',
         langLabel: 'Langue',
     },
@@ -276,6 +341,10 @@ const css =
 .pgs-shot{border:6px solid var(--wf-ink);border-radius:26px;overflow:hidden;background:#2b2b2b;
   box-shadow:0 24px 50px rgba(23,32,43,.22);aspect-ratio:470/700}
 .pgs-shot img{display:block;width:100%;height:100%;object-fit:cover;object-position:top}
+.pgs-figure{margin:0}
+.pgs-legal summary{cursor:pointer;color:var(--wf-ink);font-weight:700}
+.pgs-legal p{margin:8px 0 0}
+.pgs-credit{margin-top:8px;font-size:.8rem;text-align:center;color:var(--wf-muted)}
 .pgs-features{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
 .pgs-features li{padding:14px 16px}
 .pgs-features b{display:block;font-size:1.03rem;letter-spacing:-.01em}
@@ -342,10 +411,8 @@ ${redirect}<meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#f5f7f9">
 ${social}
 <link rel="icon" type="image/svg+xml" href="${base}favicon.svg">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mona+Sans:wght@400..800&display=swap">
-<style>${css}</style>
+<link rel="preload" href="${base}mona-sans.woff2" as="font" type="font/woff2" crossorigin>
+<style>@font-face{font-family:'Mona Sans';src:url('${base}mona-sans.woff2') format('woff2');font-weight:400 800;font-display:swap}${css}</style>
 </head>
 <body>
 <header class="wf-top">
@@ -364,7 +431,10 @@ ${langNav}
 </div>
 </div>
 <div class="pgs-cols">
+<figure class="pgs-figure">
 <div class="pgs-shot"><img src="${base}${SHOT}" alt="${t.shotAlt}"></div>
+<figcaption class="pgs-credit">${t.shotCredit}</figcaption>
+</figure>
 <ul class="pgs-features">
 ${t.features.map(([title, text]) => `<li class="wf-card"><b>${title}</b><span>${text}</span></li>`).join('\n')}
 </ul>
@@ -400,6 +470,14 @@ ${bodyHtml(v.body)}
 <div class="wf-made">${logo}<span>${t.madeBy}</span></div>
 <ul class="wf-tools"><li>${t.otherTools}</li>${OTHER_TOOLS.map(tool => `<li><a href="${tool.url[lang]}">${tool.name[lang]}</a></li>`).join('')}</ul>
 <p>${t.disclaimer}</p>
+<details class="pgs-legal" id="legal"><summary>${t.legalTitle}</summary>
+${t
+    .legal(PUBLISHER, HOST, base)
+    .map(line => `<p>${line}</p>`)
+    .join('\n')}
+</details>
+<!-- Le lien #legal (depuis le plugin) ouvre les mentions, repliées sinon -->
+<script>if(location.hash=='#legal')document.getElementById('legal').open=true</script>
 </div></footer>
 </body>
 </html>
@@ -414,8 +492,22 @@ for (const lang of LANGS) {
 }
 fs.copyFileSync(path.join(root, SHOT_SOURCE), path.join(out, SHOT));
 fs.copyFileSync(path.join(root, 'scripts/wesoar-mark.svg'), path.join(out, 'favicon.svg'));
+// La police est servie avec la page, et sa licence (SIL OFL) l'accompagne
+fs.copyFileSync(path.join(root, 'scripts/mona-sans.woff2'), path.join(out, 'mona-sans.woff2'));
+fs.copyFileSync(path.join(root, 'scripts/mona-sans-OFL.txt'), path.join(out, 'mona-sans-OFL.txt'));
 console.log(
     `site/ : PG Soundings ${version}, ` +
         LANGS.map(lang => `${lang} ${versions[lang].length} versions`).join(', ') +
         (SITE_URL ? `, pour ${SITE_URL}` : ''),
 );
+const missing = Object.entries({
+    capital: 'capital',
+    address: 'siège social',
+    registration: 'immatriculation (RCS)',
+    phone: 'téléphone',
+}).filter(([key]) => !PUBLISHER[key] || PUBLISHER[key].includes(TODO));
+if (missing.length) {
+    console.warn(
+        `Mentions légales incomplètes, à remplir dans PUBLISHER : ${missing.map(([, label]) => label).join(', ')}`,
+    );
+}

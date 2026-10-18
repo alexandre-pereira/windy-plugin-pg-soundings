@@ -2,11 +2,10 @@
  * Recherche d'une version plus récente du plugin sur windy-plugins.com.
  *
  * Un plugin installé par lien reste sur la version de ce lien : on regarde donc au démarrage si
- * une version plus récente a été publiée. La dernière version est demandée à GitHub (dernière
- * release du dépôt, une seule requête), puis vérifiée sur windy-plugins.com : une version annoncée
- * doit pouvoir s'installer. Sans réponse de GitHub, on avance de version en version sur
- * windy-plugins.com (correctif, mineure, majeure), en tolérant un numéro sauté. Le résultat est
- * gardé quelques heures dans le navigateur.
+ * une version plus récente a été publiée, en avançant de version en version sur windy-plugins.com
+ * (correctif, mineure, majeure) et en tolérant un numéro sauté. Seul windy-plugins.com est
+ * interrogé : aucun site extérieur à Windy ne voit passer l'utilisateur. Le résultat est gardé
+ * quelques heures dans le navigateur.
  */
 
 import config from './pluginConfig';
@@ -14,9 +13,6 @@ import config from './pluginConfig';
 /** Identifiant Windy de l'auteur, dans l'adresse des versions publiées */
 const AUTHOR_ID = '2727410';
 const BASE = `https://windy-plugins.com/${AUTHOR_ID}/${config.name}`;
-/** Dernière release du dépôt GitHub (voir « Publier une version » dans CLAUDE.md) */
-const LATEST_RELEASE =
-    'https://api.github.com/repos/alexandre-pereira/windy-plugin-pg-soundings/releases/latest';
 const CACHE_KEY = 'wpp-update-check';
 const CACHE_MS = 6 * 3600e3;
 /** Numéros sautés tolérés, de version en version : correctifs et mineures essayés au-delà du suivant */
@@ -60,19 +56,6 @@ const exists = async (version: string): Promise<Probe> => {
     }
 };
 
-/** Version de la dernière release GitHub (étiquette `vX.Y.Z`), null sans réponse */
-const latestRelease = async (): Promise<string | null> => {
-    try {
-        const r = await fetch(LATEST_RELEASE, { cache: 'no-store' });
-        if (!r.ok) return null;
-        const tag = String((await r.json()).tag_name ?? '');
-        const m = /^v?(\d+\.\d+\.\d+)$/.exec(tag);
-        return m ? m[1] : null;
-    } catch {
-        return null;
-    }
-};
-
 /**
  * Dernière version publiée si elle est plus récente que la version en cours, sinon null. Le
  * résultat n'est gardé que si le réseau a répondu : une panne passagère ne doit pas cacher une
@@ -89,34 +72,23 @@ export const checkForUpdate = async (current: string = config.version): Promise<
     let latest: string = current;
     let failed = false;
 
-    // GitHub d'abord : la dernière release, vérifiée sur windy-plugins.com
-    const release = await latestRelease();
-    if (release && isNewer(release, current)) {
-        const probe = await exists(release);
-        if (probe === 'yes') latest = release;
-        failed = probe === 'error';
-    }
-
-    // Sinon, de version en version sur windy-plugins.com
-    if (latest === current && !failed) {
-        let probes = 0;
-        search: while (probes < MAX_PROBES) {
-            let found: string | null = null;
-            for (const v of nextCandidates(latest)) {
-                if (probes++ >= MAX_PROBES) break;
-                const probe = await exists(v);
-                if (probe === 'error') {
-                    failed = true;
-                    break search;
-                }
-                if (probe === 'yes') {
-                    found = v;
-                    break;
-                }
+    let probes = 0;
+    search: while (probes < MAX_PROBES) {
+        let found: string | null = null;
+        for (const v of nextCandidates(latest)) {
+            if (probes++ >= MAX_PROBES) break;
+            const probe = await exists(v);
+            if (probe === 'error') {
+                failed = true;
+                break search;
             }
-            if (!found) break;
-            latest = found;
+            if (probe === 'yes') {
+                found = v;
+                break;
+            }
         }
+        if (!found) break;
+        latest = found;
     }
     const result = latest === current ? null : latest;
 

@@ -14,7 +14,8 @@ estimation est calculée sont décrits dans [README.md](README.md).
 - `npm start` : compile et sert le plugin sur `https://localhost:9999` (à charger depuis
   <https://www.windy.com/developer-mode>)
 - `npm run build` : version finale dans `dist/`
-- `npm test` : tests des calculs (vitest), sur deux prévisions ECMWF réelles de `tests/fixtures/`
+- `npm test` : tests des calculs (vitest), sur deux prévisions ECMWF réelles de `tests/fixtures/`,
+  gardées sur l'ordinateur seulement (ignorées par git : contenu de Windy, qui ne se redistribue pas)
 - Un seul fichier ou un seul test : `npx vitest run tests/fronts.test.ts`, ou
   `npx vitest run tests/physics.test.ts -t "isotherme 0 °C"` (nom d'un `describe` ou d'un `it`)
 - Il n'y a pas de commande de lint ni de vérification des types : la compilation (swc) ne vérifie
@@ -69,8 +70,8 @@ Les réglages de l'utilisateur sont gardés dans le `localStorage` de Windy, sou
 - `src/level.ts` : altitude de la carte de Windy (niveau le plus proche d'une altitude du graphique,
   et altitude d'un niveau), synchronisée avec le graphique
 - `src/scrub.ts` : lecture au doigt du graphique et de l'émagramme (appui maintenu, puis glissé)
-- `src/update.ts` : recherche d'une version plus récente : dernière release GitHub, vérifiée sur
-  windy-plugins.com (sinon de version en version sur windy-plugins.com)
+- `src/update.ts` : recherche d'une version plus récente, de version en version sur
+  windy-plugins.com seulement (aucun autre site ne doit voir passer l'utilisateur)
 - `src/size.ts` : taille du panneau choisie par l'utilisateur (part de l'écran, en largeur ou en
   hauteur sur téléphone), posée par-dessus les règles CSS de Windy
 - `src/favorites.ts` : lieux favoris, ceux du compte Windy (`@windy/userFavs`), listés et modifiés
@@ -80,11 +81,15 @@ Les réglages de l'utilisateur sont gardés dans le `localStorage` de Windy, sou
 - `scripts/site-page.mjs` : page de présentation du plugin (dossier `site/`, ignoré par git : le
   lien d'installation et le changelog), en anglais à la racine du site (`site/index.html`, la
   langue par défaut) et en français dans `site/fr/`, fabriquée depuis `src/pluginConfig.ts`,
-  `CHANGELOG.en.md` et `CHANGELOG.md`. Ses textes sont dans `TEXTS`, une entrée par langue.
+  `CHANGELOG.en.md` et `CHANGELOG.md`. Ses textes sont dans `TEXTS`, une entrée par langue. Ses
+  mentions légales (pied de page) prennent l'éditeur dans `PUBLISHER` (société WeSoar) et
+  l'hébergeur dans `HOST` ; un champ vide n'est pas écrit, et `npm run site` le signale.
   `.github/workflows/pages.yml` la refait et la publie sur GitHub Pages à chaque envoi sur `main` ;
   `npm run site` la fabrique en local pour la voir. `.tmp/site-wordpress/` garde sa première
   forme, un bloc HTML à coller dans WordPress
 - `scripts/site-capture.png` : capture du plugin affichée par cette page
+- `scripts/mona-sans.woff2`, `scripts/mona-sans-OFL.txt` : police de la page et sa licence, servies
+  avec elle (pas de Google Fonts, qui verrait l'adresse IP des visiteurs)
 - `scripts/wesoar.css`, `scripts/wesoar.svg`, `scripts/wesoar-mark.svg` : habillage commun des
   pages des outils WeSoar (feuille de style, logo, icône de l'onglet). Les mêmes fichiers sont
   dans le dépôt de chaque outil (`outils/` de `trimming-tools`) : une modification s'y reporte
@@ -112,7 +117,12 @@ Les réglages de l'utilisateur sont gardés dans le `localStorage` de Windy, sou
   termes, sans le comparer à d'autres sites ou outils de prévision.
 - Les textes publiés ne disent ni niveau de pilote ni aptitude à voler (« débutant », « pilote
   confirmé », « volable »), ni qu'une journée ou un créneau convient pour voler. En cas d'accident,
-  le plugin ne doit pas avoir dit qu'un moment convenait pour voler.
+  le plugin ne doit pas avoir dit qu'un moment convenait pour voler. Ils rappellent au contraire
+  que les valeurs sont des estimations et que la décision de voler appartient au pilote.
+- Le plugin n'interroge que Windy : aucune requête vers un autre site (GitHub, polices, mesure
+  d'audience…), qui verrait passer l'adresse IP de l'utilisateur.
+- Le plugin est diffusé par WeSoar (`author` de `pluginConfig.ts`, mentions légales de la page) ;
+  le code reste celui d'Alexandre Pereira (`LICENSE`).
 - `.windy-api-key` contient la clé de publication : ne jamais l'afficher ni la versionner.
 
 ## Changelog
@@ -162,6 +172,6 @@ Si Windy refuse l'envoi (version déjà publiée), augmenter le numéro et repre
 version publiée ne se remplace pas.
 
 Changer `name` dans `pluginConfig.ts` crée un autre plugin pour Windy : les utilisateurs devraient
-le réinstaller, et la recherche de mise à jour ne le trouverait pas. Elle lit la dernière release
-GitHub : sans release, une version publiée sur Windy n'est annoncée qu'à ceux qui ont la version
-juste avant.
+le réinstaller, et la recherche de mise à jour ne le trouverait pas. Elle avance de version en
+version sur windy-plugins.com en tolérant trois numéros sautés : un saut plus grand cache les
+versions suivantes.

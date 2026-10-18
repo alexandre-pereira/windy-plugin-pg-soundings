@@ -6,7 +6,9 @@
  * même famille. Ce qui est propre à un outil s'écrit dans son script de page, pas ici.
  *
  * Thème clair seulement. Les couleurs sont celles du thème clair de Wing Trim, la police est
- * celle du logo WeSoar (Mona Sans, chargée par la page depuis Google Fonts).
+ * celle du logo WeSoar (Mona Sans, licence SIL OFL) : la page la sert elle-même, avec sa licence
+ * (fichiers mona-sans.woff2 et mona-sans-OFL.txt, @font-face écrit par la page), sans passer par
+ * Google Fonts qui verrait l'adresse IP des visiteurs.
  */
 
 :root {

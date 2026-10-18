@@ -320,6 +320,13 @@
         <!-- Réglages d'affichage secondaires et informations sur les données, en bas de page : repliés,
              ouverts à la demande -->
         <div class="wpp__settings">
+            <!-- Toujours visible, sous les graphiques : ce que valent les valeurs affichées -->
+            <p class="wpp__caveat">
+                {tr(
+                    'Estimations tirées des modèles de prévision : rien ne remplace l’observation du ciel. La décision de voler appartient au pilote.',
+                    'Estimates drawn from forecast models: nothing replaces watching the sky. The decision to fly is the pilot’s.',
+                )}
+            </p>
             <button
                 class="wpp__settings-btn"
                 class:wpp__settings-btn--open={settingsOpen}
@@ -419,6 +426,15 @@
                 {/if}
             </dl>
         {/if}
+        <!-- Éditeur, licence et données personnelles : les mentions légales de la page du plugin -->
+        <p class="wpp__about">
+            {tr('PG Soundings, diffusé par WeSoar, à code ouvert (licence ISC). Il ne collecte aucune donnée :', 'PG Soundings, distributed by WeSoar, open source (ISC licence). It collects no data:')}
+            <a
+                href={tr('https://soundings.wesoar.fr/fr/#legal', 'https://soundings.wesoar.fr/#legal')}
+                target="_blank"
+                rel="noopener">{tr('mentions légales et confidentialité', 'legal notice and privacy')}</a
+            >
+        </p>
         </div>
         {/if}
     {/if}
@@ -1499,6 +1515,19 @@
             gap: 6px;
             margin: 6px 0 12px;
         }
+        &__about {
+            margin: 12px auto 4px;
+            max-width: 420px;
+            font-size: 11px;
+            line-height: 1.4;
+            text-align: center;
+            color: var(--wpp-fg-faint);
+
+            a {
+                color: inherit;
+                text-decoration: underline;
+            }
+        }
         &__info {
             margin: 14px auto 4px;
             max-width: 420px;
@@ -1525,10 +1554,19 @@
         // Bouton qui ouvre les réglages, repliés pour laisser la place aux graphiques
         &__settings {
             display: flex;
-            justify-content: center;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
             margin: 20px 0 8px;
             padding-top: 10px;
             border-top: 1px solid var(--wpp-border);
+        }
+        &__caveat {
+            margin: 0;
+            font-size: 11px;
+            line-height: 1.4;
+            text-align: center;
+            color: var(--wpp-fg-faint);
         }
         &__settings-btn {
             display: inline-flex;

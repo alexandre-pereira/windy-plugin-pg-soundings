@@ -8,6 +8,23 @@ The git repository only starts after 1.2.7: older entries were reconstructed aft
 release notes. Every version can still be installed from Windy at
 `https://windy-plugins.com/2727410/<plugin-name>/<version>/plugin.min.js`.
 
+## [Unreleased]
+
+### Added
+
+- At the bottom of the panel, above “Settings & info”, a reminder that stays visible: the values
+  are estimates drawn from forecast models, nothing replaces watching the sky, and the decision to
+  fly is the pilot’s.
+- In “Settings & info”, a link to the legal notice and privacy.
+- The code is published under the ISC licence (`LICENSE` file), as Windy asks of plugins open to
+  everyone.
+
+### Changed
+
+- The plugin is distributed by WeSoar.
+- The search for a new version only asks Windy’s plugin site: no site outside Windy sees the
+  plugin any more.
+
 ## [1.13.0] - 2026-10-07
 
 The way clouds are drawn changes, not the way they are computed: bases, tops, rain and hours are the

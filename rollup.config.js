@@ -14,6 +14,16 @@ import { transformCodeToESMPlugin, keyPEM, certificatePEM } from '@windycom/plug
 
 const useSourceMaps = true;
 
+/**
+ * Mentions de licence en tête de la version minifiée, posées après la minification qui retire les
+ * commentaires : celle du plugin, et celle de Svelte, dont le code compilé est inclus (la licence
+ * MIT demande de la reproduire)
+ */
+const LICENCES =
+    '/*! PG Soundings | (c) Alexandre Pereira, diffusé par WeSoar | ISC | github.com/alexandre-pereira/windy-plugin-pg-soundings */\n' +
+    '/*! Svelte | (c) 2016-23 Svelte contributors | MIT | github.com/sveltejs/svelte/blob/main/LICENSE.md */\n';
+const licences = () => ({ name: 'licences', renderChunk: code => ({ code: LICENCES + code, map: null }) });
+
 const input = 'src/plugin.svelte';
 const out = 'plugin';
 
@@ -31,7 +41,7 @@ export default {
         {
             file: `dist/${out}.min.js`,
             format: 'module',
-            plugins: [rollupCleanup({ comments: 'none', extensions: ['ts'] }), terser()],
+            plugins: [rollupCleanup({ comments: 'none', extensions: ['ts'] }), terser(), licences()],
         },
     ],
 

@@ -14,3 +14,6 @@ reseaux/
 
 .windy-api-key
 plugin.tar
+
+# Prévisions de Windy pour les tests : leur contenu ne se redistribue pas (conditions de Windy)
+tests/fixtures/
