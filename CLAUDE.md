@@ -155,7 +155,7 @@ Les réglages de l'utilisateur sont gardés dans le `localStorage` de Windy, sou
 
 Aucune version n'est publiée sur Windy sans son changelog ni sans être envoyée sur GitHub : les
 trois vont ensemble, dans cet ordre. Le dépôt est
-<https://github.com/alexandre-pereira/windy-plugin-pg-soundings> (branche `main`), avec un tag et
+<https://github.com/alexandre-pereira/ws-plugin-windy> (branche `main`), avec un tag et
 une release GitHub par version.
 
 1. `npm test` doit passer.

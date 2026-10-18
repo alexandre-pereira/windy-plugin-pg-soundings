@@ -23,7 +23,7 @@ const version = config.match(/version: '([^']+)'/)[1];
 /** Identifiant Windy de l'auteur, dans l'adresse des versions publiées (voir src/update.ts) */
 const AUTHOR_ID = '2727410';
 const installUrl = `https://windy-plugins.com/${AUTHOR_ID}/${name}/${version}/plugin.min.js`;
-const REPO = 'https://github.com/alexandre-pereira/windy-plugin-pg-soundings';
+const REPO = 'https://github.com/alexandre-pereira/ws-plugin-windy';
 /** Capture du plugin en largeur de téléphone, copiée à côté de la page */
 const SHOT_SOURCE = 'scripts/site-capture.png';
 const SHOT = 'capture.png';

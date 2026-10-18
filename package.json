@@ -17,7 +17,7 @@
         "plugins",
         "parapente"
     ],
-    "repository": "github:alexandre-pereira/windy-plugin-pg-soundings",
+    "repository": "github:alexandre-pereira/ws-plugin-windy",
     "author": "WeSoar SASU",
     "license": "ISC",
     "dependencies": {
