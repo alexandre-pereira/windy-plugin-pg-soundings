@@ -1,6 +1,5 @@
 {
     "compilerOptions": {
-        "baseUrl": ".",
         "module": "ESNext",
         "lib": ["es2022", "webworker", "DOM"],
         "noImplicitAny": true,
@@ -18,7 +17,7 @@
         "noImplicitReturns": true,
         "noImplicitThis": true,
         "noFallthroughCasesInSwitch": true,
-        "moduleResolution": "node",
+        "moduleResolution": "bundler",
         "strictNullChecks": true,
         "strictBindCallApply": true,
         "forceConsistentCasingInFileNames": true,
