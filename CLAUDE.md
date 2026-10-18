@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-# PG Soundings
+# WS Sounding (ex-PG Soundings)
 
 Plugin Windy.com pour le vol libre (`windy-plugin-pg-soundings`) : graphique altitude × heure du
 vent et des thermiques, émagramme redressé, risque d'orage, passages de front. Svelte + TypeScript,
@@ -168,12 +168,12 @@ une release GitHub par version.
 4. Mettre le nouveau lien d'installation
    (`https://windy-plugins.com/2727410/windy-plugin-pg-soundings/X.Y.Z/plugin.min.js`) dans
    `README.md`.
-5. Commit `PG Soundings vX.Y.Z` (résumé de la version dans le corps), tag `vX.Y.Z`, puis
+5. Commit `WS Sounding vX.Y.Z` (résumé de la version dans le corps), tag `vX.Y.Z`, puis
    `git push origin main` et `git push origin vX.Y.Z`. L'envoi sur `main` met aussi à jour la page
    de présentation (GitHub Pages), avec le nouveau lien et le changelog.
 6. `npm run publish:windy`, seulement après le push : le script envoie à Windy le dépôt GitHub et
    le commit `HEAD`, qui doit donc déjà exister sur GitHub.
-7. Créer la release GitHub `PG Soundings vX.Y.Z` sur le tag : les instructions d'installation
+7. Créer la release GitHub `WS Sounding vX.Y.Z` sur le tag : les instructions d'installation
    avec le lien, puis la section de la version copiée du changelog (reprendre la forme de la
    release précédente, `gh release view`).
 8. Donner le lien d'installation de la nouvelle version.

@@ -24,7 +24,7 @@ const useSourceMaps = true;
  * Les commentaires `/*!` sont ceux que les minificateurs gardent.
  */
 const LICENCES =
-    '/*! PG Soundings | (c) 2026 WeSoar SASU | ISC | github.com/alexandre-pereira/ws-plugin-windy */\n' +
+    '/*! WS Sounding | (c) 2026 WeSoar SASU | ISC | github.com/alexandre-pereira/ws-plugin-windy */\n' +
     `/*! Svelte (https://github.com/sveltejs/svelte), licence MIT :
 
 Copyright (c) 2016-23 [these people](https://github.com/sveltejs/svelte/graphs/contributors)

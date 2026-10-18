@@ -1,4 +1,6 @@
-# PG Soundings 🪂
+# WS Sounding 🪂
+
+Anciennement PG Soundings. Le nom technique du plugin pour Windy (`windy-plugin-pg-soundings`) ne change pas.
 
 Plugin Windy.com qui affiche, pour un site de vol, un graphique **altitude × heure** pour le vol libre :
 
@@ -116,12 +118,12 @@ L'interface est en français ou en anglais, selon la langue de Windy.
 
 ## Données de prévision
 
-Les prévisions viennent de Windy.com, qui sert les modèles de leurs producteurs. PG Soundings les
+Les prévisions viennent de Windy.com, qui sert les modèles de leurs producteurs. WS Sounding les
 interpole (au pas horaire, entre les niveaux d'altitude) et en tire ses propres estimations :
 
 - **ECMWF** : modèle IFS, © ECMWF, licence CC BY 4.0
 - **ICON, ICON-EU, ICON-D2** : source Deutscher Wetterdienst
-- **GFS** : NOAA, domaine public ; la NOAA ne soutient ni n'approuve PG Soundings
+- **GFS** : NOAA, domaine public ; la NOAA ne soutient ni n'approuve WS Sounding
 - **AROME** : source Météo-France, Licence Ouverte Etalab 2.0
 - **UKV** : source Met Office
 
@@ -134,7 +136,7 @@ graphique le dit et donne les heures que le modèle fournit : les autres sont in
 Sur <https://www.windy.com/plugins>, choisissez « Load plugin directly from URL » et collez :
 
 ```
-https://windy-plugins.com/2727410/windy-plugin-pg-soundings/1.14.0/plugin.min.js
+https://windy-plugins.com/2727410/windy-plugin-pg-soundings/1.15.0/plugin.min.js
 ```
 
 Le plugin signale ensuite lui-même les nouvelles versions. L'historique est dans
@@ -180,7 +182,7 @@ Les mentions légales sont au pied de la [page du plugin](https://soundings.weso
 
 Les valeurs affichées sont des estimations tirées des modèles de prévision, qui peuvent se tromper :
 elles ne remplacent ni l'observation du ciel ni les prévisions officielles, et la décision de voler
-appartient au seul pilote. PG Soundings est un outil non officiel et non certifié, pour la seule
+appartient au seul pilote. WS Sounding est un outil non officiel et non certifié, pour la seule
 préparation du vol : ce n'est pas une information météorologique aéronautique officielle (consulter
 Météo-France et AEROWEB). L'absence d'alerte d'orage ne signifie pas l'absence de risque, et la
 réglementation de l'espace aérien reste à respecter.

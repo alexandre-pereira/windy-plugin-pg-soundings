@@ -171,7 +171,7 @@ export const toHourly = (payload: ForecastPayload, lat: number, lon: number): Fo
     try {
         return interpolateAll(payload, makeOffsetAt(payload, lat, lon));
     } catch (e) {
-        console.error('PG Soundings : interpolation horaire impossible', e);
+        console.error('WS Sounding : interpolation horaire impossible', e);
         return payload;
     }
 };
@@ -304,7 +304,7 @@ export const payloadAt = (
             meteogram: sample(payload.meteogram as Hash) as ForecastPayload['data'] | undefined,
         };
     } catch (e) {
-        console.error('PG Soundings : interpolation impossible', e);
+        console.error('WS Sounding : interpolation impossible', e);
         return null;
     }
 };

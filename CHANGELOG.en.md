@@ -1,6 +1,6 @@
 # Changelog
 
-All published versions of PG Soundings, from the most recent to the oldest. The format follows
+All published versions of WS Sounding (PG Soundings up to 1.14.0), from the most recent to the oldest. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and version numbers follow
 [SemVer](https://semver.org/).
 
@@ -8,13 +8,13 @@ The git repository only starts after 1.2.7: older entries were reconstructed aft
 release notes. Every version can still be installed from Windy at
 `https://windy-plugins.com/2727410/<plugin-name>/<version>/plugin.min.js`.
 
-## [Unreleased]
+## [1.15.0] - 2026-10-19
 
 ### Added
 
 - In “Settings & info”, the origin of the data of the chosen model and the licence of its producer
-  (for example “ECMWF IFS via Windy.com (© ECMWF, CC BY 4.0)”), interpolated and processed by PG
-  Soundings.
+  (for example “ECMWF IFS via Windy.com (© ECMWF, CC BY 4.0)”), interpolated and processed by WS
+  Sounding.
 - Below the chart, a line when Windy only provides the model every 3 hours for the day shown: it
   gives the hours provided by the model, the others being interpolated.
 - In “Settings & info”, a “Forget the last place” button, which erases the place kept in the
@@ -22,6 +22,9 @@ release notes. Every version can still be installed from Windy at
 
 ### Changed
 
+- The plugin is now called "WS Sounding", like the other WeSoar tools (WS Trim, WS Trimmer,
+  WS Viewer): title in Windy, panel and presentation page. Its technical name
+  (`windy-plugin-pg-soundings`) does not change: no need to reinstall it.
 - The reminder at the bottom of the panel also says: unofficial, uncertified tool, for flight
   preparation only, which is not official aeronautical weather information; no thunderstorm
   warning does not mean no risk; airspace regulations must be followed.

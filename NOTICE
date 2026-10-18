@@ -1,14 +1,14 @@
-PG Soundings : titulaire, marques et fichiers tiers (NOTICE)
+WS Sounding : titulaire, marques et fichiers tiers (NOTICE)
 ============================================================
 
 Ce fichier accompagne la licence (LICENSE). Il dit à qui appartient le code, ce que la licence ne
-couvre pas, et d'où viennent les fichiers qui ne sont pas de PG Soundings, avec leurs licences.
+couvre pas, et d'où viennent les fichiers qui ne sont pas de WS Sounding, avec leurs licences.
 
 
-1. Code de PG Soundings
+1. Code de WS Sounding
 -----------------------
 
-Le code de PG Soundings appartient à WeSoar SASU, qui le diffuse. Il est écrit par Alexandre
+Le code de WS Sounding appartient à WeSoar SASU, qui le diffuse. Il est écrit par Alexandre
 Pereira. Il est sous licence ISC (fichier LICENSE), à l'exception des fichiers tiers de la
 section 3, qui gardent leurs auteurs et leurs licences.
 
@@ -282,7 +282,7 @@ responsabilité ne s'applique que dans la mesure où la loi applicable l'autoris
 English summary
 ---------------
 
-The PG Soundings code belongs to WeSoar SASU, which distributes it; it is written by Alexandre
+The WS Sounding code belongs to WeSoar SASU, which distributes it; it is written by Alexandre
 Pereira and licensed under the ISC licence (LICENSE), except for the third-party files listed in
 section 3, which keep their own authors and licences: configuration files and type declarations
 from windycom/windy-plugin-template (ISC, Windyty, S.E.), the Leaflet (BSD-2-Clause) and MapLibre

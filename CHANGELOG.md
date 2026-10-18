@@ -1,6 +1,6 @@
 # Changelog
 
-Toutes les versions publiées de PG Soundings, de la plus récente à la plus ancienne.
+Toutes les versions publiées de WS Sounding (PG Soundings jusqu'à la 1.14.0), de la plus récente à la plus ancienne.
 Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et les numéros de version
 [SemVer](https://semver.org/lang/fr/).
 
@@ -8,13 +8,13 @@ Le dépôt git ne commence qu'après la 1.2.7 : les entrées plus anciennes ont 
 coup à partir des notes de publication. Chaque version reste installable depuis Windy à l'adresse
 `https://windy-plugins.com/2727410/<nom-du-plugin>/<version>/plugin.min.js`.
 
-## [Non publié]
+## [1.15.0] - 2026-10-19
 
 ### Ajouté
 
 - Dans « Réglages et infos », l'origine des données du modèle choisi et la licence de son
   producteur (par exemple « ECMWF IFS via Windy.com (© ECMWF, CC BY 4.0) »), interpolées et
-  retraitées par PG Soundings.
+  retraitées par WS Sounding.
 - Sous le graphique, une ligne quand Windy ne fournit le modèle que toutes les 3 heures pour le
   jour affiché : elle donne les heures fournies par le modèle, les autres étant interpolées.
 - Dans « Réglages et infos », un bouton « Oublier le dernier lieu », qui efface le lieu gardé dans
@@ -22,6 +22,9 @@ coup à partir des notes de publication. Chaque version reste installable depuis
 
 ### Modifié
 
+- Le plugin s'appelle désormais « WS Sounding », comme les autres outils de WeSoar (WS Trim,
+  WS Trimmer, WS Viewer) : titre dans Windy, panneau et page de présentation. Son nom technique
+  (`windy-plugin-pg-soundings`) ne change pas : pas besoin de le réinstaller.
 - Le rappel du bas du panneau le dit aussi : outil non officiel et non certifié, pour la seule
   préparation du vol, qui n'est pas une information météorologique aéronautique officielle
   (Météo-France, AEROWEB) ; l'absence d'alerte d'orage ne signifie pas l'absence de risque ; la

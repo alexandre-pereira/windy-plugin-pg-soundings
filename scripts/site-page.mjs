@@ -73,8 +73,8 @@ const OTHER_TOOLS = [
         // L'application n'existe qu'en français : une seule adresse
         url: { en: 'https://trim.wesoar.fr/', fr: 'https://trim.wesoar.fr/' },
         name: {
-            en: 'Wing Trim, the app to measure and trim your lines',
-            fr: 'Wing Trim, l’application de mesure et de calage des suspentes',
+            en: 'WS Trim, the app to measure and trim your lines',
+            fr: 'WS Trim, l’application de mesure et de calage des suspentes',
         },
     },
     {
@@ -82,14 +82,14 @@ const OTHER_TOOLS = [
             en: 'https://trimming-tools.wesoar.fr/',
             fr: 'https://trimming-tools.wesoar.fr/fr/',
         },
-        name: { en: 'Paraglider trimming bench', fr: 'Banc de calage parapente' },
+        name: { en: 'WS Trimmer, the paraglider trimming bench', fr: 'WS Trimmer, le banc de calage parapente' },
     },
     {
-        // Le Viewer n'existe qu'en français : une seule adresse
+        // WS Viewer n'existe qu'en français : une seule adresse
         url: { en: 'https://viewer.wesoar.fr/', fr: 'https://viewer.wesoar.fr/' },
         name: {
-            en: 'Viewer 3D, to replay your flights over the terrain and share them',
-            fr: 'Viewer 3D, pour revoir vos vols sur le relief et les partager',
+            en: 'WS Viewer, to replay your flights over the terrain and share them',
+            fr: 'WS Viewer, pour revoir vos vols sur le relief et les partager',
         },
     },
 ];
@@ -98,7 +98,7 @@ const TEXTS = {
     en: {
         changelog: 'CHANGELOG.en.md',
         locale: 'en_GB',
-        title: 'PG Soundings: the free-flight forecast inside Windy',
+        title: 'WS Sounding: the free-flight forecast inside Windy',
         description:
             'Free plugin for Windy.com: wind and thermals, altitude by altitude and hour by hour, clouds, fronts, thunderstorm risk and the sounding of the place you pick.',
         eyebrow: 'Free plugin for Windy.com',
@@ -107,12 +107,12 @@ const TEXTS = {
         news: 'What’s new',
         source: 'Source code',
         shotAlt:
-            'Altitude × hour chart of PG Soundings: wind arrows, thermal zone, shower clouds and a cold front passing',
+            'Altitude × hour chart of WS Sounding: wind arrows, thermal zone, shower clouds and a cold front passing',
         shotCredit:
-            'Source: <a href="https://www.windy.com/">Windy.com</a> — ECMWF IFS model data, © ECMWF, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>, processed by PG Soundings',
+            'Source: <a href="https://www.windy.com/">Windy.com</a> — ECMWF IFS model data, © ECMWF, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>, processed by WS Sounding',
         // Crédit de la capture dans l'aperçu des liens, qui montre l'image sans sa légende
         shotSource:
-            'Screenshot: Windy.com, ECMWF IFS model data, © ECMWF, CC BY 4.0, processed by PG Soundings.',
+            'Screenshot: Windy.com, ECMWF IFS model data, © ECMWF, CC BY 4.0, processed by WS Sounding.',
         features: [
             [
                 'Wind aloft',
@@ -153,7 +153,7 @@ const TEXTS = {
             `Choose “Load plugin directly from URL” and paste this link in place of the text already in the field:${link}`,
             'Click a flying site on the map: the plugin remembers your last place.',
         ],
-        linkLabel: v => `Install link of PG Soundings ${v}`,
+        linkLabel: v => `Install link of WS Sounding ${v}`,
         copy: 'Copy the link',
         copied: 'Copied ✓',
         installNote:
@@ -165,7 +165,7 @@ const TEXTS = {
                 'January February March April May June July August September October November December';
             return `${d} ${months.split(' ')[m - 1]} ${y}`;
         },
-        disclaimer: `Estimates drawn from forecast models: nothing replaces watching the sky. PG Soundings is an independent, free and <a href="${REPO}">open-source</a> plugin; how each estimate is computed is described in its <a href="${REPO}#readme">README</a> (in French).`,
+        disclaimer: `Estimates drawn from forecast models: nothing replaces watching the sky. WS Sounding is an independent, free and <a href="${REPO}">open-source</a> plugin; how each estimate is computed is described in its <a href="${REPO}#readme">README</a> (in French).`,
         madeBy: 'Developed and offered free of charge by WeSoar.',
         legalTitle: 'Legal notice',
         legal: (p, h, base) => [
@@ -183,7 +183,7 @@ const TEXTS = {
             `<b>Personal data</b>: the controller is WeSoar (the publisher), contact <a href="mailto:${p.email}">${p.email}</a>. This page sets no cookie, does not measure its audience and loads nothing from other sites; it only keeps, in your browser, the language you chose. Its host, GitHub, Inc. (United States, certified under the EU-U.S. Data Privacy Framework), records visitors’ IP addresses in its logs for the security of the service, and keeps them for the periods set by its <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">privacy statement</a>. An e-mail sent to WeSoar is kept for the time of the exchange.`,
             `<b>The plugin</b> collects no data and sends nothing to WeSoar: what it reads or writes goes through Windy. It asks Windy for the forecasts, the terrain height and the name of the place. When it opens without a place (none given by the map, no last place kept), it asks for the device’s position through Windy’s geolocation: the browser asks for your permission, unless it was already given to windy.com, in which case no prompt appears; without it, Windy gives an approximate position drawn from the IP address. The heart in its header adds the place shown (name and coordinates) to Windy’s favourites, or removes it: Windy saves it, in your Windy account if you are signed in. Its settings and last place stay in the browser storage of the windy.com site, readable by Windy and its other plugins; the device’s position is only kept there, as in the page address, rounded to about 1 km, and “Forget the last place” erases it. It checks windy-plugins.com, Windy’s plugin site, for a new version at most every 6 hours (<a href="${REPO}#données-personnelles">details</a>, in French).`,
             `<b>Your rights</b>: you can ask for access to your data, its rectification or erasure, and object to its processing, by writing to <a href="mailto:${p.email}">${p.email}</a>. You can also lodge a complaint with the CNIL (<a href="https://www.cnil.fr/">cnil.fr</a>).`,
-            `<b>Intellectual property</b>: the code of PG Soundings belongs to WeSoar SASU; written by Alexandre Pereira, it is published under the <a href="${REPO}/blob/main/LICENSE">ISC licence</a> and distributed by WeSoar. The WeSoar name and logo belong to the publisher and are not covered by this licence; third-party files keep their own authors and licences (<a href="${REPO}/blob/main/NOTICE">NOTICE</a>). The Mona Sans typeface is used under the <a href="${base}mona-sans-OFL.txt">SIL Open Font License</a>. Windy is a trademark of Windyty, SE; PG Soundings is not published by Windy.`,
+            `<b>Intellectual property</b>: the code of WS Sounding belongs to WeSoar SASU; written by Alexandre Pereira, it is published under the <a href="${REPO}/blob/main/LICENSE">ISC licence</a> and distributed by WeSoar. The WeSoar name and logo belong to the publisher and are not covered by this licence; third-party files keep their own authors and licences (<a href="${REPO}/blob/main/NOTICE">NOTICE</a>). The Mona Sans typeface is used under the <a href="${base}mona-sans-OFL.txt">SIL Open Font License</a>. Windy is a trademark of Windyty, SE; WS Sounding is not published by Windy.`,
             `<b>Liability</b>: the plugin shows estimates computed from forecast models, which can be wrong. It is an unofficial, uncertified tool, for flight preparation only: it is not official aeronautical weather information (check your national aviation weather service; in France, Météo-France and AEROWEB). No thunderstorm warning does not mean no risk, and airspace regulations must be followed. The estimates do not replace watching the sky or official forecasts, and the decision to fly is the pilot’s alone.`,
         ],
         otherTools: 'Other free tools:',
@@ -192,7 +192,7 @@ const TEXTS = {
     fr: {
         changelog: 'CHANGELOG.md',
         locale: 'fr_FR',
-        title: 'PG Soundings : la prévision du vol libre dans Windy',
+        title: 'WS Sounding : la prévision du vol libre dans Windy',
         description:
             'Plugin gratuit pour Windy.com : le vent et les thermiques, altitude par altitude et heure par heure, les nuages, les fronts, le risque d’orage et l’émagramme du lieu choisi.',
         eyebrow: 'Plugin gratuit pour Windy.com',
@@ -201,11 +201,11 @@ const TEXTS = {
         news: 'Nouveautés',
         source: 'Code source',
         shotAlt:
-            'Graphique altitude × heure de PG Soundings : flèches du vent, zone des thermiques, nuages d’averses et passage d’un front froid',
+            'Graphique altitude × heure de WS Sounding : flèches du vent, zone des thermiques, nuages d’averses et passage d’un front froid',
         shotCredit:
-            'Source : <a href="https://www.windy.com/">Windy.com</a> — données du modèle ECMWF IFS, © ECMWF, <a href="https://creativecommons.org/licenses/by/4.0/deed.fr">CC BY 4.0</a>, retraitées par PG Soundings',
+            'Source : <a href="https://www.windy.com/">Windy.com</a> — données du modèle ECMWF IFS, © ECMWF, <a href="https://creativecommons.org/licenses/by/4.0/deed.fr">CC BY 4.0</a>, retraitées par WS Sounding',
         shotSource:
-            'Capture : Windy.com, données du modèle ECMWF IFS, © ECMWF, CC BY 4.0, retraitées par PG Soundings.',
+            'Capture : Windy.com, données du modèle ECMWF IFS, © ECMWF, CC BY 4.0, retraitées par WS Sounding.',
         features: [
             [
                 'Vent en altitude',
@@ -246,7 +246,7 @@ const TEXTS = {
             `Choisis « Load plugin directly from URL » et colle ce lien à la place du texte déjà dans le champ :${link}`,
             'Clique sur un site de vol sur la carte : le plugin retient ton dernier lieu.',
         ],
-        linkLabel: v => `Lien d’installation de PG Soundings ${v}`,
+        linkLabel: v => `Lien d’installation de WS Sounding ${v}`,
         copy: 'Copier le lien',
         copied: 'Copié ✓',
         installNote:
@@ -258,7 +258,7 @@ const TEXTS = {
                 'janvier février mars avril mai juin juillet août septembre octobre novembre décembre';
             return `${d === 1 ? '1er' : d} ${months.split(' ')[m - 1]} ${y}`;
         },
-        disclaimer: `Des estimations tirées des modèles de prévision : rien ne remplace l’observation du ciel. PG Soundings est un plugin indépendant, gratuit et <a href="${REPO}">à code ouvert</a> ; la façon dont chaque estimation est calculée est décrite dans son <a href="${REPO}#readme">README</a>.`,
+        disclaimer: `Des estimations tirées des modèles de prévision : rien ne remplace l’observation du ciel. WS Sounding est un plugin indépendant, gratuit et <a href="${REPO}">à code ouvert</a> ; la façon dont chaque estimation est calculée est décrite dans son <a href="${REPO}#readme">README</a>.`,
         madeBy: 'Développé et offert gratuitement par WeSoar.',
         legalTitle: 'Mentions légales',
         legal: (p, h, base) => [
@@ -276,7 +276,7 @@ const TEXTS = {
             `<b>Données personnelles</b> : le responsable du traitement est WeSoar (l’éditeur), contact <a href="mailto:${p.email}">${p.email}</a>. Cette page ne pose aucun cookie, ne mesure pas l’audience et ne charge rien depuis d’autres sites ; elle retient seulement, dans votre navigateur, la langue choisie. Son hébergeur, GitHub, Inc. (États-Unis, certifié au Data Privacy Framework UE–États-Unis), enregistre l’adresse IP des visiteurs dans ses journaux, pour la sécurité du service, et la garde pendant les durées fixées par sa <a href="https://docs.github.com/fr/site-policy/privacy-policies/github-general-privacy-statement">déclaration de confidentialité</a>. Un e-mail envoyé à WeSoar est gardé le temps de l’échange.`,
             `<b>Le plugin</b> ne collecte aucune donnée et n’envoie rien à WeSoar : ce qu’il lit ou écrit passe par Windy. Il demande à Windy les prévisions, l’altitude du terrain et le nom du lieu. Quand il s’ouvre sans lieu (ni lieu donné par la carte, ni dernier lieu gardé), il demande la position de l’appareil par la géolocalisation de Windy : le navigateur vous demande l’autorisation, sauf si elle a déjà été donnée à windy.com, auquel cas aucune demande n’apparaît ; sans elle, Windy donne une position approchée, tirée de l’adresse IP. Le cœur de son en-tête ajoute le lieu affiché (nom et coordonnées) aux favoris de Windy, ou l’en retire : Windy l’enregistre, dans votre compte Windy si vous êtes connecté. Ses réglages et le dernier lieu restent dans le stockage du navigateur pour le site windy.com, lisible par Windy et ses autres plugins ; la position de l’appareil n’y est gardée, comme dans l’adresse de la page, qu’arrondie à environ 1 km, et « Oublier le dernier lieu » l’efface. Il interroge au plus toutes les 6 heures windy-plugins.com, le site des plugins de Windy, pour savoir si une nouvelle version existe (<a href="${REPO}#données-personnelles">détail</a>).`,
             `<b>Vos droits</b> : vous pouvez demander l’accès à vos données, leur rectification ou leur effacement, et vous opposer à leur traitement, en écrivant à <a href="mailto:${p.email}">${p.email}</a>. Vous pouvez aussi adresser une réclamation à la CNIL (<a href="https://www.cnil.fr/">cnil.fr</a>).`,
-            `<b>Propriété intellectuelle</b> : le code de PG Soundings appartient à WeSoar SASU ; écrit par Alexandre Pereira, il est publié sous <a href="${REPO}/blob/main/LICENSE">licence ISC</a> et diffusé par WeSoar. Le nom et le logo WeSoar appartiennent à l’éditeur et n’entrent pas dans cette licence ; les fichiers tiers gardent leurs auteurs et leurs licences (<a href="${REPO}/blob/main/NOTICE">NOTICE</a>). La police Mona Sans est utilisée sous <a href="${base}mona-sans-OFL.txt">licence SIL Open Font License</a>. Windy est une marque de Windyty, SE ; PG Soundings n’est pas édité par Windy.`,
+            `<b>Propriété intellectuelle</b> : le code de WS Sounding appartient à WeSoar SASU ; écrit par Alexandre Pereira, il est publié sous <a href="${REPO}/blob/main/LICENSE">licence ISC</a> et diffusé par WeSoar. Le nom et le logo WeSoar appartiennent à l’éditeur et n’entrent pas dans cette licence ; les fichiers tiers gardent leurs auteurs et leurs licences (<a href="${REPO}/blob/main/NOTICE">NOTICE</a>). La police Mona Sans est utilisée sous <a href="${base}mona-sans-OFL.txt">licence SIL Open Font License</a>. Windy est une marque de Windyty, SE ; WS Sounding n’est pas édité par Windy.`,
             `<b>Responsabilité</b> : le plugin affiche des estimations calculées à partir de modèles de prévision, qui peuvent se tromper. C’est un outil non officiel et non certifié, pour la seule préparation du vol : ce n’est pas une information météorologique aéronautique officielle (consultez Météo-France et AEROWEB). L’absence d’alerte d’orage ne signifie pas l’absence de risque, et la réglementation de l’espace aérien reste à respecter. Ces estimations ne remplacent ni l’observation du ciel ni les prévisions officielles, et la décision de voler appartient au seul pilote.`,
         ],
         otherTools: 'Autres outils gratuits :',
@@ -422,7 +422,7 @@ const pageOf = lang => {
 <div class="wf-copy"><input type="text" readonly value="${installUrl}" onclick="this.select()" aria-label="${t.linkLabel(version)}"><button class="wf-btn" type="button" onclick="navigator.clipboard.writeText('${installUrl}').then(()=>{this.textContent='${t.copied}'})">${t.copy}</button></div>`;
 
     return `<!doctype html>
-<!-- PG Soundings ${version} : page fabriquée par scripts/site-page.mjs, ne pas la modifier à la main -->
+<!-- WS Sounding ${version} : page fabriquée par scripts/site-page.mjs, ne pas la modifier à la main -->
 <html lang="${lang}">
 <head>
 <meta charset="utf-8">
@@ -443,7 +443,7 @@ ${langNav}
 <main class="wf-page">
 <div class="wf-hero">
 <span class="wf-eyebrow">${t.eyebrow}</span>
-<h1 class="wf-title">PG Soundings</h1>
+<h1 class="wf-title">WS Sounding</h1>
 <p class="wf-lead">${t.lead}</p>
 <div class="wf-actions">
 <a class="wf-btn" href="#install">${t.install(version)}</a>
@@ -517,7 +517,7 @@ fs.copyFileSync(path.join(root, 'scripts/wesoar-mark.svg'), path.join(out, 'favi
 fs.copyFileSync(path.join(root, 'scripts/mona-sans.woff2'), path.join(out, 'mona-sans.woff2'));
 fs.copyFileSync(path.join(root, 'scripts/mona-sans-OFL.txt'), path.join(out, 'mona-sans-OFL.txt'));
 console.log(
-    `site/ : PG Soundings ${version}, ` +
+    `site/ : WS Sounding ${version}, ` +
         LANGS.map(lang => `${lang} ${versions[lang].length} versions`).join(', ') +
         (SITE_URL ? `, pour ${SITE_URL}` : ''),
 );

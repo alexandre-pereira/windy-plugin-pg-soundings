@@ -320,12 +320,12 @@
             <p class="wpp__interp">
                 {modelSteps.hours
                     ? tr(
-                          `Ce jour-là, Windy ne fournit ${modelLabel} que toutes les ${modelSteps.every} h (${modelSteps.hours}) : les heures intermédiaires sont interpolées par PG Soundings, donc moins sûres.`,
-                          `On this day, Windy only provides ${modelLabel} every ${modelSteps.every} h (${modelSteps.hours}): the hours in between are interpolated by PG Soundings, and less certain.`,
+                          `Ce jour-là, Windy ne fournit ${modelLabel} que toutes les ${modelSteps.every} h (${modelSteps.hours}) : les heures intermédiaires sont interpolées par WS Sounding, donc moins sûres.`,
+                          `On this day, Windy only provides ${modelLabel} every ${modelSteps.every} h (${modelSteps.hours}): the hours in between are interpolated by WS Sounding, and less certain.`,
                       )
                     : tr(
-                          `Ce jour-là, Windy ne fournit ${modelLabel} que toutes les ${modelSteps.every} h : les heures affichées sont interpolées par PG Soundings, donc moins sûres.`,
-                          `On this day, Windy only provides ${modelLabel} every ${modelSteps.every} h: the hours shown are interpolated by PG Soundings, and less certain.`,
+                          `Ce jour-là, Windy ne fournit ${modelLabel} que toutes les ${modelSteps.every} h : les heures affichées sont interpolées par WS Sounding, donc moins sûres.`,
+                          `On this day, Windy only provides ${modelLabel} every ${modelSteps.every} h: the hours shown are interpolated by WS Sounding, and less certain.`,
                       )}
             </p>
         {/if}
@@ -448,14 +448,14 @@
         <!-- Origine des données du modèle choisi et licence de son producteur -->
         <p class="wpp__about">
             {tr(
-                `Données : ${MODEL_SOURCES[model][0]}, interpolées et retraitées par PG Soundings.`,
-                `Data: ${MODEL_SOURCES[model][1]}, interpolated and processed by PG Soundings.`,
+                `Données : ${MODEL_SOURCES[model][0]}, interpolées et retraitées par WS Sounding.`,
+                `Data: ${MODEL_SOURCES[model][1]}, interpolated and processed by WS Sounding.`,
             )}
         </p>
         <p class="wpp__about">
             {tr(
-                'PG Soundings, diffusé par WeSoar, à code ouvert (licence ISC). Il ne collecte aucune donnée : prévisions, position et favoris passent par Windy. Ouvert sans lieu, il demande la position de l’appareil par Windy (aucune demande n’apparaît si windy.com y a déjà accès). Le dernier lieu reste dans le stockage du navigateur pour le site windy.com, lisible par Windy et ses autres plugins ; la position de l’appareil n’y est gardée qu’arrondie à environ 1 km. Détail :',
-                'PG Soundings, distributed by WeSoar, open source (ISC licence). It collects no data: forecasts, position and favourites go through Windy. Opened without a place, it asks Windy for the device’s position (no prompt appears if windy.com already has access). The last place stays in the browser storage of the windy.com site, readable by Windy and its other plugins; the device’s position is only kept there rounded to about 1 km. Details:',
+                'WS Sounding, diffusé par WeSoar, à code ouvert (licence ISC). Il ne collecte aucune donnée : prévisions, position et favoris passent par Windy. Ouvert sans lieu, il demande la position de l’appareil par Windy (aucune demande n’apparaît si windy.com y a déjà accès). Le dernier lieu reste dans le stockage du navigateur pour le site windy.com, lisible par Windy et ses autres plugins ; la position de l’appareil n’y est gardée qu’arrondie à environ 1 km. Détail :',
+                'WS Sounding, distributed by WeSoar, open source (ISC licence). It collects no data: forecasts, position and favourites go through Windy. Opened without a place, it asks Windy for the device’s position (no prompt appears if windy.com already has access). The last place stays in the browser storage of the windy.com site, readable by Windy and its other plugins; the device’s position is only kept there rounded to about 1 km. Details:',
             )}
             <a
                 href={tr('https://soundings.wesoar.fr/fr/#legal', 'https://soundings.wesoar.fr/#legal')}
@@ -576,8 +576,8 @@
             iconEu: dwd('ICON-EU'),
             iconD2: dwd('ICON-D2'),
             gfs: [
-                'GFS via Windy.com (NOAA, domaine public ; la NOAA ne soutient ni n’approuve PG Soundings)',
-                'GFS via Windy.com (NOAA, public domain; NOAA does not endorse PG Soundings)',
+                'GFS via Windy.com (NOAA, domaine public ; la NOAA ne soutient ni n’approuve WS Sounding)',
+                'GFS via Windy.com (NOAA, public domain; NOAA does not endorse WS Sounding)',
             ],
             aromeFrance: [
                 'AROME via Windy.com (source : Météo-France, Licence Ouverte Etalab 2.0)',
