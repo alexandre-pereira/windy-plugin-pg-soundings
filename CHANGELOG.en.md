@@ -156,9 +156,9 @@ same as before, in the tooltip and on the chart.
 
 ## [1.9.0] - 2026-10-04
 
-Front times change. Cold fronts are shown 1 to 6 hours earlier (2 hours in the median), at the hour
-when the air starts to change; warm fronts up to 6 hours later (2 hours in the median), at the hour
-when it finishes changing. Both used to be placed at the hour when the air changes fastest.
+Front times change. Cold fronts are shown 1 to 6 hours earlier, at the hour when the air starts to
+change; warm fronts up to 6 hours later, at the hour when it finishes changing. Both used to be
+placed at the hour when the air changes fastest.
 
 ### Changed
 
@@ -282,13 +282,12 @@ is now the cloud ceiling of the hour, measured where cloud cover exceeds 40%: it
 tooltip, is often lower than before, and steadier from one hour to the next.
 
 The top of small cumulus drops further: a cumulus whose base is close to the ground dilutes faster
-than a tower (200 m lower in the median on the test forecasts, no change when the base is 2,000 m or
-more above the ground). At sites above 500 m of elevation, clouds less than 2,500 m above the ground
-hide the sun more than before: under an overcast sky around 3,000 m, climb rates are weaker and
-ceilings lower there. The "Therm." strip turns orange when the wind changes a lot between the ground
-and the ceiling (wind shear) and, in the mountains, yellow when the ceiling stays below the ridges.
-CAPE cells change colour at lower values; the values themselves, LI and the storm risk do not
-change.
+than a tower (no change when the base is 2,000 m or more above the ground). At sites above 500 m of
+elevation, clouds less than 2,500 m above the ground hide the sun more than before: under an
+overcast sky around 3,000 m, climb rates are weaker and ceilings lower there. The "Therm." strip
+turns orange when the wind changes a lot between the ground and the ceiling (wind shear) and, in the
+mountains, yellow when the ceiling stays below the ridges. CAPE cells change colour at lower values;
+the values themselves, LI and the storm risk do not change.
 
 Rain is more often drawn as showers, especially with ECMWF, which does not provide convective
 precipitation: hours drawn so far as frontal rain now carry a shower cloud, with its base and top,
@@ -339,9 +338,7 @@ rain or storm risk is no longer green.
   sheet a smooth top. Drawn in clumps are the low cloud layer fed by thermals (cumulus,
   stratocumulus), named "Cumulus layer" in the tooltip, and the thin mid-level layer, more than
   2,000 m above the ground, named "Altocumulus" and drawn as a thin band. A thick mid-level layer is
-  named "Altostratus, altocumulus". Under a cumulus layer, the observers of 62 stations in Europe
-  report cumulus 8 times out of 10; under a low cloud layer without thermals, 4 times out of 10. The
-  legend explains it.
+  named "Altostratus, altocumulus". The legend explains it.
 - "Wind & thermals" chart: a "Sky" strip, above the chart, shows the sky of each hour. A disc,
   yellow by day and dark blue at night, is covered in grey over the share of the sky taken by
   clouds, at all levels, including higher than the chart. The grey is solid for the share that hides
@@ -391,11 +388,9 @@ rain or storm risk is no longer green.
 ### Changed
 
 - Showers: post-frontal showers, behind a cold front, are recognised. With almost no energy (CAPE),
-  they were taken for frontal rain. They are now read from cold air aloft above moist air. Compared
-  with the weather reported by the observers of 62 stations in Europe, the plugin draws as showers 5
-  to 7 shower hours out of 10, against 3 out of 10 before with ECMWF, and 7 hours out of 10 drawn as
-  showers really are shower hours. With a model that provides its convective precipitation, frontal
-  rain in which it accounts for less than half remains frontal rain.
+  they were taken for frontal rain. They are now read from cold air aloft above moist air. With a
+  model that provides its convective precipitation, frontal rain in which it accounts for less than
+  half remains frontal rain.
 - "Therm." strip: an hour with at least 0.5 mm of rain, or one carrying a storm risk
   (overdevelopment included), is no longer green. When its thermals would be called easy, its cell
   is grey, "rain or storm". The legend explains it.
@@ -410,10 +405,9 @@ rain or storm risk is no longer green.
   air mass (temperature and humidity together) changes quickly from one place to the next, and that
   the wind pushes over the place. Until now, the front was looked for on the place alone, where the
   air cools or warms by at least 3 °C in 6 hours between 1,500 and 3,000 m under rain, an overcast
-  sky or a shifting wind: over a month of forecasts for 16 sites in Europe, only 3 map fronts out of
-  10 were recognised, and almost no warm fronts. Fronts appear a moment after the chart, the time it
-  takes to read the surrounding points. If these points do not answer, the front is looked for on
-  the place alone, from the change of its air mass between 750 and 2,000 m above the ground.
+  sky or a shifting wind. Fronts appear a moment after the chart, the time it takes to read the
+  surrounding points. If these points do not answer, the front is looked for on the place alone,
+  from the change of its air mass between 750 and 2,000 m above the ground.
 - Wind aloft: the rows of arrows are closer together, to read the wind at more altitudes. With the
   automatic max altitude, there is one every 200 m instead of 250 m; when the chart goes higher,
   every 250 to 400 m instead of 500 m, and every 500 m instead of 1,000 m with a max altitude of
@@ -627,8 +621,7 @@ likely thunderstorm becomes "severe thunderstorm possible" when the air lends it
 ## [1.3.0] - 2026-10-01
 
 The thermal calculations have been revised: in the same conditions, the ceilings shown are markedly
-lower than in 1.2.7 (by 300 to 450 m in fair weather on the test forecasts), and climb values are
-now vario climbs.
+lower than in 1.2.7 (by 300 to 450 m in fair weather), and climb values are now vario climbs.
 
 ### Added
 

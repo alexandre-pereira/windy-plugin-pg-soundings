@@ -232,10 +232,9 @@ de pression (souvent 7 niveaux seulement pour ECMWF : rien entre 850 et 700 hPa,
   lui-même à toute heure (CAPE de l'air le plus instable, sommet froid, nuages épais et pluie).
   L'épaisseur et le sommet sont ici ceux que le nuage peut atteindre sans se diluer
   (pseudo-adiabatique pure), plus hauts que le sommet affiché : les seuils d'énergie le supposent
-- classe un orage probable en **orage violent possible** quand l'air s'y prête : LI ≤ −6, ou
-  √(2 · CAPE) × cisaillement sol–6 km ≥ 500 m²/s² avec un LI ≤ −2 (la CAPE s'arrête au dernier niveau
-  fourni, 400 hPa : ~620 m²/s² sur un profil complet), ou rafales du modèle ≥ 70 km/h ; seuils calés
-  sur GFS et ICON-EU (30 sites d'Europe)
+- classe un orage probable en **orage violent possible** quand l'air s'y prête : LI ≤ −6, ou √(2 ·
+  CAPE) × cisaillement sol–6 km ≥ 500 m²/s² avec un LI ≤ −2 (la CAPE s'arrête au dernier niveau
+  fourni, 400 hPa : ~620 m²/s² sur un profil complet), ou rafales du modèle ≥ 70 km/h
 - résume l'**orage du jour** dans un bandeau (8 h – 22 h, heures à venir) : première heure, cause,
   déplacement (vent moyen du sol à 6 km), rafales du modèle, absence de signe l'heure d'avant
 - dessine un **nuage d'averses** quand la pluie est faite d'averses. Une heure, prise seule, est
@@ -244,17 +243,13 @@ de pression (souvent 7 niveaux seulement pour ECMWF : rien entre 850 et 700 hPa,
   d'épaisseur ; l'air est froid en altitude au-dessus d'un air humide, ce que mesure l'indice des
   totaux (T + Td à 850 hPa − 2 × T à 500 hPa) à partir de 47, ou, là où le niveau 850 hPa est sous
   le sol, un indice de soulèvement d'au plus 2,5. Les averses de traîne, derrière un front froid,
-  n'ont presque pas de CAPE : c'est l'indice des totaux qui les repère. Seuils calés sur le temps
-  noté par les observateurs de 62 stations d'Europe (averse ou orage, contre pluie continue ou
-  bruine ; messages SYNOP du 9 septembre au 2 octobre 2026), avec ECMWF, GFS et ICON : 7 heures
-  dessinées en averses sur 10 en sont bien, et 5 à 7 heures d'averses observées sur 10 sont
-  dessinées en averses. La nature de la pluie se décide ensuite sur cinq heures, l'heure
-  et les deux de chaque côté : averses si au moins la moitié de la pluie y tombe à des heures
-  convectives. Une heure convective minoritaire autour d'elle est d'abord écartée, puis celles qui
-  restent entraînent leurs voisines : une énergie qui passe le seuil d'un rien ne donne plus une
-  averse isolée au milieu d'une pluie de front. Le nuage dessiné est celui de la particule
-  standard, sinon celui de la particule la plus instable ; sans l'un ni l'autre, la pluie reste
-  dessinée sous la nappe
+  n'ont presque pas de CAPE : c'est l'indice des totaux qui les repère. La nature de la pluie se
+  décide ensuite sur cinq heures, l'heure et les deux de chaque côté : averses si au moins la moitié
+  de la pluie y tombe à des heures convectives. Une heure convective minoritaire autour d'elle est
+  d'abord écartée, puis celles qui restent entraînent leurs voisines : une énergie qui passe le
+  seuil d'un rien ne donne plus une averse isolée au milieu d'une pluie de front. Le nuage dessiné
+  est celui de la particule standard, sinon celui de la particule la plus instable ; sans l'un ni
+  l'autre, la pluie reste dessinée sous la nappe
 - dessine les nuages d'averses d'heures qui se suivent, ou qu'une seule heure sans averse sépare,
   en une masse au contour bourgeonnant
 - souligne la base du **plafond nuageux** de chaque heure, sa plus basse couche de nuages dense :
@@ -285,13 +280,8 @@ de pression (souvent 7 niveaux seulement pour ECMWF : rien entre 850 et 700 hPa,
   exploitables montent jusqu'à elle, à 300 m près ; sans thermique, le profil ne sépare pas le
   stratus du stratocumulus : elle reste « nuages bas ». Une couche sans pluie dont la base est à
   l'étage moyen (à plus de 2 000 m du sol, sous 450 hPa) est un **altocumulus** si elle fait moins
-  de 2 000 m d'épaisseur ; plus épaisse, c'est un **altostratus** ou un altocumulus épais. Calé sur le
-  genre noté par les observateurs des mêmes 62 stations : sous une couche de cumulus, ils notent
-  des cumulus ou des cumulonimbus 8 fois sur 10 (4 fois sur 10 sous une couche basse sans
-  thermique) ; sous un altocumulus, des altocumulus près de 8 fois sur 10 ; sous une couche
-  épaisse, un altostratus ou des altocumulus épais ou en plusieurs couches 5 à 7 fois sur 10.
-  L'altocumulus castellanus, signe d'instabilité en altitude, n'est pas repéré : avec les 7 niveaux
-  du modèle, aucun critère essayé ne le sépare des autres altocumulus
+  de 2 000 m d'épaisseur ; plus épaisse, c'est un **altostratus** ou un altocumulus épais.
+  L'altocumulus castellanus, signe d'instabilité en altitude, n'est pas repéré
 - marque de tirets le **relief pris dans les nuages** : là où T − Td ne dépasse pas 1,5 °C sur au
   moins 100 m, l'air condense dès qu'une pente le soulève de moins de 200 m, que le modèle y annonce
   une couche ou non. Les tirets ne vont que du sol au **niveau des crêtes voisines** : le plus haut
@@ -309,17 +299,15 @@ de pression (souvent 7 niveaux seulement pour ECMWF : rien entre 850 et 700 hPa,
   12 °C entre température et point de rosée au sol), la pluie s'y évapore et le refroidit. Elle est
   dite **forte** (trois chevrons rouges) quand la descente de cet air a beaucoup d'énergie : l'air
   pris à la base du nuage, refroidi jusqu'à son thermomètre mouillé, descend le long de la
-  pseudo-adiabatique jusqu'au sol, et l'énergie de cette descente (DCAPE) atteint environ
-  400 J/kg, soit une vitesse théorique √(2 · DCAPE) de 100 km/h. Cette vitesse est un maximum,
-  environ trois fois les rafales que les modèles prévoient à ces heures sur les prévisions d'essai :
-  elle sert de seuil, pas de rafale annoncée, et ce seuil n'est pas vérifié sur des observations
-- signale des **tourbillons de poussière** possibles quand leurs ingrédients sont réunis :
-  w\* d'au moins 2,5 m/s, couche convective d'au moins 1 500 m, rapport w\* / u\* d'au moins 5
-  (convection libre, −zi/L ≥ 50 : le vent au sol reste faible devant les thermiques), au moins
-  10 °C entre la température et le point de rosée au sol, moins de 1 mm de pluie dans les 24 heures
-  et l'heure, et moins de 30 % du ciel qui cache le soleil. Sur un mois de prévisions de 16 sites
-  d'Europe (septembre-octobre), moins de 1 % des heures de thermiques les réunissent. Seuils tirés
-  de la littérature : aucune observation de tourbillons ne permet de les caler
+  pseudo-adiabatique jusqu'au sol, et l'énergie de cette descente (DCAPE) atteint environ 400 J/kg,
+  soit une vitesse théorique √(2 · DCAPE) de 100 km/h. Cette vitesse est un maximum théorique : elle
+  sert de seuil, pas de rafale annoncée, et ce seuil n'est pas vérifié sur des observations
+- signale des **tourbillons de poussière** possibles quand leurs ingrédients sont réunis : w\* d'au
+  moins 2,5 m/s, couche convective d'au moins 1 500 m, rapport w\* / u\* d'au moins 5 (convection
+  libre, −zi/L ≥ 50 : le vent au sol reste faible devant les thermiques), au moins 10 °C entre la
+  température et le point de rosée au sol, moins de 1 mm de pluie dans les 24 heures et l'heure, et
+  moins de 30 % du ciel qui cache le soleil. Seuils tirés de la littérature : aucune observation de
+  tourbillons ne permet de les caler
 - montre le **ciel de chaque heure** dans le bandeau « Nuages » : la couverture nuageuse totale
   (maximum de chaque étage, bas, moyen et haut, puis recouvrement aléatoire entre étages). Le
   calcul des thermiques, lui, compte la part qui cache le soleil, où les nuages bas comptent en
@@ -353,77 +341,63 @@ de pression (souvent 7 niveaux seulement pour ECMWF : rien entre 850 et 700 hPa,
   L'émagramme, lui, montre toujours l'ascension de la particule
 - lit les **passages de front sur la carte** autour du lieu : en plus de la prévision du lieu, il
   charge celle de quatre points voisins, à 55 km au nord, au sud, à l'est et à l'ouest, et y lit la
-  masse d'air à 850 hPa (et à 700 hPa quand le sol dépasse 900 m, ou quand 850 hPa est sous le sol) :
-  sa température potentielle équivalente, qui réunit température et humidité et ne varie pas quand
+  masse d'air à 850 hPa (et à 700 hPa quand le sol dépasse 900 m, ou quand 850 hPa est sous le sol)
+  : sa température potentielle équivalente, qui réunit température et humidité et ne varie pas quand
   l'air ne fait que monter ou descendre. Un front est une zone où la masse d'air change vite d'un
-  endroit à l'autre et qui traverse le lieu : la température potentielle équivalente du lieu
-  (lissée sur 3 heures) change d'au moins 5 °C en 6 heures, dans un gradient horizontal moyen d'au
-  moins 3,5 °C aux 100 km, que le vent du niveau pousse sur le lieu (advection moyenne d'au moins
-  0,3 °C/h, de même sens). L'humidité seule ne fait pas un front (intrusion d'air sec,
-  subsidence) : la température potentielle doit suivre, d'au moins 2 °C, avec un gradient d'au
-  moins 1,5 °C aux 100 km et une advection d'au moins 0,15 °C/h. **Front lent** : au moins 7 °C en
-  12 heures (dont 2,8 °C de température potentielle), avec des advections moitié moindres, quand
-  aucun front franc de même sens ne passe à moins de 9 heures. Le gradient est celui du plan ajusté
-  aux cinq points ; il faut au moins trois voisins. Un front froid est dit **sec** quand il tombe
-  moins de 1 mm de pluie autour de son passage (de 3 heures avant à 3 heures après le changement).
-  Sur 48 prévisions d'un mois (16 sites d'Europe, GFS, ICON et ECMWF, du 8 septembre au 8 octobre
-  2026), cette lecture donne 216 fronts, dont 38 fronts chauds.
-  **Sans points voisins** (ils ne répondent pas, ou sortent du domaine d'un modèle local), le front
-  est repéré sur le lieu seul, entre 750 et 2 000 m au-dessus du sol : au moins 5 °C de
-  température potentielle équivalente en 6 heures, dont 1,5 °C de température (ou 7 °C en
-  12 heures, dont 2,5 °C), avec une advection froide pour un front froid, chaude d'au moins
-  0,1 °C/h et sous un ciel couvert pour un front chaud ; l'advection se lit alors sur la rotation
-  du vent entre 500 et 3 000 m au-dessus du sol (vent thermique : à droite en montant dans
-  l'hémisphère nord, de l'air chaud arrive). Le lieu seul retrouve 79 % des fronts de la carte, et
-  78 % de ceux qu'il annonce y sont : un front peu actif, ou qui passe à côté, lui échappe.
-  **Occlusion** (toujours repérée sur le lieu) : l'air libre (1 500 à 3 000 m au-dessus du sol)
-  gagne puis reperd au moins 1,5 °C en 6 heures de part et d'autre, sous un ciel couvert et au moins
-  2 mm de pluie de nuages en couches, quand l'air entre 250 et 1 000 m au-dessus du sol change de
-  moins de 2 °C et qu'aucun autre front ne passe à moins de 12 heures ; ces seuils-là ne sont pas
-  calés. La carte dit qu'un front passe et à quelle heure il passe au niveau lu ; la prévision du
-  lieu dit où il passe plus bas et plus haut. Un front est le bord de l'air chaud, pas le milieu
-  du changement d'air. Un **front froid** est le bord avant de l'air froid : il passe quand l'air
-  commence à changer. Un **front chaud** est le bord arrière de l'air froid qu'il remplace : il
-  passe quand l'air finit de changer. Ce début (ou cette fin) se lit en remontant (ou en
-  descendant) le temps depuis l'heure du changement le plus rapide, tant que la température
-  potentielle équivalente change encore d'au moins 0,5 °C par heure, de 6 heures au plus. Sur les
-  prévisions de la période ci-dessus, le passage au sol d'un front froid ainsi lu (179 fronts)
-  tombe, en médiane, à l'heure où le vent au sol tourne et à celle de la plus forte pluie, une
-  heure après le creux de pression ; l'heure du changement le plus rapide vient 2 à 3 heures plus
-  tard. Celui d'un front chaud (38 fronts, dont 18 avec une rotation du vent au sol et 27 avec un
-  creux de pression) tombe en médiane à l'heure où le vent tourne et une heure avant le creux ;
-  l'heure du changement le plus rapide vient 2 à 3 heures plus tôt. Le graphique trace la
-  **surface du front** par trois points. Au **sol**, l'heure où la température potentielle
-  équivalente de l'air bas (250 à 1 000 m au-dessus du sol) change le plus vite, d'au moins 1 °C
-  en 2 heures, est cherchée dans les 3 heures qui précèdent le changement le plus rapide au niveau
-  lu pour un front froid (il passe au sol avant l'altitude), dans les 3 heures qui le suivent pour
-  un front chaud. Le front froid passe au sol à l'heure où ce changement de l'air bas commence, le
-  front chaud à celle où il finit ; à défaut, l'heure de la carte. C'est l'**heure du passage**
-  que donnent la liste des jours et l'infobulle. Quand Windy ne fournit le modèle que
+  endroit à l'autre et qui traverse le lieu : la température potentielle équivalente du lieu (lissée
+  sur 3 heures) change d'au moins 5 °C en 6 heures, dans un gradient horizontal moyen d'au moins 3,5
+  °C aux 100 km, que le vent du niveau pousse sur le lieu (advection moyenne d'au moins 0,3 °C/h, de
+  même sens). L'humidité seule ne fait pas un front (intrusion d'air sec, subsidence) : la
+  température potentielle doit suivre, d'au moins 2 °C, avec un gradient d'au moins 1,5 °C aux 100
+  km et une advection d'au moins 0,15 °C/h. **Front lent** : au moins 7 °C en 12 heures (dont 2,8 °C
+  de température potentielle), avec des advections moitié moindres, quand aucun front franc de même
+  sens ne passe à moins de 9 heures. Le gradient est celui du plan ajusté aux cinq points ; il faut
+  au moins trois voisins. Un front froid est dit **sec** quand il tombe moins de 1 mm de pluie
+  autour de son passage (de 3 heures avant à 3 heures après le changement). **Sans points voisins**
+  (ils ne répondent pas, ou sortent du domaine d'un modèle local), le front est repéré sur le lieu
+  seul, entre 750 et 2 000 m au-dessus du sol : au moins 5 °C de température potentielle équivalente
+  en 6 heures, dont 1,5 °C de température (ou 7 °C en 12 heures, dont 2,5 °C), avec une advection
+  froide pour un front froid, chaude d'au moins 0,1 °C/h et sous un ciel couvert pour un front chaud
+  ; l'advection se lit alors sur la rotation du vent entre 500 et 3 000 m au-dessus du sol (vent
+  thermique : à droite en montant dans l'hémisphère nord, de l'air chaud arrive). Un front peu
+  actif, ou qui passe à côté, peut échapper au lieu seul. **Occlusion** (toujours repérée sur le
+  lieu) : l'air libre (1 500 à 3 000 m au-dessus du sol) gagne puis reperd au moins 1,5 °C en 6
+  heures de part et d'autre, sous un ciel couvert et au moins 2 mm de pluie de nuages en couches,
+  quand l'air entre 250 et 1 000 m au-dessus du sol change de moins de 2 °C et qu'aucun autre front
+  ne passe à moins de 12 heures. La carte dit qu'un front passe et à quelle heure il passe au niveau
+  lu ; la prévision du lieu dit où il passe plus bas et plus haut. Un front est le bord de l'air
+  chaud, pas le milieu du changement d'air. Un **front froid** est le bord avant de l'air froid : il
+  passe quand l'air commence à changer. Un **front chaud** est le bord arrière de l'air froid qu'il
+  remplace : il passe quand l'air finit de changer. Ce début (ou cette fin) se lit en remontant (ou
+  en descendant) le temps depuis l'heure du changement le plus rapide, tant que la température
+  potentielle équivalente change encore d'au moins 0,5 °C par heure, de 6 heures au plus. Le
+  graphique trace la **surface du front** par trois points. Au **sol**, l'heure où la température
+  potentielle équivalente de l'air bas (250 à 1 000 m au-dessus du sol) change le plus vite, d'au
+  moins 1 °C en 2 heures, est cherchée dans les 3 heures qui précèdent le changement le plus rapide
+  au niveau lu pour un front froid (il passe au sol avant l'altitude), dans les 3 heures qui le
+  suivent pour un front chaud. Le front froid passe au sol à l'heure où ce changement de l'air bas
+  commence, le front chaud à celle où il finit ; à défaut, l'heure de la carte. C'est l'**heure du
+  passage** que donnent la liste des jours et l'infobulle. Quand Windy ne fournit le modèle que
   toutes les 3 heures, le changement commence ou finit à un pas du modèle et le front passe dans le
   pas voisin (celui qui suit pour un front froid, celui qui précède pour un front chaud) : le trait
   est mis au milieu de ce pas, et l'infobulle en donne les deux heures. À l'**altitude du niveau
-  lu**, l'heure de la carte (début du changement pour un front froid, fin pour un front chaud) :
-  le trait y passe, jamais avant le sol pour un front froid ni après lui pour un front chaud, et
-  à 6 heures du sol au plus (si ce niveau est à moins de 250 m du sol, son heure est celle du
-  sol). À
+  lu**, l'heure de la carte (début du changement pour un front froid, fin pour un front chaud) : le
+  trait y passe, jamais avant le sol pour un front froid ni après lui pour un front chaud, et à 6
+  heures du sol au plus (si ce niveau est à moins de 250 m du sol, son heure est celle du sol). À
   **2 250 m au-dessus du sol** (le milieu de la couche de l'air libre), l'heure où l'air libre
-  change le plus vite, cherchée après les passages plus bas pour un front froid, avant pour un
-  front chaud, à 6 heures du sol au plus : le trait ne penche jamais à l'envers. Quand le niveau lu
-  est à 2 000 m du sol ou plus, c'est lui qui donne ce point. Il se prolonge jusqu'à 3 000 m au-dessus du sol : plus haut, rien ne
-  dit où est le front. La liste des jours porte le symbole de chaque sorte de front qui passe au
-  sol ce jour-là
+  change le plus vite, cherchée après les passages plus bas pour un front froid, avant pour un front
+  chaud, à 6 heures du sol au plus : le trait ne penche jamais à l'envers. Quand le niveau lu est à
+  2 000 m du sol ou plus, c'est lui qui donne ce point. Il se prolonge jusqu'à 3 000 m au-dessus du
+  sol : plus haut, rien ne dit où est le front. La liste des jours porte le symbole de chaque sorte
+  de front qui passe au sol ce jour-là
 - donne la **vitesse d'un front** et la direction d'où il vient, lues sur la carte : la température
   potentielle équivalente de chaque point voisin est décalée dans le temps (de −6 à +6 heures, par
   quart d'heure) jusqu'à se superposer à celle du lieu sur la fenêtre du front, élargie de 3 heures
   de chaque côté. Ce retard, positif du côté vers lequel le front va, donne avec ceux des autres
   voisins (il en faut trois) sa lenteur en heures par kilomètre, donc sa vitesse. Elle n'est pas
   donnée sous 8 km/h ni au-delà de 120 km/h, où les retards deviennent trop petits devant le pas
-  d'une heure. Sur les mêmes prévisions, 94 % des fronts ont une vitesse (médiane 28 km/h pour les
-  fronts froids, 34 pour les fronts chauds), et elle vaut en médiane 1,05 fois le vent du niveau
-  dans le sens du front : un front avance avec le vent qui le pousse. Un front est dit **rapide**
-  à partir de 50 km/h (14 % des fronts). Limite connue : le gradient exigé est une moyenne sur
-  6 heures, qu'un front rapide et étroit dilue ; il peut alors manquer
+  d'une heure. Un front est dit **rapide** à partir de 50 km/h. Limite connue : le gradient exigé
+  est une moyenne sur 6 heures, qu'un front rapide et étroit dilue ; il peut alors manquer
 - dit un passage **brutal** quand au moins 60 % du changement de masse d'air de la fenêtre se fait
   en 2 heures (l'infobulle donne alors la variation de température de ces 2 heures), et signale un
   **saut de vent** au sol quand les plus fortes rafales des 3 heures qui suivent le passage

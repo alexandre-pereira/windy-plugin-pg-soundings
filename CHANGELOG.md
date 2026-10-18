@@ -158,10 +158,9 @@ qu'avant, dans l'infobulle comme sur le graphique.
 
 ## [1.9.0] - 2026-10-04
 
-Les heures des fronts changent. Les fronts froids sont affichés de 1 à 6 heures plus tôt
-(2 heures en médiane), à l'heure où l'air commence à changer ; les fronts chauds jusqu'à 6 heures
-plus tard (2 heures en médiane), à l'heure où il finit de changer. Les uns et les autres étaient
-placés à l'heure où l'air change le plus vite.
+Les heures des fronts changent. Les fronts froids sont affichés de 1 à 6 heures plus tôt, à l'heure
+où l'air commence à changer ; les fronts chauds jusqu'à 6 heures plus tard, à l'heure où il finit de
+changer. Les uns et les autres étaient placés à l'heure où l'air change le plus vite.
 
 ### Modifié
 
@@ -296,13 +295,13 @@ nuageux de l'heure, mesuré là où la nébulosité dépasse 40 % : sa base, don
 souvent plus basse qu'avant, et plus régulière d'une heure à l'autre.
 
 Le sommet des petits cumulus baisse encore : un cumulus dont la base est proche du sol se dilue plus
-vite qu'une tour (200 m de moins en médiane sur les prévisions d'essai, rien de changé quand la
-base est à 2 000 m du sol ou plus). Sur les sites à plus de 500 m d'altitude, les nuages situés à
-moins de 2 500 m du sol cachent davantage le soleil qu'avant : sous un ciel couvert vers 3 000 m,
-les ascendances et les plafonds y sont plus faibles. Le bandeau « Therm. »
-passe à l'orange quand le vent change beaucoup entre le sol et le plafond (cisaillement) et, en
-montagne, au jaune quand le plafond reste sous les crêtes. Les cases de la CAPE changent de couleur
-à des valeurs plus basses ; les valeurs elles-mêmes, le LI et le risque d'orage ne changent pas.
+vite qu'une tour (rien de changé quand la base est à 2 000 m du sol ou plus). Sur les sites à plus
+de 500 m d'altitude, les nuages situés à moins de 2 500 m du sol cachent davantage le soleil
+qu'avant : sous un ciel couvert vers 3 000 m, les ascendances et les plafonds y sont plus faibles.
+Le bandeau « Therm. » passe à l'orange quand le vent change beaucoup entre le sol et le plafond
+(cisaillement) et, en montagne, au jaune quand le plafond reste sous les crêtes. Les cases de la
+CAPE changent de couleur à des valeurs plus basses ; les valeurs elles-mêmes, le LI et le risque
+d'orage ne changent pas.
 
 La pluie est plus souvent dessinée en averses, surtout avec ECMWF, qui ne fournit pas de
 précipitations convectives : des heures dessinées jusqu'ici en pluie de front portent maintenant un
@@ -355,11 +354,9 @@ de pluie ou de risque d'orage n'est plus verte.
 - Graphique « Vent & thermiques » : une couche faite d'amas séparés par des trouées a le dessus
   moutonné, une nappe continue le dessus lisse. Sont dessinées en amas la couche de nuages bas que
   les thermiques nourrissent (cumulus, stratocumulus), nommée « Couche de cumulus » dans
-  l'infobulle, et la couche mince de l'étage moyen, à plus de 2 000 m du sol, nommée
-  « Altocumulus » et dessinée en bande mince. Une couche épaisse de l'étage moyen est nommée
-  « Altostratus, altocumulus ». Sous une couche de cumulus, les observateurs de 62 stations
-  d'Europe notent des cumulus 8 fois sur 10 ; sous une couche de nuages bas sans thermique, 4 fois
-  sur 10. La légende l'explique.
+  l'infobulle, et la couche mince de l'étage moyen, à plus de 2 000 m du sol, nommée « Altocumulus »
+  et dessinée en bande mince. Une couche épaisse de l'étage moyen est nommée « Altostratus,
+  altocumulus ». La légende l'explique.
 - Graphique « Vent & thermiques » : un bandeau « Ciel », au-dessus du graphique, montre le ciel de
   chaque heure. Un disque, jaune le jour et bleu sombre la nuit, se couvre de gris sur la part du
   ciel que prennent les nuages, tous étages confondus, y compris plus haut que le graphique. Le
@@ -414,11 +411,8 @@ de pluie ou de risque d'orage n'est plus verte.
 
 - Averses : les averses de traîne, derrière un front froid, sont reconnues. Presque sans énergie
   (CAPE), elles passaient pour une pluie de front. Elles se lisent maintenant à l'air froid en
-  altitude au-dessus d'un air humide. Comparé au temps noté par les observateurs de 62 stations
-  d'Europe, le plugin dessine en averses 5 à 7 heures d'averses sur 10, contre 3 sur 10 avant avec
-  ECMWF, et 7 heures dessinées en averses sur 10 en sont bien. Avec un modèle qui fournit ses
-  précipitations convectives, une pluie de front où elles comptent pour moins de la moitié reste
-  une pluie de front.
+  altitude au-dessus d'un air humide. Avec un modèle qui fournit ses précipitations convectives, une
+  pluie de front où elles comptent pour moins de la moitié reste une pluie de front.
 - Bandeau « Therm. » : une heure où il tombe au moins 0,5 mm de pluie, ou qui porte un risque
   d'orage (surdéveloppement compris), n'est plus verte. Quand ses thermiques seraient dits faciles,
   sa case est grise, « pluie ou orage ». La légende l'explique.
@@ -430,15 +424,13 @@ de pluie ou de risque d'orage n'est plus verte.
   trait du plafond nuageux est celui du graphique, décidé avec les heures de la journée. Ils ne
   changent plus quand le curseur passe entre deux heures qui les partagent.
 - Fronts : ils sont lus sur la carte autour du lieu. Le plugin charge, en plus de la prévision du
-  lieu, celle de quatre points à 55 km au nord, au sud, à l'est et à l'ouest : un front est une
-  zone où la masse d'air (température et humidité ensemble) change vite d'un endroit à l'autre, et
-  que le vent pousse sur le lieu. Jusqu'ici, le front était cherché sur le lieu seul, là où l'air
-  se refroidit ou se réchauffe d'au moins 3 °C en 6 heures entre 1 500 et 3 000 m sous la pluie, un
-  ciel couvert ou un vent qui tourne : sur un mois de prévisions de 16 sites d'Europe, 3 fronts de
-  la carte sur 10 seulement étaient reconnus, et presque aucun front chaud. Les fronts
-  apparaissent un instant après le graphique, le temps de lire les points voisins. Si
-  ces points ne répondent pas, le front est cherché sur le lieu seul, par le changement de sa
-  masse d'air entre 750 et 2 000 m au-dessus du sol.
+  lieu, celle de quatre points à 55 km au nord, au sud, à l'est et à l'ouest : un front est une zone
+  où la masse d'air (température et humidité ensemble) change vite d'un endroit à l'autre, et que le
+  vent pousse sur le lieu. Jusqu'ici, le front était cherché sur le lieu seul, là où l'air se
+  refroidit ou se réchauffe d'au moins 3 °C en 6 heures entre 1 500 et 3 000 m sous la pluie, un
+  ciel couvert ou un vent qui tourne. Les fronts apparaissent un instant après le graphique, le
+  temps de lire les points voisins. Si ces points ne répondent pas, le front est cherché sur le lieu
+  seul, par le changement de sa masse d'air entre 750 et 2 000 m au-dessus du sol.
 - Vent en altitude : les rangées de flèches sont plus serrées, pour lire le vent à davantage
   d'altitudes. Avec l'altitude max automatique, il y en a une tous les 200 m au lieu de 250 m ;
   quand le graphique monte plus haut, tous les 250 à 400 m au lieu de 500 m, et tous les 500 m au
@@ -664,9 +656,9 @@ instable, et un orage probable passe en « orage violent possible » quand l'air
 
 ## [1.3.0] - 2026-10-01
 
-Les calculs des thermiques ont été revus : à conditions égales, les plafonds affichés sont
-nettement plus bas qu'en 1.2.7 (de 300 à 450 m par beau temps sur les prévisions de test), et les
-valeurs d'ascendance sont désormais des montées au vario.
+Les calculs des thermiques ont été revus : à conditions égales, les plafonds affichés sont nettement
+plus bas qu'en 1.2.7 (de 300 à 450 m par beau temps), et les valeurs d'ascendance sont désormais des
+montées au vario.
 
 ### Ajouté
 
