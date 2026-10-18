@@ -23,6 +23,12 @@ du dépôt peut les garder, pour désigner WeSoar comme diffuseur d'origine ; un
 porte ni le nom ni le logo WeSoar, et ne laisse pas croire qu'elle vient de WeSoar ou que WeSoar
 l'approuve.
 
+Exception pour Windyty, SE : les conditions d'utilisation de Windy prévoient que Windy peut modifier
+les plugins qu'il héberge. Les modifications que Windyty, SE apporte au plugin pour l'héberger, le
+maintenir ou le mettre en conformité (avec ses règles, ses conditions ou la loi) ne lui retirent pas
+le nom et l'auteur WeSoar : le plugin ainsi modifié peut garder le nom WeSoar, son logo et la
+mention de WeSoar comme auteur.
+
 
 3. Fichiers tiers
 -----------------
@@ -248,6 +254,31 @@ Sans Project Authors (https://github.com/github/mona-sans), with Reserved Font N
 sous SIL Open Font License 1.1.
 
 
+4. Licence ISC : traduction française
+-------------------------------------
+
+Traduction donnée à titre d'information : seul le texte anglais du fichier LICENSE fait foi. La
+réserve « dans les limites permises par la loi » rappelle que l'exclusion de garantie et de
+responsabilité ne s'applique que dans la mesure où la loi applicable l'autorise.
+
+    Licence ISC
+
+    Copyright (c) 2026 WeSoar SASU
+
+    L'autorisation d'utiliser, de copier, de modifier et/ou de distribuer ce logiciel, dans
+    quelque but que ce soit, avec ou sans contrepartie financière, est accordée par les présentes,
+    à condition que la mention de droit d'auteur ci-dessus et la présente autorisation figurent
+    dans toutes les copies.
+
+    DANS LES LIMITES PERMISES PAR LA LOI, LE LOGICIEL EST FOURNI « EN L'ÉTAT » ET L'AUTEUR DÉCLINE
+    TOUTE GARANTIE À SON SUJET, Y COMPRIS TOUTE GARANTIE IMPLICITE DE QUALITÉ MARCHANDE ET
+    D'ADÉQUATION À UN USAGE PARTICULIER. EN AUCUN CAS L'AUTEUR NE POURRA ÊTRE TENU RESPONSABLE D'UN
+    DOMMAGE SPÉCIAL, DIRECT, INDIRECT OU CONSÉCUTIF, NI D'AUCUN DOMMAGE RÉSULTANT D'UNE PERTE
+    D'USAGE, DE DONNÉES OU DE PROFITS, QUE CE SOIT DANS LE CADRE D'UNE ACTION CONTRACTUELLE, D'UNE
+    NÉGLIGENCE OU DE TOUTE AUTRE ACTION DÉLICTUELLE, DÉCOULANT DE L'UTILISATION OU DU
+    FONCTIONNEMENT DE CE LOGICIEL, OU EN LIEN AVEC CEUX-CI.
+
+
 English summary
 ---------------
 
@@ -261,4 +292,8 @@ plugin, and the unmodified Mona Sans font (SIL Open Font License 1.1). The WeSoa
 WeSoar and are not covered by the licence: they may only be used with WeSoar's written permission.
 An unmodified copy of the repository may keep them, to credit WeSoar as the original distributor;
 a modified version must not bear the WeSoar name or logo, nor suggest that it comes from or is
-endorsed by WeSoar.
+endorsed by WeSoar. Exception for Windyty, SE: since Windy's terms allow Windy to modify the
+plugins it hosts, changes made by Windyty, SE to host or maintain the plugin, or to bring it into
+compliance, do not remove the WeSoar name and authorship: the plugin so modified may keep the
+WeSoar name, its logo and the mention of WeSoar as author. Section 4 gives an informative French
+translation of the ISC licence; only the English text in LICENSE is binding.
