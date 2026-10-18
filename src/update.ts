@@ -3,9 +3,9 @@
  *
  * Un plugin installé par lien reste sur la version de ce lien : on regarde donc au démarrage si
  * une version plus récente a été publiée, en avançant de version en version sur windy-plugins.com
- * (correctif, mineure, majeure) et en tolérant un numéro sauté. Seul windy-plugins.com est
- * interrogé : aucun site extérieur à Windy ne voit passer l'utilisateur. Le résultat est gardé
- * quelques heures dans le navigateur.
+ * (correctif, mineure, majeure) et en tolérant des numéros sautés, en MAX_PROBES requêtes au plus.
+ * Seul windy-plugins.com est interrogé : aucun site extérieur à Windy ne voit passer l'utilisateur.
+ * Le résultat est gardé quelques heures dans le navigateur.
  */
 
 import config from './pluginConfig';
@@ -17,8 +17,15 @@ const CACHE_KEY = 'wpp-update-check';
 const CACHE_MS = 6 * 3600e3;
 /** Numéros sautés tolérés, de version en version : correctifs et mineures essayés au-delà du suivant */
 const GAP = 3;
-/** Nombre maximal de requêtes vers windy-plugins.com (sécurité) */
-const MAX_PROBES = 60;
+/**
+ * Nombre maximal de requêtes vers windy-plugins.com par recherche, pour ne pas charger le site de
+ * Windy. Les candidates étant essayées de la plus lointaine à la plus proche, chaque requête
+ * positive saute le plus loin possible : un plugin à jour fait 7 requêtes, un plugin en retard de
+ * plusieurs versions trouve en général la dernière dans ce nombre. S'il est très en retard, la
+ * recherche s'arrête sur une version intermédiaire, déjà plus récente (le bandeau s'affiche), et la
+ * recherche suivante, une fois le résultat gardé périmé, repart d'elle au lieu de tout reprendre.
+ */
+const MAX_PROBES = 10;
 
 export const installUrl = (version: string) => `${BASE}/${version}/plugin.min.js`;
 
@@ -62,20 +69,29 @@ const exists = async (version: string): Promise<Probe> => {
  * version pendant des heures.
  */
 export const checkForUpdate = async (current: string = config.version): Promise<string | null> => {
+    /** Version plus récente trouvée par une recherche précédente : la recherche repart d'elle */
+    let known: string | null = null;
     try {
         const saved = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
-        if (saved && saved.from === current && Date.now() - saved.t < CACHE_MS) return saved.latest;
+        if (saved && saved.from === current) {
+            if (Date.now() - saved.t < CACHE_MS) return saved.latest;
+            if (typeof saved.latest === 'string' && isNewer(saved.latest, current))
+                known = saved.latest;
+        }
     } catch {
         /* stockage indisponible : on vérifie */
     }
 
-    let latest: string = current;
+    let latest: string = known ?? current;
     let failed = false;
 
     let probes = 0;
     search: while (probes < MAX_PROBES) {
         let found: string | null = null;
-        for (const v of nextCandidates(latest)) {
+        // De la plus lointaine à la plus proche : la première qui existe est la plus récente des
+        // candidates, et celles qu'elle saute sont plus anciennes qu'elle (aucune n'est perdue :
+        // les candidates de la plus récente couvrent tout ce qui suit les autres)
+        for (const v of [...nextCandidates(latest)].reverse()) {
             if (probes++ >= MAX_PROBES) break;
             const probe = await exists(v);
             if (probe === 'error') {

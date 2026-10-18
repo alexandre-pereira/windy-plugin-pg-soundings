@@ -8,6 +8,14 @@ Le dépôt git ne commence qu'après la 1.2.7 : les entrées plus anciennes ont 
 coup à partir des notes de publication. Chaque version reste installable depuis Windy à l'adresse
 `https://windy-plugins.com/2727410/<nom-du-plugin>/<version>/plugin.min.js`.
 
+## [Non publié]
+
+### Modifié
+
+- La recherche d'une nouvelle version interroge le site des plugins de Windy en 10 requêtes au plus
+  (60 auparavant). Un plugin très en retard voit d'abord une version intermédiaire, puis la
+  dernière aux recherches suivantes.
+
 ## [1.14.0] - 2026-10-18
 
 ### Ajouté

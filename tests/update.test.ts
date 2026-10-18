@@ -52,10 +52,42 @@ describe('recherche de mise à jour', () => {
         expect(asked.every(u => u.startsWith('https://windy-plugins.com/'))).toBe(true);
     });
 
-    it('avance de version en version jusqu’à la dernière, même lointaine', async () => {
+    it('avance de version en version jusqu’à la dernière, même lointaine, en 10 requêtes au plus', async () => {
         const published = ['1.2.0', '1.2.1', '1.2.2', '1.3.0', '1.4.0', '1.4.1', '1.5.0', '1.6.0', '1.6.1', '1.6.2', '1.7.0', '1.8.0', '1.9.0', '1.10.0', '1.11.0', '1.12.0'];
-        network({ published });
+        const asked = network({ published });
         expect(await checkForUpdate('1.1.6')).toBe('1.12.0');
+        expect(asked.length).toBeLessThanOrEqual(10);
+    });
+
+    it('à jour, ou en retard d’un correctif ou d’une mineure : 10 requêtes au plus', async () => {
+        for (const [current, published, expected] of [
+            ['1.14.0', ['1.14.0'], null],
+            ['1.14.0', ['1.14.0', '1.14.1'], '1.14.1'],
+            ['1.14.0', ['1.14.0', '1.15.0'], '1.15.0'],
+            ['1.14.0', ['1.14.0', '1.14.1', '1.15.0', '1.15.1', '1.16.0'], '1.16.0'],
+        ] as const) {
+            store.clear();
+            const asked = network({ published: [...published] });
+            expect(await checkForUpdate(current)).toBe(expected);
+            expect(asked.length).toBeLessThanOrEqual(10);
+        }
+    });
+
+    it('très en retard : une version plus récente tout de suite, la dernière aux recherches suivantes', async () => {
+        // Une version par mineure, de 1.0.0 à 1.40.0 : trop loin pour 10 requêtes
+        const published = Array.from({ length: 41 }, (_, k) => `1.${k}.0`);
+        const asked = network({ published });
+        let latest = await checkForUpdate('1.0.0');
+        expect(latest && isNewer(latest, '1.0.0')).toBe(true);
+        expect(asked.length).toBeLessThanOrEqual(10);
+        for (let k = 0; k < 10 && latest !== '1.40.0'; k++) {
+            // Résultat gardé périmé : la recherche suivante repart de la version déjà trouvée
+            store.set('wpp-update-check', JSON.stringify({ from: '1.0.0', latest, t: 0 }));
+            asked.length = 0;
+            latest = await checkForUpdate('1.0.0');
+            expect(asked.length).toBeLessThanOrEqual(10);
+        }
+        expect(latest).toBe('1.40.0');
     });
 
     it('passe un numéro sauté', async () => {
