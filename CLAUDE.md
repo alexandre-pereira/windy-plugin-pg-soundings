@@ -94,8 +94,6 @@ Les réglages de l'utilisateur sont gardés dans le `localStorage` de Windy, sou
   pages des outils WeSoar (feuille de style, logo, icône de l'onglet). Les mêmes fichiers sont
   dans le dépôt de chaque outil (`outils/` de `trimming-tools`) : une modification s'y reporte
   telle quelle. Ce qui est propre à cette page reste dans `site-page.mjs`
-- `reseaux/` (ignoré par git, retiré du dépôt le 2026-10-07) : visuels et légendes des
-  publications réseaux sociaux, gardés sur l'ordinateur seulement
 - `.tmp/` (ignoré par git) : bancs d'essai et brouillons, jamais publiés. `.tmp/cross-supprime/`
   garde la carte des cross (onglet « Cross »), retirée le 2026-10-03 pour le moment, et la marche
   à suivre pour la remettre
@@ -113,7 +111,7 @@ Les réglages de l'utilisateur sont gardés dans le `localStorage` de Windy, sou
   `nearby.ts` ou `level.ts` va avec son test dans `tests/`, et avec la mise à jour de « Comment sont calculées les estimations » dans le
   README si une méthode ou un seuil change.
 - Classes CSS préfixées `wpp-`. Prettier : 4 espaces, guillemets simples, 100 colonnes.
-- Les textes publiés (interface, README, changelog, réseaux sociaux) décrivent le plugin dans ses propres
+- Les textes publiés (interface, README, changelog, page de présentation) décrivent le plugin dans ses propres
   termes, sans le comparer à d'autres sites ou outils de prévision.
 - Les textes publiés ne disent ni niveau de pilote ni aptitude à voler (« débutant », « pilote
   confirmé », « volable »), ni qu'une journée ou un créneau convient pour voler. En cas d'accident,
@@ -157,8 +155,7 @@ une release GitHub par version.
    avertit si une version y manque.
 4. Mettre le nouveau lien d'installation
    (`https://windy-plugins.com/2727410/windy-plugin-pg-soundings/X.Y.Z/plugin.min.js`) dans
-   `README.md`, `reseaux/legende.txt` et `reseaux/slides.html` (constante `LINK`), puis
-   refaire `reseaux/carrousel/5.png` et `reseaux/story/5.png`, qui affichent ce lien.
+   `README.md`.
 5. Commit `PG Soundings vX.Y.Z` (résumé de la version dans le corps), tag `vX.Y.Z`, puis
    `git push origin main` et `git push origin vX.Y.Z`. L'envoi sur `main` met aussi à jour la page
    de présentation (GitHub Pages), avec le nouveau lien et le changelog.
