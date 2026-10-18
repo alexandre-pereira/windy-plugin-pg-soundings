@@ -6,7 +6,6 @@ tmp
 .secret-api-key.sh
 nohup.out
 node_modules
-package-lock.json
 *.log
 dist/*
 site/
@@ -16,3 +15,6 @@ plugin.tar
 
 # Prévisions de Windy pour les tests : leur contenu ne se redistribue pas (conditions de Windy)
 tests/fixtures/
+
+# Réglages locaux de Claude Code (autorisations propres à cet ordinateur)
+.claude/settings.local.json

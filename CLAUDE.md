@@ -14,6 +14,7 @@ estimation est calculée sont décrits dans [README.md](README.md).
 - `npm start` : compile et sert le plugin sur `https://localhost:9999` (à charger depuis
   <https://www.windy.com/developer-mode>) par `scripts/dev-server.js` : localhost seulement, CORS pour windy.com
   seulement, rien hors de `dist/` (pas rollup-plugin-serve, qui écoutait sur tout le réseau et laissait lire le disque)
+- `npm ci` : installe les dépendances telles que les fixe `package-lock.json` (versionné)
 - `npm run build` : version finale dans `dist/`
 - `npm test` : tests des calculs (vitest), sur deux prévisions ECMWF réelles de `tests/fixtures/`,
   gardées sur l'ordinateur seulement (ignorées par git : contenu de Windy, qui ne se redistribue pas)
