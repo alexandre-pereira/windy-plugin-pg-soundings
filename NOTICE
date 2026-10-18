@@ -214,9 +214,9 @@ contient du code) :
 
 3.3 Svelte, dans la version compilée du plugin
 
-La version compilée (dist/plugin.min.js, publiée sur Windy) contient le code de Svelte
-(https://github.com/sveltejs/svelte), version 4, sous licence MIT. Le texte de cette licence est
-repris en tête du fichier compilé :
+La version compilée (dist/plugin.js et dist/plugin.min.js, envoyés à Windy) contient le code de
+Svelte (https://github.com/sveltejs/svelte), version 4, sous licence MIT. Le texte de cette licence
+est repris en tête des deux fichiers compilés, avec la mention de la licence ISC du plugin :
 
     Copyright (c) 2016-23 [these people](https://github.com/sveltejs/svelte/graphs/contributors)
 
