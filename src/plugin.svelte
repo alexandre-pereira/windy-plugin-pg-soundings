@@ -1295,8 +1295,8 @@
         'style="display:block;pointer-events:none" fill="none" stroke-linecap="round">' +
         // Liseré sombre sous le trait orange : lisible sur toutes les couleurs de la carte
         `<g stroke="#10141a" stroke-opacity="0.8" stroke-width="5">${PLACE_SHAPE}</g>` +
-        `<g stroke="#f5a623" stroke-width="2.5">${PLACE_SHAPE}</g>` +
-        '<circle r="2.75" fill="#f5a623" stroke="#10141a" stroke-opacity="0.8" stroke-width="1.25"/>' +
+        `<g stroke="#f1ae3e" stroke-width="2.5">${PLACE_SHAPE}</g>` +
+        '<circle r="2.75" fill="#f1ae3e" stroke="#10141a" stroke-opacity="0.8" stroke-width="1.25"/>' +
         '</svg>';
 
     const removeMarker = () => {
@@ -1521,7 +1521,7 @@
         --wpp-sky-bottom: #1a2531;
         --wpp-stable: #e9edf2;
         --wpp-parcel: #ffd24a;
-        --wpp-accent: #ffd24a;
+        --wpp-accent: #f1ae3e;
         // Nuage de l'émagramme, à sa base (il s'éclaircit vers le sommet)
         --wpp-cloud: rgba(238, 242, 247, 0.3);
         // Nuages du modèle dans la bande de l'émagramme, à 100 % de couverture
@@ -1563,7 +1563,7 @@
             --wpp-sky-bottom: #d9e4ee;
             --wpp-stable: #1f2933;
             --wpp-parcel: #c98a00;
-            --wpp-accent: #e0a800;
+            --wpp-accent: #955902;
             --wpp-cloud: rgba(255, 255, 255, 0.9);
             --wpp-cloud-layer: #7f8ba0;
             --wpp-freezing: #0284c7;
@@ -1772,9 +1772,9 @@
                 opacity: 0.75;
             }
             &.selected {
-                background: #f5a623;
-                border-color: #f5a623;
-                color: #111;
+                background: #f1ae3e;
+                border-color: #f1ae3e;
+                color: #0e1b26;
             }
             &:disabled {
                 opacity: 0.35;
@@ -1840,7 +1840,7 @@
             margin-right: 8px;
             vertical-align: -2px;
             border: 2px solid var(--wpp-border);
-            border-top-color: #ffd24a;
+            border-top-color: #f1ae3e;
             border-radius: 50%;
             animation: wpp-spin 0.8s linear infinite;
         }
@@ -1848,9 +1848,9 @@
             display: block;
             margin: 12px auto 0;
             padding: 7px 16px;
-            border: 2px solid #ffd24a;
+            border: 2px solid #f1ae3e;
             border-radius: 18px;
-            background: rgba(255, 210, 74, 0.12);
+            background: rgba(241, 174, 62, 0.16);
             color: var(--wpp-fg);
             font-size: 13px;
             font-weight: bold;
@@ -1878,9 +1878,9 @@
             flex-wrap: wrap;
             margin: 0 0 10px;
             padding: 8px 10px;
-            border: 1px solid #f5a623;
+            border: 1px solid #f1ae3e;
             border-radius: 8px;
-            background: rgba(245, 166, 35, 0.12);
+            background: rgba(241, 174, 62, 0.16);
             font-size: 12px;
             line-height: 1.4;
             color: var(--wpp-fg-dim);
@@ -1900,8 +1900,8 @@
             padding: 6px 12px;
             border: none;
             border-radius: 6px;
-            background: #f5a623;
-            color: #111;
+            background: #f1ae3e;
+            color: #0e1b26;
             font-weight: 700;
             font-size: 12px;
             cursor: pointer;
@@ -2094,8 +2094,8 @@
             transform: translateX(-50%);
             padding: 0 7px;
             border-radius: 8px;
-            background: #f5a623;
-            color: #111;
+            background: #f1ae3e;
+            color: #0e1b26;
             font-size: 12.5px;
             font-weight: 700;
             line-height: 16px;
@@ -2133,7 +2133,7 @@
                 margin-top: -5px;
                 border-radius: 50%;
                 background: #fff;
-                border: 3px solid #f5a623;
+                border: 3px solid #f1ae3e;
                 box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
             }
             &::-moz-range-thumb {
@@ -2141,13 +2141,13 @@
                 height: 14px;
                 border-radius: 50%;
                 background: #fff;
-                border: 3px solid #f5a623;
+                border: 3px solid #f1ae3e;
                 box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
             }
             &:focus-visible {
                 outline: none;
                 &::-webkit-slider-thumb {
-                    box-shadow: 0 0 0 4px rgba(245, 166, 35, 0.35);
+                    box-shadow: 0 0 0 4px rgba(241, 174, 62, 0.4);
                 }
             }
         }
@@ -2166,9 +2166,9 @@
             font-size: 10px;
 
             &.on {
-                background: #f5a623;
-                border-color: #f5a623;
-                color: #111;
+                background: #f1ae3e;
+                border-color: #f1ae3e;
+                color: #0e1b26;
             }
         }
         // Instabilité (CAPE, LI, risque d'orage) : une ligne sur toute la largeur, sous les autres valeurs

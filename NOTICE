@@ -253,6 +253,17 @@ scripts/mona-sans-OFL.txt est le fichier OFL.txt de la même archive : Copyright
 Sans Project Authors (https://github.com/github/mona-sans), with Reserved Font Name "Mona",
 sous SIL Open Font License 1.1.
 
+3.5 Police Literata, des titres de la page de présentation
+
+scripts/literata.woff2 et scripts/literata-italic.woff2 sont les fichiers literata-titre-latin.woff2
+et literata-titre-italic-latin.woff2 de la charte graphique WeSoar (wesoar-brand, assets/fonts/) :
+Literata, de TypeTogether (https://github.com/googlefonts/literata), réduite au latin et aux
+graisses 400 à 600, corps optique figé à 48, comme le permet sa licence (Literata n'a pas de nom
+réservé). SHA-256 : 9cf87b382c8f28cfa67fd3a8c7e5f9b4fecef45b16b32c2777b0755099daee1a (romain),
+5ff37c021d1cc40fa13ce38b5695a3c67ed50f54f3ae6dad451f0ada04572027 (italique).
+scripts/literata-OFL.txt est sa licence : Copyright 2017 The Literata Project Authors, sous SIL
+Open Font License 1.1.
+
 
 4. Licence ISC : traduction française
 -------------------------------------
@@ -287,7 +298,7 @@ Pereira and licensed under the ISC licence (LICENSE), except for the third-party
 section 3, which keep their own authors and licences: configuration files and type declarations
 from windycom/windy-plugin-template (ISC, Windyty, S.E.), the Leaflet (BSD-2-Clause) and MapLibre
 GL JS (BSD-3-Clause) documentation in declarations/leaflet-gl-L.d.ts, Svelte (MIT) in the compiled
-plugin, and the unmodified Mona Sans font (SIL Open Font License 1.1). The WeSoar name and logo
+plugin, the unmodified Mona Sans font and the Literata font (both SIL Open Font License 1.1). The WeSoar name and logo
 (scripts/wesoar.svg, scripts/wesoar-mark.svg, and the same design wherever it appears) belong to
 WeSoar and are not covered by the licence: they may only be used with WeSoar's written permission.
 An unmodified copy of the repository may keep them, to credit WeSoar as the original distributor;

@@ -136,7 +136,7 @@ graphique le dit et donne les heures que le modèle fournit : les autres sont in
 Sur <https://www.windy.com/plugins>, choisissez « Load plugin directly from URL » et collez :
 
 ```
-https://windy-plugins.com/2727410/windy-plugin-pg-soundings/1.15.0/plugin.min.js
+https://windy-plugins.com/2727410/windy-plugin-pg-soundings/1.15.1/plugin.min.js
 ```
 
 Le plugin signale ensuite lui-même les nouvelles versions. L'historique est dans

@@ -95,7 +95,8 @@ Les réglages de l'utilisateur sont gardés dans le `localStorage` de Windy, sou
   forme, un bloc HTML à coller dans WordPress
 - `scripts/site-capture.png` : capture du plugin affichée par cette page
 - `scripts/mona-sans.woff2`, `scripts/mona-sans-OFL.txt` : police de la page et sa licence, servies
-  avec elle (pas de Google Fonts, qui verrait l'adresse IP des visiteurs). C'est le fichier
+  avec elle, comme `scripts/literata.woff2`, `scripts/literata-italic.woff2` et `scripts/literata-OFL.txt`,
+  la police des grands titres (charte WeSoar : Literata pour les h1 et h2, Mona Sans pour le reste) (pas de Google Fonts, qui verrait l'adresse IP des visiteurs). C'est le fichier
   officiel `MonaSansVF[opsz,wght].woff2` de github/mona-sans v2.0.27, non modifié (provenance et
   empreinte dans `NOTICE`) : ne pas le sous-ensembler ni le retoucher, une version modifiée ne
   pourrait plus porter le nom réservé « Mona » (SIL OFL)

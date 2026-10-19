@@ -533,7 +533,7 @@
                     x2={selX}
                     y1={railY + 8}
                     y2={stripsEnd}
-                    stroke="#f5a623"
+                    stroke="#f1ae3e"
                     stroke-width="1.5"
                     pointer-events="none"
                 />
@@ -547,7 +547,7 @@
                     x2={left + plotW}
                     y1={mapY}
                     y2={mapY}
-                    stroke="#f5a623"
+                    stroke="#f1ae3e"
                     stroke-opacity="0.85"
                     stroke-dasharray="7 5"
                     pointer-events="none"
@@ -588,7 +588,7 @@
                         stroke-dasharray="3 3"
                         pointer-events="none"
                     />
-                    <rect x="2" y={hover.y - 8} width={left - 4} height="16" rx="3" fill="#ffd24a" />
+                    <rect x="2" y={hover.y - 8} width={left - 4} height="16" rx="3" fill="#f1ae3e" />
                     <text x={left / 2} y={hover.y + 3.5} class="wpp-axis-hover" text-anchor="middle"
                         >{r50(hover.z)}</text
                     >
@@ -1075,13 +1075,13 @@
             {/if}
             <!-- Altitude de la carte, écrite sur l'axe au bout de ses tirets orange -->
             {#if mapY != null && mapZ != null}
-                <rect x="2" y={mapY - 8} width={left - 4} height="16" rx="3" fill="#f5a623" />
+                <rect x="2" y={mapY - 8} width={left - 4} height="16" rx="3" fill="#f1ae3e" />
                 <text x={left / 2} y={mapY + 3.5} class="wpp-axis-hover" text-anchor="middle"
                     >{Math.round(mapZ / 10) * 10}</text
                 >
             {/if}
             {#if hover?.z != null}
-                <rect x="2" y={hover.y - 8} width={left - 4} height="16" rx="3" fill="#ffd24a" />
+                <rect x="2" y={hover.y - 8} width={left - 4} height="16" rx="3" fill="#f1ae3e" />
                 <text x={left / 2} y={hover.y + 3.5} class="wpp-axis-hover" text-anchor="middle"
                     >{r50(hover.z)}</text
                 >
@@ -2239,9 +2239,9 @@
             background: var(--wpp-surface-hover);
         }
         &.on {
-            background: #f5a623;
-            border-color: #f5a623;
-            color: #111;
+            background: #f1ae3e;
+            border-color: #f1ae3e;
+            color: #0e1b26;
         }
     }
 
@@ -2474,7 +2474,7 @@
         }
         // Barre de l'heure : bouton orange qui porte l'heure choisie
         .wpp-rail-thumb {
-            fill: #f5a623;
+            fill: #f1ae3e;
             stroke: #fff;
             stroke-width: 1.5;
         }

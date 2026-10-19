@@ -760,9 +760,9 @@
         }
         &--open,
         &--open:hover {
-            background: #ffd24a;
-            border-color: #ffd24a;
-            color: #111;
+            background: #f1ae3e;
+            border-color: #f1ae3e;
+            color: #0e1b26;
         }
     }
 

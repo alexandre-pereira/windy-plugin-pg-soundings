@@ -1,35 +1,65 @@
 /*
- * Style commun des pages de présentation des outils WeSoar (WS Sounding, WS Trimmer…).
+ * Style commun des pages de présentation des outils WeSoar (WS Sounding, WS Trimmer…), d'après
+ * la charte graphique WeSoar (version 4, octobre 2026).
  *
  * Le même fichier est copié dans le dépôt de chaque outil, qui l'insère dans sa page : une
  * modification se reporte telle quelle dans les autres dépôts, pour que les pages restent de la
  * même famille. Ce qui est propre à un outil s'écrit dans son script de page, pas ici.
  *
- * Thème clair seulement. Les couleurs sont celles du thème clair de WS Trim, la police est
- * celle du logo WeSoar (Mona Sans, licence SIL OFL) : la page la sert elle-même, avec sa licence
- * (fichiers mona-sans.woff2 et mona-sans-OFL.txt, @font-face écrit par la page), sans passer par
- * Google Fonts qui verrait l'adresse IP des visiteurs.
+ * Charte : fond écume, texte nuit atlantique, un seul accent, l'ambre (fond du bouton principal ;
+ * en texte et en filet sur fond clair il devient l'ambre foncé), liens océan, pied de page sur
+ * l'ardoise de nuit. Deux voix : Literata pour les grands titres (h1, h2), Mona Sans (la police du
+ * logo) pour tout le reste. Les deux polices sont servies par la page elle-même, avec leur licence
+ * SIL OFL (fichiers mona-sans.woff2, literata-*.woff2 et les OFL, @font-face écrits par la page),
+ * sans passer par Google Fonts qui verrait l'adresse IP des visiteurs. Au survol, rien ne bouge :
+ * couleur, fond ou soulignement changent, sans déplacement, ombre ni dégradé.
  */
 
 :root {
-    --wf-page: #f5f7f9;
+    /* Couleurs de la charte */
+    --wf-page: #f7f4ee; /* écume : fond de page */
     --wf-surface: #fff;
-    --wf-ink: #17202b;
-    --wf-muted: #5a6472;
-    --wf-line: #dadee5;
-    --wf-accent: #007696;
-    --wf-accent-strong: #006083;
-    --wf-tint: #e4f4fa;
-    --wf-glow-1: rgba(154, 217, 238, 0.4);
-    --wf-glow-2: rgba(221, 207, 250, 0.3);
-    --wf-shadow: 0 1px 2px rgba(23, 32, 43, 0.05), 0 10px 28px rgba(23, 32, 43, 0.06);
-    --wf-radius: 14px;
-    --wf-radius-s: 9px;
-    --wf-gutter: clamp(16px, 4vw, 32px);
+    --wf-sand: #f3ead6; /* sable clair : fonds d'encarts, code */
+    --wf-sand-2: #e9d8b4; /* sable : liens et petit texte sur fond nuit */
+    --wf-ink: #0e1b26; /* nuit atlantique : texte, boutons */
+    --wf-ink-2: #1c2c3a; /* nuit 2 : appui des boutons nuit */
+    --wf-night: #1a2730; /* ardoise de nuit : le seul sombre des grandes surfaces (pied de page) */
+    --wf-muted: #6f695f; /* gris dune : texte secondaire sur fond clair */
+    --wf-muted-2: #8a8378; /* gris dune clair : texte secondaire sur fond nuit */
+    --wf-line: #e2dcd0; /* filets, bordures */
+    --wf-flare: #f1ae3e; /* ambre : une couleur de surface (bouton principal, pastille) */
+    --wf-flare-hover: #e6a024; /* ambre soutenu : appui */
+    --wf-accent: #955902; /* ambre foncé : l'accent en texte, en filet et en pictogramme sur fond clair */
+    --wf-accent-strong: #955902;
+    --wf-tint: rgba(241, 174, 62, 0.16); /* ambre dilué : fond d'encart */
+    --wf-ocean: #1b6a8a; /* liens dans le texte, focus */
+    --wf-sky: #bfddeb; /* ciel : l'accent sur fond nuit */
+    --wf-focus: var(--wf-ocean);
+    /* Formes : la carte (16 px), la rangée (10 px), le champ (8 px), la pilule */
+    --wf-radius: 16px;
+    --wf-radius-s: 10px;
+    --wf-radius-xs: 8px;
+    --wf-pill: 999px;
+    --wf-shadow: none;
+    --wf-gutter: clamp(16px, 4vw, 48px);
     --wf-width: 66rem;
-    --wf-font:
-        'Mona Sans', 'Segoe UI', system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+    --wf-card-pad: clamp(18px, 2.2vw, 28px);
+    /* Deux voix : la voix de titrage (Literata), la voix de lecture (Mona Sans) */
+    --wf-font: 'Mona Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --wf-font-display: 'Literata', Georgia, 'Times New Roman', serif;
     --wf-mono: ui-monospace, 'Cascadia Mono', Consolas, Menlo, monospace;
+    /* Corps, de 360 px à 1440 px de large */
+    --wf-h1: clamp(2.375rem, 1.667rem + 3.148vw, 4.5rem); /* titre de page : 38 → 72 px */
+    --wf-h2: clamp(2rem, 1.583rem + 1.852vw, 3.25rem); /* titre de section : 32 → 52 px */
+    --wf-h2-prose: clamp(1.75rem, 1.583rem + 0.741vw, 2.25rem); /* titre dans un texte long : 28 → 36 px */
+    --wf-h3: clamp(1.25rem, 1.157rem + 0.381vw, 1.5rem); /* intertitre : 20 → 24 px */
+    --wf-h4: clamp(1.125rem, 1.079rem + 0.19vw, 1.25rem); /* titre de carte : 18 → 20 px */
+    --wf-lead: clamp(1.125rem, 1.055rem + 0.286vw, 1.3125rem); /* chapô : 18 → 21 px */
+    --wf-text: clamp(1rem, 0.977rem + 0.095vw, 1.0625rem); /* texte courant : 16 → 17 px */
+    --wf-text-s: 0.9375rem; /* cartes, listes, tableaux : 15 px */
+    --wf-small: 0.875rem; /* légendes, mentions : 14 px */
+    --wf-eyebrow: 0.8125rem; /* surtitres et libellés en capitales : 13 px */
+    --wf-micro: 0.75rem; /* en-têtes de tableau : 12 px, rien en dessous */
     color-scheme: light;
 }
 
@@ -44,19 +74,29 @@ html {
     -webkit-text-size-adjust: 100%;
 }
 
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+        transition: none !important;
+    }
+}
+
 body {
     margin: 0;
-    background:
-        radial-gradient(1200px 600px at 100% -10%, var(--wf-glow-1), transparent 60%),
-        radial-gradient(900px 500px at -10% 110%, var(--wf-glow-2), transparent 60%), var(--wf-page);
-    background-attachment: fixed;
+    background: var(--wf-page);
     color: var(--wf-ink);
-    font: 400 1rem/1.6 var(--wf-font);
+    font: 400 var(--wf-text) / 1.6 var(--wf-font);
+    -webkit-font-smoothing: antialiased;
 }
 
 a {
-    color: var(--wf-accent-strong);
+    color: var(--wf-ocean);
     text-underline-offset: 0.15em;
+    transition: color 0.15s ease-out;
 }
 
 a:hover {
@@ -64,8 +104,8 @@ a:hover {
 }
 
 :focus-visible {
-    outline: 2px solid var(--wf-accent);
-    outline-offset: 2px;
+    outline: 2px solid var(--wf-focus);
+    outline-offset: 3px;
     border-radius: 4px;
 }
 
@@ -100,18 +140,19 @@ img {
     display: inline-flex;
     padding: 3px;
     border: 1px solid var(--wf-line);
-    border-radius: 999px;
+    border-radius: var(--wf-pill);
     background: var(--wf-surface);
-    font-size: 0.82rem;
-    font-weight: 700;
-    letter-spacing: 0.04em;
+    font-size: var(--wf-eyebrow);
+    font-weight: 600;
+    letter-spacing: 0.1em;
 }
 
 .wf-lang a {
-    padding: 4px 12px;
-    border-radius: 999px;
+    padding: 5px 12px;
+    border-radius: var(--wf-pill);
     color: var(--wf-muted);
     text-decoration: none;
+    transition: color 0.15s ease-out, background-color 0.15s ease-out;
 }
 
 .wf-lang a:hover {
@@ -120,7 +161,7 @@ img {
 
 .wf-lang a[aria-current] {
     background: var(--wf-ink);
-    color: #fff;
+    color: var(--wf-page);
 }
 
 .wf-page {
@@ -129,37 +170,56 @@ img {
     padding: 0 var(--wf-gutter) clamp(40px, 8vw, 72px);
 }
 
-/* En-tête de la page : étiquette, titre, phrase de présentation, boutons */
+/* En-tête de la page : surtitre, titre, phrase de présentation, boutons */
 .wf-hero {
     padding: clamp(20px, 5vw, 48px) 0 clamp(24px, 4vw, 40px);
 }
 
+/* Surtitre en capitales, fin et espacé, précédé d'un filet : en ambre foncé sur fond clair */
 .wf-eyebrow {
-    display: inline-block;
-    padding: 4px 12px;
-    border-radius: 999px;
-    background: var(--wf-tint);
-    color: var(--wf-accent-strong);
-    font-size: 0.78rem;
-    font-weight: 700;
-    letter-spacing: 0.06em;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6em;
+    color: var(--wf-accent);
+    font-size: var(--wf-eyebrow);
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    line-height: 1.3;
     text-transform: uppercase;
+    font-feature-settings: 'case' 1;
 }
 
+.wf-eyebrow::before {
+    content: '';
+    flex: none;
+    width: 28px;
+    height: 1px;
+    background: currentColor;
+}
+
+/* Les grands titres parlent en Literata, graisse 500, en bas de casse : l'impact vient de la taille et du blanc */
 .wf-title {
     margin: 14px 0 0;
-    font-size: clamp(2.2rem, 6.5vw, 3.7rem);
-    font-weight: 800;
-    line-height: 1.04;
-    letter-spacing: -0.04em;
+    font-family: var(--wf-font-display);
+    font-size: var(--wf-h1);
+    font-weight: 500;
+    line-height: 1.06;
+    letter-spacing: -0.016em;
     text-wrap: balance;
 }
 
+/* Le mot mis en avant d'un titre : en italique, à la couleur de l'accent */
+.wf-title em,
+.wf-h em {
+    font-style: italic;
+    color: var(--wf-accent);
+}
+
 .wf-lead {
-    margin: 14px 0 0;
-    max-width: 44em;
-    color: var(--wf-muted);
-    font-size: clamp(1.05rem, 2.2vw, 1.25rem);
+    margin: 16px 0 0;
+    max-width: 60ch;
+    font-size: var(--wf-lead);
+    font-weight: 380;
     line-height: 1.5;
     text-wrap: pretty;
 }
@@ -168,63 +228,97 @@ img {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
-    margin-top: 24px;
+    margin-top: 28px;
 }
 
+/* Boutons en pilule, Mona Sans 650. Le principal : fond ambre, texte encre ; au survol, fond nuit, texte écume.
+   Un seul bouton ambre par écran : les autres sont en contour. Rien ne bouge au survol. */
 .wf-btn {
-    display: inline-block;
-    padding: 11px 20px;
-    border: 1px solid var(--wf-ink);
-    border-radius: var(--wf-radius-s);
-    background: var(--wf-ink);
-    color: #fff;
-    font: inherit;
-    font-weight: 700;
-    line-height: 1.3;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55em;
+    padding: 0.95em 1.6em;
+    border: 2px solid var(--wf-flare);
+    border-radius: var(--wf-pill);
+    background: var(--wf-flare);
+    color: var(--wf-ink);
+    font: 650 1rem/1 var(--wf-font);
+    letter-spacing: 0;
+    text-align: center;
     text-decoration: none;
+    max-width: 100%;
     cursor: pointer;
+    transition: background-color 0.15s ease-out, color 0.15s ease-out, border-color 0.15s ease-out;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .wf-btn:hover {
-    border-color: var(--wf-accent-strong);
-    background: var(--wf-accent-strong);
-    color: #fff;
+    border-color: var(--wf-ink);
+    background: var(--wf-ink);
+    color: var(--wf-page);
+}
+
+.wf-btn:active {
+    border-color: var(--wf-ink-2);
+    background: var(--wf-ink-2);
+    color: var(--wf-page);
+}
+
+.wf-btn:focus-visible {
+    outline: 3px solid var(--wf-focus);
+    outline-offset: 3px;
+    border-radius: var(--wf-pill);
 }
 
 .wf-btn--ghost {
-    border-color: var(--wf-line);
-    background: var(--wf-surface);
+    border-color: currentColor;
+    background: transparent;
     color: var(--wf-ink);
 }
 
 .wf-btn--ghost:hover {
     border-color: var(--wf-ink);
-    background: var(--wf-surface);
+    background: var(--wf-ink);
+    color: var(--wf-page);
+}
+
+.wf-btn--night {
+    border-color: var(--wf-ink);
+    background: var(--wf-ink);
+    color: var(--wf-page);
+}
+
+.wf-btn--night:hover {
+    border-color: var(--wf-flare);
+    background: var(--wf-flare);
     color: var(--wf-ink);
 }
 
 /* Titre d'une section */
 .wf-h {
     margin: clamp(40px, 7vw, 64px) 0 0;
-    font-size: clamp(1.5rem, 3.6vw, 2rem);
-    font-weight: 800;
-    line-height: 1.15;
-    letter-spacing: -0.03em;
+    font-family: var(--wf-font-display);
+    font-size: var(--wf-h2);
+    font-weight: 500;
+    line-height: 1.06;
+    letter-spacing: -0.016em;
     text-wrap: balance;
     scroll-margin-top: 16px;
 }
 
+/* Carte : filet fin, pas d'ombre */
 .wf-card {
-    padding: clamp(16px, 3vw, 24px);
+    padding: var(--wf-card-pad);
     border: 1px solid var(--wf-line);
     border-radius: var(--wf-radius);
     background: var(--wf-surface);
-    box-shadow: var(--wf-shadow);
 }
 
 .wf-note {
     color: var(--wf-muted);
-    font-size: 0.93rem;
+    font-size: var(--wf-small);
+    line-height: 1.45;
 }
 
 /* Champ à copier, avec son bouton */
@@ -240,10 +334,10 @@ img {
     min-width: 0;
     padding: 10px 12px;
     border: 1px solid var(--wf-line);
-    border-radius: var(--wf-radius-s);
+    border-radius: var(--wf-radius-xs);
     background: var(--wf-page);
     color: var(--wf-ink);
-    font: 500 0.85rem var(--wf-mono);
+    font: 500 var(--wf-small) var(--wf-mono);
 }
 
 /* Sections repliables (versions d'un changelog) */
@@ -258,10 +352,12 @@ img {
 }
 
 .wf-fold summary {
-    padding: 14px clamp(16px, 3vw, 24px);
-    font-size: 1.05rem;
-    font-weight: 700;
+    padding: 14px var(--wf-card-pad);
+    font-size: var(--wf-h4);
+    font-weight: 650;
+    letter-spacing: -0.01em;
     cursor: pointer;
+    transition: background-color 0.15s ease-out;
 }
 
 .wf-fold summary:hover {
@@ -271,12 +367,13 @@ img {
 .wf-fold summary small {
     margin-left: 10px;
     color: var(--wf-muted);
-    font-size: 0.85rem;
+    font-size: var(--wf-small);
     font-weight: 400;
+    letter-spacing: 0;
 }
 
 .wf-fold-body {
-    padding: 0 clamp(16px, 3vw, 24px) 18px;
+    padding: 0 var(--wf-card-pad) 18px;
 }
 
 /* Texte courant venu d'un Markdown : titres, listes, tableaux, code, images */
@@ -284,31 +381,35 @@ img {
     min-width: 0;
 }
 
+/* Un titre dans un texte long garde la voix de titrage, à un corps de lecture */
 .wf-prose h2 {
     margin: clamp(36px, 6vw, 56px) 0 12px;
-    font-size: clamp(1.4rem, 3.2vw, 1.8rem);
-    font-weight: 800;
+    font-family: var(--wf-font-display);
+    font-size: var(--wf-h2-prose);
+    font-weight: 500;
     line-height: 1.15;
-    letter-spacing: -0.03em;
+    letter-spacing: -0.016em;
     text-wrap: balance;
     scroll-margin-top: 16px;
 }
 
 .wf-prose h3 {
     margin: 28px 0 8px;
-    font-size: 1.12rem;
-    font-weight: 700;
-    line-height: 1.25;
-    letter-spacing: -0.015em;
+    font-size: var(--wf-h3);
+    font-weight: 650;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
 }
 
-/* Dans une section repliable, les sous-titres sont des rubriques (« Ajouté », « Corrigé »…) */
+/* Dans une section repliable, les sous-titres sont des rubriques (« Ajouté », « Corrigé »…) : des surtitres */
 .wf-fold-body h3 {
     margin: 22px 0 6px;
-    color: var(--wf-accent-strong);
-    font-size: 0.78rem;
-    letter-spacing: 0.06em;
+    color: var(--wf-accent);
+    font-size: var(--wf-eyebrow);
+    font-weight: 500;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
+    font-feature-settings: 'case' 1;
 }
 
 .wf-prose > :first-child {
@@ -317,7 +418,7 @@ img {
 
 .wf-prose p,
 .wf-prose li {
-    max-width: 72ch;
+    max-width: 68ch;
 }
 
 .wf-prose p {
@@ -334,10 +435,14 @@ img {
     margin: 6px 0;
 }
 
+.wf-prose li::marker {
+    color: var(--wf-accent);
+}
+
 .wf-prose code {
     padding: 0.1em 0.35em;
     border-radius: 4px;
-    background: var(--wf-tint);
+    background: var(--wf-sand);
     font: 0.88em var(--wf-mono);
     overflow-wrap: anywhere;
 }
@@ -345,7 +450,7 @@ img {
 .wf-prose pre {
     padding: 14px;
     border-radius: var(--wf-radius-s);
-    background: var(--wf-tint);
+    background: var(--wf-sand);
     overflow-x: auto;
 }
 
@@ -372,7 +477,8 @@ img {
 .wf-scroll table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.93rem;
+    font-size: var(--wf-text-s);
+    font-variant-numeric: tabular-nums lining-nums;
 }
 
 .wf-scroll th,
@@ -389,27 +495,49 @@ img {
 
 .wf-scroll th {
     color: var(--wf-muted);
-    font-size: 0.74rem;
-    font-weight: 700;
-    letter-spacing: 0.06em;
+    font-size: var(--wf-micro);
+    font-weight: 600;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
     white-space: nowrap;
 }
 
-/* Pied de page : ce que dit l'outil de lui-même, puis WeSoar et ses autres outils */
+/* Pied de page : la seule grande surface sombre, sur l'ardoise de nuit. Les variables y sont redéfinies : ce qui est
+   écrit en couleur d'encre passe en écume, les liens en sable, l'accent en ciel, et les styles propres à chaque page
+   suivent sans rien savoir du fond. */
 .wf-foot {
-    border-top: 1px solid var(--wf-line);
-    background: var(--wf-surface);
+    --wf-ink: #f7f4ee;
+    --wf-ink-2: #f3ead6;
+    --wf-muted: color-mix(in srgb, #f7f4ee 78%, transparent);
+    --wf-line: color-mix(in srgb, #f7f4ee 12%, transparent);
+    --wf-surface: color-mix(in srgb, #0e1b26 42%, transparent);
+    --wf-page: color-mix(in srgb, #0e1b26 42%, transparent);
+    --wf-accent: var(--wf-sky);
+    --wf-ocean: var(--wf-sand-2);
+    --wf-focus: #fff;
+    --wf-tint: color-mix(in srgb, #bfddeb 14%, transparent);
+    background:
+        radial-gradient(70% 90% at 100% 0%, rgba(191, 221, 235, 0.07), rgba(191, 221, 235, 0) 70%),
+        linear-gradient(to bottom, rgba(14, 27, 38, 0) 35%, rgba(14, 27, 38, 0.34) 100%),
+        var(--wf-night);
+    color: var(--wf-muted);
+}
+
+.wf-foot a {
+    color: var(--wf-sand-2);
+}
+
+.wf-foot a:hover {
+    color: #fff;
 }
 
 .wf-foot-in {
     max-width: var(--wf-width);
     margin: 0 auto;
-    padding: clamp(24px, 5vw, 40px) var(--wf-gutter);
+    padding: clamp(28px, 5vw, 48px) var(--wf-gutter);
     display: grid;
     gap: 20px;
-    color: var(--wf-muted);
-    font-size: 0.9rem;
+    font-size: var(--wf-text-s);
 }
 
 .wf-foot p {
@@ -440,5 +568,5 @@ img {
 
 .wf-tools li:first-child {
     color: var(--wf-ink);
-    font-weight: 700;
+    font-weight: 650;
 }

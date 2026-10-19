@@ -6,7 +6,7 @@
 //                                   site/favicon.svg (dossier ignoré par git)
 //
 // La version vient de src/pluginConfig.ts, les versions de CHANGELOG.en.md et de CHANGELOG.md.
-// L'habillage (scripts/wesoar.css, scripts/wesoar.svg) est celui de tous les outils WeSoar.
+// L'habillage (scripts/wesoar.css, scripts/wesoar.svg, les polices) est celui de tous les outils WeSoar.
 // GitHub refait la page et la publie à chaque envoi sur main (.github/workflows/pages.yml) : rien
 // à lancer à la main, sauf pour la voir avant de l'envoyer.
 
@@ -358,8 +358,7 @@ const css =
     oneLine(read('scripts/wesoar.css')) +
     oneLine(`
 .pgs-cols{display:grid;grid-template-columns:minmax(0,320px) minmax(0,1fr);gap:clamp(20px,4vw,40px);align-items:start}
-.pgs-shot{border:6px solid var(--wf-ink);border-radius:26px;overflow:hidden;background:#2b2b2b;
-  box-shadow:0 24px 50px rgba(23,32,43,.22);aspect-ratio:470/700}
+.pgs-shot{border:6px solid var(--wf-ink);border-radius:26px;overflow:hidden;background:#2b2b2b;aspect-ratio:470/700}
 .pgs-shot img{display:block;width:100%;height:100%;object-fit:cover;object-position:top}
 .pgs-figure{margin:0}
 .pgs-legal summary{cursor:pointer;color:var(--wf-ink);font-weight:700}
@@ -429,11 +428,12 @@ const pageOf = lang => {
 ${redirect}<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${t.title}</title>
 <meta name="description" content="${t.description}">
-<meta name="theme-color" content="#f5f7f9">
+<meta name="theme-color" content="#f7f4ee">
 ${social}
 <link rel="icon" type="image/svg+xml" href="${base}favicon.svg">
 <link rel="preload" href="${base}mona-sans.woff2" as="font" type="font/woff2" crossorigin>
-<style>@font-face{font-family:'Mona Sans';src:url('${base}mona-sans.woff2') format('woff2');font-weight:400 800;font-display:swap}${css}</style>
+<link rel="preload" href="${base}literata.woff2" as="font" type="font/woff2" crossorigin>
+<style>@font-face{font-family:'Mona Sans';src:url('${base}mona-sans.woff2') format('woff2');font-weight:200 900;font-display:swap}@font-face{font-family:'Literata';src:url('${base}literata.woff2') format('woff2');font-weight:400 600;font-display:swap}@font-face{font-family:'Literata';font-style:italic;src:url('${base}literata-italic.woff2') format('woff2');font-weight:400 600;font-display:swap}${css}</style>
 </head>
 <body>
 <header class="wf-top">
@@ -513,9 +513,10 @@ for (const lang of LANGS) {
 }
 fs.copyFileSync(path.join(root, SHOT_SOURCE), path.join(out, SHOT));
 fs.copyFileSync(path.join(root, 'scripts/wesoar-mark.svg'), path.join(out, 'favicon.svg'));
-// La police est servie avec la page, et sa licence (SIL OFL) l'accompagne
-fs.copyFileSync(path.join(root, 'scripts/mona-sans.woff2'), path.join(out, 'mona-sans.woff2'));
-fs.copyFileSync(path.join(root, 'scripts/mona-sans-OFL.txt'), path.join(out, 'mona-sans-OFL.txt'));
+// Les polices sont servies avec la page, et leur licence (SIL OFL) les accompagne : Mona Sans pour le texte,
+// Literata (romain et italique) pour les grands titres, comme le veut la charte WeSoar
+for (const font of ['mona-sans.woff2', 'mona-sans-OFL.txt', 'literata.woff2', 'literata-italic.woff2', 'literata-OFL.txt'])
+    fs.copyFileSync(path.join(root, 'scripts', font), path.join(out, font));
 console.log(
     `site/ : WS Sounding ${version}, ` +
         LANGS.map(lang => `${lang} ${versions[lang].length} versions`).join(', ') +

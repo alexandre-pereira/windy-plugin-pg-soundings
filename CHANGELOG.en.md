@@ -8,6 +8,16 @@ The git repository only starts after 1.2.7: older entries were reconstructed aft
 release notes. Every version can still be installed from Windy at
 `https://windy-plugins.com/2727410/<plugin-name>/<version>/plugin.min.js`.
 
+## [1.15.1] - 2026-10-19
+
+### Changed
+
+- The plugin colours follow the WeSoar brand guidelines: the brand amber replaces the yellow and
+  orange of the interface markers (selected day and hour, time slider, pointed altitude, place marker
+  on the map, update banner, open legend), with ink text. The presentation page (soundings.wesoar.fr)
+  takes the same guidelines: foam background, Literata headings, amber button, footer on the night
+  slate. Data colours (wind, thermals, clouds, fronts, sounding) are unchanged.
+
 ## [1.15.0] - 2026-10-19
 
 ### Added

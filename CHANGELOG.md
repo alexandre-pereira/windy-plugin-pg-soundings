@@ -8,6 +8,17 @@ Le dépôt git ne commence qu'après la 1.2.7 : les entrées plus anciennes ont 
 coup à partir des notes de publication. Chaque version reste installable depuis Windy à l'adresse
 `https://windy-plugins.com/2727410/<nom-du-plugin>/<version>/plugin.min.js`.
 
+## [1.15.1] - 2026-10-19
+
+### Modifié
+
+- Les couleurs du plugin suivent la charte graphique WeSoar : l'ambre de la marque remplace le jaune
+  et l'orange des repères de l'interface (jour et heure choisis, curseur de l'heure, altitude
+  pointée, repère du lieu sur la carte, bandeau de mise à jour, légende ouverte), avec le texte en
+  encre. La page de présentation (soundings.wesoar.fr) prend la même charte : fond écume, titres en
+  Literata, bouton ambre, pied de page sur l'ardoise de nuit. Les couleurs des données (vent,
+  thermiques, nuages, fronts, émagramme) ne changent pas.
+
 ## [1.15.0] - 2026-10-19
 
 ### Ajouté

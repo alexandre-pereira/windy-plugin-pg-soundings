@@ -29,7 +29,7 @@
             >
         {/if}
         {#if hover}
-            <rect x="2" y={y(hover.z) - 8} width={left - 4} height="16" rx="3" fill="#ffd24a" />
+            <rect x="2" y={y(hover.z) - 8} width={left - 4} height="16" rx="3" fill="#f1ae3e" />
             <text x={left / 2} y={y(hover.z) + 3.5} class="wpp-axis-hover" text-anchor="middle"
                 >{r50(hover.z)}</text
             >
@@ -261,7 +261,7 @@
                     x2={left + plotW}
                     y1={y(hover.z)}
                     y2={y(hover.z)}
-                    stroke="#ffd24a"
+                    stroke="#f1ae3e"
                     stroke-opacity="0.8"
                     stroke-dasharray="3 3"
                 />
