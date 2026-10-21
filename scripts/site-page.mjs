@@ -79,8 +79,8 @@ const OTHER_TOOLS = [
     },
     {
         url: {
-            en: 'https://trimming-tools.wesoar.fr/',
-            fr: 'https://trimming-tools.wesoar.fr/fr/',
+            en: 'https://trimmer.wesoar.fr/',
+            fr: 'https://trimmer.wesoar.fr/fr/',
         },
         name: { en: 'WS Trimmer, the paraglider trimming bench', fr: 'WS Trimmer, le banc de calage parapente' },
     },
