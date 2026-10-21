@@ -8,7 +8,7 @@ couvre pas, et d'où viennent les fichiers qui ne sont pas de WS Sounding, avec 
 1. Code de WS Sounding
 -----------------------
 
-Le code de WS Sounding appartient à WeSoar SASU, qui le diffuse. Il est écrit par Alexandre
+Le code de WS Sounding appartient à WeSoar, qui le diffuse. Il est écrit par Alexandre
 Pereira. Il est sous licence ISC (fichier LICENSE), à l'exception des fichiers tiers de la
 section 3, qui gardent leurs auteurs et leurs licences.
 
@@ -274,7 +274,7 @@ responsabilité ne s'applique que dans la mesure où la loi applicable l'autoris
 
     Licence ISC
 
-    Copyright (c) 2026 WeSoar SASU
+    Copyright (c) 2026 WeSoar
 
     L'autorisation d'utiliser, de copier, de modifier et/ou de distribuer ce logiciel, dans
     quelque but que ce soit, avec ou sans contrepartie financière, est accordée par les présentes,
@@ -293,7 +293,7 @@ responsabilité ne s'applique que dans la mesure où la loi applicable l'autoris
 English summary
 ---------------
 
-The WS Sounding code belongs to WeSoar SASU, which distributes it; it is written by Alexandre
+The WS Sounding code belongs to WeSoar, which distributes it; it is written by Alexandre
 Pereira and licensed under the ISC licence (LICENSE), except for the third-party files listed in
 section 3, which keep their own authors and licences: configuration files and type declarations
 from windycom/windy-plugin-template (ISC, Windyty, S.E.), the Leaflet (BSD-2-Clause) and MapLibre

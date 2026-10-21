@@ -18,7 +18,7 @@
         "parapente"
     ],
     "repository": "github:alexandre-pereira/ws-plugin-windy",
-    "author": "WeSoar SASU",
+    "author": "WeSoar",
     "license": "ISC",
     "dependencies": {
         "@windycom/plugin-devtools": "^3.0.4"

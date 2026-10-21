@@ -173,7 +173,7 @@ Aucun site extérieur à Windy ne voit passer l'utilisateur.
 
 ## Licence
 
-Code de WeSoar SASU, écrit par Alexandre Pereira, ouvert sous licence [ISC](LICENSE) et diffusé
+Code de WeSoar, écrit par Alexandre Pereira, ouvert sous licence [ISC](LICENSE) et diffusé
 par WeSoar. Le fichier [NOTICE](NOTICE) dit ce que la licence ne couvre pas : le nom WeSoar et son
 logo, qui appartiennent à WeSoar (une version modifiée ne les porte pas), et les fichiers tiers,
 qui gardent leurs auteurs et leurs licences (fichiers de configuration et déclarations de types

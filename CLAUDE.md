@@ -130,7 +130,7 @@ Les réglages de l'utilisateur sont gardés dans le `localStorage` de Windy, sou
 - Le plugin n'interroge que Windy : aucune requête vers un autre site (GitHub, polices, mesure
   d'audience…), qui verrait passer l'adresse IP de l'utilisateur.
 - Le plugin est diffusé par WeSoar (`author` de `pluginConfig.ts`, mentions légales de la page) ;
-  le code appartient à WeSoar SASU et est écrit par Alexandre Pereira. `LICENSE` ne contient que le
+  le code appartient à WeSoar et est écrit par Alexandre Pereira. `LICENSE` ne contient que le
   texte ISC canonique (GitHub y reconnaît la licence) ; le reste va dans `NOTICE` : titulaire, nom
   et logo WeSoar (hors de la licence ISC : ne rien écrire qui les dise libres), fichiers tiers et
   leurs licences (configuration et `declarations/` du modèle de plugin de Windy, Svelte dans la
