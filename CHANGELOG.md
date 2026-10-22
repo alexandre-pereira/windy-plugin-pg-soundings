@@ -8,6 +8,12 @@ Le dépôt git ne commence qu'après la 1.2.7 : les entrées plus anciennes ont 
 coup à partir des notes de publication. Chaque version reste installable depuis Windy à l'adresse
 `https://windy-plugins.com/2727410/<nom-du-plugin>/<version>/plugin.min.js`.
 
+## [Non publié]
+
+### Modifié
+
+- La page de présentation (soundings.wesoar.fr) porte le nouveau logo WeSoar, et son onglet la nouvelle icône.
+
 ## [1.15.1] - 2026-10-19
 
 ### Modifié

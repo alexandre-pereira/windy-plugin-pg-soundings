@@ -8,6 +8,12 @@ The git repository only starts after 1.2.7: older entries were reconstructed aft
 release notes. Every version can still be installed from Windy at
 `https://windy-plugins.com/2727410/<plugin-name>/<version>/plugin.min.js`.
 
+## [Unreleased]
+
+### Changed
+
+- The presentation page (soundings.wesoar.fr) shows the new WeSoar logo, and its tab the new icon.
+
 ## [1.15.1] - 2026-10-19
 
 ### Changed
